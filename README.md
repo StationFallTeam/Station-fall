@@ -1,1 +1,1 @@
-We are Team Foxtrot making Ststion-Fall, a space station exploration rougelike!
+We are Team Foxtrot making Station-Fall, a space station exploration rougelike!
