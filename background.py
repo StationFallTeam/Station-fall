@@ -53,7 +53,7 @@ def main():
     pygame.display.set_caption("Station Fall: Early Prototype")
     clock = pygame.time.Clock()
 
-    bg = Background()
+    bg = Background(Background.png)
     
     # Player's position in the WORLD (not the screen)
     player_world_x = 0
