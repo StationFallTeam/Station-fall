@@ -6,29 +6,25 @@ WIDTH, HEIGHT = 800, 600
 FPS = 60
 TILE_SIZE = 64  # Size of floor tiles
 PLAYER_SPEED = 5
-
-# Colors
-COLOR_BG = (10, 10, 15)      # Deep space
-COLOR_TILE = (30, 30, 35)    # Station floor
-COLOR_GRID = (45, 45, 50)    # Floor panel edges
-COLOR_PLAYER = (0, 200, 255) # Scavenger blue
+COLOR_BG = (10, 10, 30)
+COLOR_PLAYER = (200, 50, 50)
 
 class Background:
     def __init__(self, image_path):
-        # 1. Load the PNG
+        # 1. Load the tile image
         try:
             self.tile_image = pygame.image.load(image_path).convert_alpha()
         except pygame.error:
-            # Fallback if image fails to load
+            # If the image fails to load, create a placeholder surface
             print(f"Warning: Could not load {image_path}. Using placeholder.")
             self.tile_image = pygame.Surface((TILE_SIZE, TILE_SIZE))
             self.tile_image.fill((50, 50, 50))
 
-        # Get the actual dimensions of your PNG (in case it isn't exactly TILE_SIZE)
+        # 2. Get image dimensions for tiling
         self.img_w = self.tile_image.get_width()
         self.img_h = self.tile_image.get_height()
 
-        # Distant stars (same as before)
+        # Distant stars for parallax effect
         self.stars = [(random.randint(0, WIDTH), random.randint(0, HEIGHT)) for _ in range(50)]
 
     def draw(self, screen, cam_x, cam_y):
