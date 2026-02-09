@@ -48,11 +48,14 @@ class Background:
             for y in range(int(start_y), HEIGHT + self.img_h, self.img_h):
                 screen.blit(self.tile_image, (x, y))
 def main():
+
+    # Initialize Pygame and create the window
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Station Fall: Early Prototype")
     clock = pygame.time.Clock()
 
+    # Create the background object
     bg = Background("Background.png")
     
     # Player's position in the WORLD (not the screen)
