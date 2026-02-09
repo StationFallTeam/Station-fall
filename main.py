@@ -1,4 +1,5 @@
 import pygame
+from enemy import Enemy
 pygame.init()
 pygame.mixer.init()
 
@@ -17,6 +18,9 @@ vel = 5 # Velocity or speed of movement
 
 player_img = pygame.image.load("IMG_5427.jpg").convert_alpha()
 player_img = pygame.transform.scale(player_img, (width, height))
+
+enemy = Enemy(300, 300)#loading one enemy 
+
 
 run = True
 while run:
@@ -41,13 +45,19 @@ while run:
     if keys[pygame.K_s]:
         y += vel #  moves down
 
+    player_rect = pygame.Rect(x, y, width, height)#so the enemy knows where the player is
+
+
     # Optional: Keep player within screen boundaries
     x = max(0, min(x, screen_width - width))
     y = max(0, min(y, screen_height - height))
 
+    enemy.update(player_rect) # Update enemy position based on player position
+
     # Drawing
     win.fill((0, 0, 0)) # Fill the background with black to clear previous frames
     win.blit(player_img, (x, y))
+    enemy.draw(win) # Draw the enemy
     pygame.display.update() # Update the display
 
 pygame.quit()
