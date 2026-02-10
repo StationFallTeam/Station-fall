@@ -8,7 +8,7 @@ pygame.mixer.init()
 screen_width = 500
 screen_height = 500
 win = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Clean Game Structure")
+pygame.display.set_caption("Station Fall Playtest")
 
 clock = pygame.time.Clock()
 
@@ -39,3 +39,4 @@ while run:
     pygame.display.update()
 
 pygame.quit()
+
