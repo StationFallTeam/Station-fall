@@ -1,4 +1,5 @@
 import pygame
+from enemy import Enemy
 pygame.init()
 pygame.mixer.init()
 
@@ -8,47 +9,23 @@ screen_height = 500
 win = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("WASD Movement Test")
 
-clock = pygame.time.Clock()
-
 # Player variables
 x = 100
 y = 100
-width = 48
-height = 48
+width = 80 
+height = 120
 vel = 5 # Velocity or speed of movement
 
-spriteSheet = pygame.image.load("player_sheet.png").convert_alpha()
+player_img = pygame.image.load("IMG_5427.jpg").convert_alpha()
+player_img = pygame.transform.scale(player_img, (width, height))
 
-def getFrame(sheet, x, y, width, height):
-    frame = pygame.Surface((width, height), pygame.SRCALPHA)
-    frame.blit(sheet, (0,0), (x, y, width, height))
-    return frame
+enemy = Enemy(300, 300)#loading one enemy 
 
-
-# Animations (4 directions)
-animations = {
-    "down": [],
-    "left": [],
-    "right": [],
-    "up": []
-}
-
-directions = ["down", "left", "right", "up"]
-
-for row in range(4): # 4 rows
-    for col in range(4): # 4 frames per row
-        frame = getFrame(spriteSheet, col * width, row * height, width, height)
-        animations[directions[row]].append(frame)
-
-direction = "down"
-frameIndex = 0
-animationSpeed = 0.2
-moving = False
 
 run = True
 while run:
-    clock.tick(60)
-    moving = False
+    # Set frame rate
+    pygame.time.delay(10) # Reduced delay for smoother movement
 
     # Event handling
     for event in pygame.event.get():
@@ -61,35 +38,26 @@ while run:
     # Movement logic: update x and y coordinates based on key states
     if keys[pygame.K_a]:
         x -= vel
-        direction = "left"        
-        moving = True
     if keys[pygame.K_d]:
-        direction = "right"
         x += vel
-        moving = True
     if keys[pygame.K_w]:
         y -= vel # subtracting from y moves up (top-left is 0,0)
-        direction = "up"        
-        moving = True
     if keys[pygame.K_s]:
         y += vel #  moves down
-        direction = "down"
-        moving = True
+
+    player_rect = pygame.Rect(x, y, width, height)#so the enemy knows where the player is
+
 
     # Optional: Keep player within screen boundaries
     x = max(0, min(x, screen_width - width))
     y = max(0, min(y, screen_height - height))
 
-    if moving:
-        frameIndex += animationSpeed
-        if frameIndex >= len(animations[direction]):
-            frameIndex = 0
-    else:
-        frameIndex = 0
+    enemy.update(player_rect) # Update enemy position based on player position
 
     # Drawing
     win.fill((0, 0, 0)) # Fill the background with black to clear previous frames
-    win.blit(animations[direction][int(frameIndex)], (x, y))
+    win.blit(player_img, (x, y))
+    enemy.draw(win) # Draw the enemy
     pygame.display.update() # Update the display
 
 pygame.quit()
