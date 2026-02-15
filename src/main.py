@@ -1,4 +1,6 @@
 import pygame
+from background import SpaceBackground
+from camera import Camera
 from enemy import Enemy
 from player import Player
 from render import draw_objects
