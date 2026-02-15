@@ -20,7 +20,7 @@ pygame.display.set_caption("Station Fall Playtest")
 
 clock = pygame.time.Clock()
 
-# 2. Define a large world size (e.g., 5000x5000) so there is room to scroll
+# Define a large world size for the player to explore
 world_width = 5000
 world_height = 5000
 
@@ -38,12 +38,12 @@ while run:
         if event.type == pygame.QUIT:
             run = False
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE: # Easy exit for Fullscreen
+            if event.key == pygame.K_ESCAPE: # Allow quitting with ESC key
                 run = False
 
     keys = pygame.key.get_pressed()
 
-    # Update player with large world bounds
+    # Update player with world boundaries
     player.update(keys, world_width, world_height)
 
     # Update camera to follow player
@@ -53,11 +53,11 @@ while run:
     for enemy in enemies:
         enemy.update(player.get_rect())
 
-    # --- DRAWING ---
-    # Draw Background (Camera topleft provides the parallax offset)
+    # Clear the screen and draw everything
+    # Draw the background first, using the camera position for parallax effect
     space_bg.update_and_draw(win, camera.camera.topleft)
 
-    # Draw everything else relative to the camera
+    # Then draw the player and enemies on top
     draw_objects(win, player, enemies, camera)
 
     pygame.display.update()
