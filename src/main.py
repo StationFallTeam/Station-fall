@@ -8,14 +8,14 @@ from render import draw_objects
 pygame.init()
 pygame.mixer.init()
 
-# 1. Get the desktop resolution for a "Big" display
+# Get the current display size for fullscreen mode
 info = pygame.display.Info()
 screen_width = info.current_w
 screen_height = info.current_h
 
 # Use pygame.FULLSCREEN for a true big-screen experience
 # Or use pygame.RESIZABLE if you want a window you can maximize
-win = pygame.display.set_mode((screen_width, screen_height), pygame.FULLSCREEN)
+win = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
 pygame.display.set_caption("Station Fall Playtest")
 
 clock = pygame.time.Clock()
