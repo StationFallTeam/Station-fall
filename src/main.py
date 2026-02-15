@@ -1,6 +1,7 @@
 import pygame
 from enemy import Enemy
 from player import Player
+from render import draw_objects
 
 pygame.init()
 pygame.mixer.init()
@@ -13,7 +14,7 @@ pygame.display.set_caption("Station Fall Playtest")
 clock = pygame.time.Clock()
 
 player = Player(100, 100)
-enemy = Enemy(300, 300)
+enemies = [Enemy(300, 300)]
 
 run = True
 while run:
@@ -22,6 +23,9 @@ while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                run = False
 
     keys = pygame.key.get_pressed()
 
@@ -29,12 +33,12 @@ while run:
     player.update(keys, screen_width, screen_height)
 
     # Update enemy using player's rect
-    enemy.update(player.get_rect())
+    for enemy in enemies:
+        enemy.update(player.get_rect())
 
     # Draw everything
     win.fill((0, 0, 0))
-    player.draw(win)
-    enemy.draw(win)
+    draw_objects(win, player, enemies)
 
     pygame.display.update()
 
