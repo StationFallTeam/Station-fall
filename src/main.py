@@ -6,7 +6,6 @@ from player import Player
 from render import draw_objects
 
 pygame.init()
-pygame.mixer.init()
 
 screen_width = 500
 screen_height = 500
@@ -15,7 +14,7 @@ pygame.display.set_caption("Station Fall Playtest")
 
 clock = pygame.time.Clock()
 
-# Initialize systems
+# Initialize the Camera and Background systems
 camera = Camera(screen_width, screen_height)
 space_bg = SpaceBackground(screen_width, screen_height)
 
@@ -29,27 +28,24 @@ while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                run = False
 
     keys = pygame.key.get_pressed()
 
-    # Update player (Removed screen bounds so you can actually move in space)
+    # Update Player: I increased the bounds to 5000 so you can move around
     player.update(keys, 5000, 5000)
 
-    # Update Camera to follow player
+    # Update Camera to track the player's new position
     camera.update(player)
 
-    # Update enemy using player's rect
+    # Update Enemies
     for enemy in enemies:
         enemy.update(player.get_rect())
 
     # --- DRAWING ---
-    # Draw Parallax Background using camera position
+    # Draw Background (Parallax uses the camera's top-left)
     space_bg.update_and_draw(win, camera.camera.topleft)
 
-    # Draw all objects with camera offset
+    # Draw player and enemies using the camera offset
     draw_objects(win, player, enemies, camera)
 
     pygame.display.update()
