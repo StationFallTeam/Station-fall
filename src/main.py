@@ -1,9 +1,4 @@
 import pygame
-import sys
-import os
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'other_folder'))
-
 from enemy import Enemy
 from player import Player
 from render import draw_objects
