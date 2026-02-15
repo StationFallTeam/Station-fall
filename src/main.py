@@ -6,20 +6,29 @@ from player import Player
 from render import draw_objects
 
 pygame.init()
+pygame.mixer.init()
 
-screen_width = 500
-screen_height = 500
-win = pygame.display.set_mode((screen_width, screen_height))
+# 1. Get the desktop resolution for a "Big" display
+info = pygame.display.Info()
+screen_width = info.current_w
+screen_height = info.current_h
+
+# Use pygame.FULLSCREEN for a true big-screen experience
+# Or use pygame.RESIZABLE if you want a window you can maximize
+win = pygame.display.set_mode((screen_width, screen_height), pygame.FULLSCREEN)
 pygame.display.set_caption("Station Fall Playtest")
 
 clock = pygame.time.Clock()
 
-# Initialize the Camera and Background systems
+# 2. Define a large world size (e.g., 5000x5000) so there is room to scroll
+world_width = 5000
+world_height = 5000
+
 camera = Camera(screen_width, screen_height)
 space_bg = SpaceBackground(screen_width, screen_height)
 
 player = Player(100, 100)
-enemies = [Enemy(300, 300)]
+enemies = [Enemy(300, 300), Enemy(800, 600)]
 
 run = True
 while run:
@@ -28,24 +37,27 @@ while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE: # Easy exit for Fullscreen
+                run = False
 
     keys = pygame.key.get_pressed()
 
-    # Update Player: I increased the bounds to 5000 so you can move around
-    player.update(keys, 5000, 5000)
+    # Update player with large world bounds
+    player.update(keys, world_width, world_height)
 
-    # Update Camera to track the player's new position
+    # Update camera to follow player
     camera.update(player)
 
-    # Update Enemies
+    # Update enemies
     for enemy in enemies:
         enemy.update(player.get_rect())
 
     # --- DRAWING ---
-    # Draw Background (Parallax uses the camera's top-left)
+    # Draw Background (Camera topleft provides the parallax offset)
     space_bg.update_and_draw(win, camera.camera.topleft)
 
-    # Draw player and enemies using the camera offset
+    # Draw everything else relative to the camera
     draw_objects(win, player, enemies, camera)
 
     pygame.display.update()
