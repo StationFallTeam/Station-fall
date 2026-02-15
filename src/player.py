@@ -8,7 +8,7 @@ class Player:
         self.height = 48
         self.vel = 5
 
-        self.spriteSheet = pygame.image.load("player_sheet.png").convert_alpha()
+        self.spriteSheet = pygame.image.load("../player_sheet.png").convert_alpha()
 
         self.animations = {
             "down": [],
