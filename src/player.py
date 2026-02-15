@@ -63,7 +63,6 @@ class Player:
             self.moving = True
 
         # Screen bounds
-        self.x = max(0, min(self.x, screen_width - self.width))
         self.y = max(0, min(self.y, screen_height - self.height))
 
         # Animation update
