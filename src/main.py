@@ -1,53 +1,47 @@
 import pygame
-from background import SpaceBackground
-from camera import Camera
-from enemy import Enemy
+import asyncio
+
 from player import Player
+from enemy import Enemy
 from render import draw_objects
 
-pygame.init()
+async def main():
+    pygame.init()
+    pygame.mixer.init()
 
-# Get monitor resolution
-info = pygame.display.Info()
-screen_width, screen_height = info.current_w, info.current_h
-win = pygame.display.set_mode((screen_width, screen_height), pygame.FULLSCREEN)
+    screen_width = 500
+    screen_height = 500
+    win = pygame.display.set_mode((screen_width, screen_height))
+    pygame.display.set_caption("Station Fall Playtest")
 
-clock = pygame.time.Clock()
+    clock = pygame.time.Clock()
 
-# Set a large world (e.g., 5000x5000) so there is space to scroll
-world_width, world_height = 5000, 5000
+    player = Player(100, 100)
+    enemies = [Enemy(300, 300)]
 
-camera = Camera(screen_width, screen_height)
-space_bg = SpaceBackground(screen_width, screen_height)
+    running = True
+    while running:
+        clock.tick(60)
 
-player = Player(screen_width // 2, screen_height // 2)
-enemies = [Enemy(800, 800), Enemy(1200, 300)]
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                running = False
 
-run = True
-while run:
-    clock.tick(60)
+        keys = pygame.key.get_pressed()
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-            run = False
+        player.update(keys, screen_width, screen_height)
 
-    keys = pygame.key.get_pressed()
+        for enemy in enemies:
+            enemy.update(player.get_rect())
 
-    # 1. Update World Objects
-    player.update(keys, world_width, world_height)
-    for enemy in enemies:
-        enemy.update(player.get_rect())
+        win.fill((0, 0, 0))
+        draw_objects(win, player, enemies)
+        pygame.display.flip()
 
-    # 2. Update Camera (Follows Player)
-    camera.update(player)
+        await asyncio.sleep(0)
 
-    # 3. Render
-    # Background uses camera position for the parallax effect
-    space_bg.update_and_draw(win, camera.camera.topleft)
-    
-    # Draw player/enemies through the 'lens' of the camera
-    draw_objects(win, player, enemies, camera)
+    pygame.quit()
 
-    pygame.display.update()
-
-pygame.quit()
+asyncio.run(main())
