@@ -13,6 +13,8 @@ async def main():
 
     screen_width = 500
     screen_height = 500
+    world_height = 3000
+    world_width = 3000
     win = pygame.display.set_mode((screen_width, screen_height))
     pygame.display.set_caption("Station Fall Playtest")
 
@@ -37,7 +39,7 @@ async def main():
 
         keys = pygame.key.get_pressed()
 
-        player.update(keys, screen_width, screen_height)
+        player.update(keys, world_width, world_height)
         
         # Make the camera follow the player - Meheraj
         camera.update(player)

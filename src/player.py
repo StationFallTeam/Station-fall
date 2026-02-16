@@ -44,7 +44,7 @@ class Player:
                 )
                 self.animations[direction].append(frame)
 
-    def update(self, keys, screen_width, screen_height):
+    def update(self, keys, world_width, world_height):
         self.moving = False
 
         if keys[pygame.K_a]:
@@ -65,8 +65,8 @@ class Player:
             self.moving = True
 
         # Update world coordinates
-        self.x = max(0, min(self.x, screen_width - self.width))
-        self.y = max(0, min(self.y, screen_height - self.height))
+        self.x = max(0, min(self.x, world_width - self.width))
+        self.y = max(0, min(self.y, world_height - self.height))
 
         # Sync the rect with the new coordinates - Meheraj
         self.rect.topleft = (self.x, self.y)
