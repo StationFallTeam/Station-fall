@@ -48,7 +48,7 @@ async def main():
             enemy.update(player.get_rect())
 
         # Removed win.fill because background.update_and_draw handles it - Meheraj
-        draw_objects(win, player, enemies, camera, background)
+        draw_objects(win, player, enemies, camera, background, world_width, world_height) # Updated to pass camera and background - Meheraj
 
         pygame.display.flip()
 
