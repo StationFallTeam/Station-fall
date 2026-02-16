@@ -18,7 +18,7 @@ class SpaceBackground:
     def update_and_draw(self, surface, camera_pos):
         surface.fill(self.bg_color)
         for layer in self.layers:
-            off_x = (camera_pos[0] * -layer["speed"]) % self.width
-            off_y = (camera_pos[1] * -layer["speed"]) % self.height
+            off_x = (camera_pos[0] * layer["speed"]) % self.width
+            off_y = (camera_pos[1] * layer["speed"]) % self.height
             for s in layer["stars"]:
                 pygame.draw.circle(surface, s[3], (int((s[0]-off_x)%self.width), int((s[1]-off_y)%self.height)), s[2])
