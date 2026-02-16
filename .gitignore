@@ -18,3 +18,5 @@ venv/
 # ===== Temporary files =====
 *.tmp
 *.swp
+build/web-cache/
+build/web-cache/
