@@ -11,8 +11,8 @@ async def main():
     pygame.init()
     pygame.mixer.init()
 
-    screen_width = 500
-    screen_height = 500
+    screen_width = 1000
+    screen_height = 1000
     world_height = 3000
     world_width = 3000
     win = pygame.display.set_mode((screen_width, screen_height))
