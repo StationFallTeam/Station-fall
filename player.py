@@ -25,6 +25,8 @@ class Player:
         self.frame_index = 0.0
         self.anim_speed = 0.15
         self.moving = False
+        # Create a rect for the camera to track - Meheraj
+        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
     def _get_frame(self, x, y):
         frame = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
@@ -42,7 +44,7 @@ class Player:
                 )
                 self.animations[direction].append(frame)
 
-    def update(self, keys, screen_width, screen_height):
+    def update(self, keys, world_width, world_height):
         self.moving = False
 
         if keys[pygame.K_a]:
@@ -62,8 +64,12 @@ class Player:
             self.direction = "down"
             self.moving = True
 
-        self.x = max(0, min(self.x, screen_width - self.width))
-        self.y = max(0, min(self.y, screen_height - self.height))
+        # Update world coordinates
+        self.x = max(0, min(self.x, world_width - self.width))
+        self.y = max(0, min(self.y, world_height - self.height))
+
+        # Sync the rect with the new coordinates - Meheraj
+        self.rect.topleft = (self.x, self.y)
 
         if self.moving:
             self.frame_index += self.anim_speed
@@ -72,9 +78,10 @@ class Player:
         else:
             self.frame_index = 0
 
-    def draw(self, screen):
+    def draw(self, screen, camera):
         frame = self.animations[self.direction][int(self.frame_index)]
-        screen.blit(frame, (self.x, self.y))
+        # Use camera.apply to draw the player at the correct SCREEN position - Meheraj
+        screen.blit(frame, camera.apply(self.rect))
 
     def get_rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
