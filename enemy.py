@@ -6,7 +6,7 @@ class Enemy:
         self.x = x
         self.y = y
         self.size = 40
-        self.speed = 2
+        self.speed = 2.5 # Increased speed for more challenge
         self.color = (200, 50, 50)
 
         self.rect = pygame.Rect(self.x, self.y, self.size, self.size)

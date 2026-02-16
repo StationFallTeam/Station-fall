@@ -1,0 +1,91 @@
+######################################################
+# Long Station Preset
+######################################################
+# Left and right of start room
+SIDE_START_CHANCE = 1.0
+SIDE_DECAY = 0.125
+
+# Branching up and down from side rooms
+BRANCH_FROM_SIDE_START_CHANCE = 0.5
+BRANCH_FROM_SIDE_DECAY = 0.4
+
+# 2 top and 2 bottom of start room
+TOP_BOTTOM_START_CHANCE = 0
+TOP_BOTTOM_DECAY = 0
+
+# Branching left or right from top and bottom rooms
+BRANCH_FROM_TOP_BOTTOM_START_CHANCE = 0
+BRANCH_FROM_TOP_BOTTOM_DECAY = 0
+
+MIN_BRANCH_CHANCE = 0.0
+MAX_BRANCHING_DEPTH = 10
+######################################################
+
+######################################################
+# Tall Station Preset
+######################################################
+# Left and right of start room
+SIDE_START_CHANCE = 0
+SIDE_DECAY = 0
+
+# Branching up and down from side rooms
+BRANCH_FROM_SIDE_START_CHANCE = 0
+BRANCH_FROM_SIDE_DECAY = 0
+
+# 2 top and 2 bottom of start room
+TOP_BOTTOM_START_CHANCE = 1.0
+TOP_BOTTOM_DECAY = 0.25
+
+# Branching left or right from top and bottom rooms
+BRANCH_FROM_TOP_BOTTOM_START_CHANCE = 0.5
+BRANCH_FROM_TOP_BOTTOM_DECAY = 0.4
+
+MIN_BRANCH_CHANCE = 0.0
+MAX_BRANCHING_DEPTH = 10
+######################################################
+
+######################################################
+# Balanced Station Preset
+######################################################
+# Left and right of start room
+SIDE_START_CHANCE = 1.0
+SIDE_DECAY = 0.25
+
+# Branching up and down from side rooms
+BRANCH_FROM_SIDE_START_CHANCE = 0.5
+BRANCH_FROM_SIDE_DECAY = 0.4
+
+# 2 top and 2 bottom of start room
+TOP_BOTTOM_START_CHANCE = 1.0
+TOP_BOTTOM_DECAY = 0.5
+
+# Branching left or right from top and bottom rooms
+BRANCH_FROM_TOP_BOTTOM_START_CHANCE = 0.5
+BRANCH_FROM_TOP_BOTTOM_DECAY = 0.4
+
+MIN_BRANCH_CHANCE = 0.0
+MAX_BRANCHING_DEPTH = 10
+######################################################
+
+######################################################
+# Stress Test (Very Big Station)
+######################################################
+# Left and right of start room
+SIDE_START_CHANCE = 1.0
+SIDE_DECAY = 0.01
+
+# Branching up and down from side rooms
+BRANCH_FROM_SIDE_START_CHANCE = 1.0
+BRANCH_FROM_SIDE_DECAY = 0.01
+
+# 2 top and 2 bottom of start room
+TOP_BOTTOM_START_CHANCE = 1.0
+TOP_BOTTOM_DECAY = 0.01
+
+# Branching left or right from top and bottom rooms
+BRANCH_FROM_TOP_BOTTOM_START_CHANCE = 1.0
+BRANCH_FROM_TOP_BOTTOM_DECAY = 0.01
+
+MIN_BRANCH_CHANCE = 0.0
+MAX_BRANCHING_DEPTH = 100
+######################################################
