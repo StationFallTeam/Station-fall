@@ -28,6 +28,13 @@ class Player:
         # Create a rect for the camera to track - Meheraj
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
+        self.max_health = 100
+        self.health = self.max_health
+
+        self.invincible = False
+        self.invincibility_duration = 1000
+        self.last_hit_time = 0
+
     def _get_frame(self, x, y):
         frame = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
         frame.blit(self.sprite_sheet, (0, 0), (x, y, self.width, self.height))
@@ -78,10 +85,38 @@ class Player:
         else:
             self.frame_index = 0
 
+        self.update_invincibility()
+
     def draw(self, screen, camera):
         frame = self.animations[self.direction][int(self.frame_index)]
-        # Use camera.apply to draw the player at the correct SCREEN position - Meheraj
-        screen.blit(frame, camera.apply(self.rect))
+        draw_pos = camera.apply(self.rect)
+
+        if self.invincible:
+            # create a red tinted copy
+            flash = frame.copy()
+            flash.fill((225, 0, 0, 120), special_flags = pygame.BLEND_RGBA_ADD)
+            screen.blit(flash, draw_pos)
+        else:
+            screen.blit(frame, draw_pos)
+
 
     def get_rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
+    
+    def take_damage(self, amount):
+        current_time = pygame.time.get_ticks()
+
+        if not self.invincible:
+            self.health -= amount
+            self.health = max(0, self.health)
+
+            self.invincible = True
+            self.last_hit_time = current_time
+
+            print("We've been hit! Health:", self.health)
+    
+    def update_invincibility(self):
+        if self.invincible:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.last_hit_time >= self.invincibility_duration:
+                self.invincible = False

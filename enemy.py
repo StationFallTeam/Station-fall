@@ -26,3 +26,6 @@ class Enemy:
 
     def draw(self, win):
         pygame.draw.rect(win, self.color, self.rect)
+
+    def get_rect(self):
+        return self.rect
