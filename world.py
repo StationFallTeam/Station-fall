@@ -1,4 +1,3 @@
-# Border walls, wall rects, tilemap, rooms, etc...
 import pygame
 
 class World:
