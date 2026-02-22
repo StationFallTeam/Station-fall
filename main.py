@@ -45,7 +45,7 @@ async def main():
         player.update(keys, world.walls)
         
         # Make the camera follow the player - Meheraj
-        camera.update(player, world_width, world_height)
+        camera.update(player)
 
         for enemy in enemies:
             enemy.update(player.get_rect())
