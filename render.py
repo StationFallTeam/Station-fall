@@ -13,4 +13,4 @@ def draw_objects(win, player, enemies, walls, camera, background):
 
     # 3. Draw enemies relative to camera
     for enemy in enemies:
-        pygame.draw.rect(win, enemy.color, camera.apply(enemy.rect))
+        enemy.draw(win, camera)
