@@ -48,29 +48,47 @@ class Player(Damageable):
                 )
                 self.animations[direction].append(frame)
 
-    def update(self, keys, world_width, world_height):
+    def update(self, keys, walls):
         self.moving = False
 
+        dx = 0
+        dy = 0
+
         if keys[pygame.K_a]:
-            self.x -= self.speed
+            dx -= self.speed
             self.direction = "left"
-            self.moving = True
+        self.moving = True
         if keys[pygame.K_d]:
-            self.x += self.speed
+            dx += self.speed
             self.direction = "right"
             self.moving = True
         if keys[pygame.K_w]:
-            self.y -= self.speed
+            dy -= self.speed
             self.direction = "up"
             self.moving = True
         if keys[pygame.K_s]:
-            self.y += self.speed
+            dy += self.speed
             self.direction = "down"
             self.moving = True
 
-        # Update world coordinates
-        self.x = max(0, min(self.x, world_width - self.width))
-        self.y = max(0, min(self.y, world_height - self.height))
+        self.rect.x += dx
+        for wall in walls:
+            if self.rect.colliderect(wall):
+                if dx > 0:
+                    self.rect.right = wall.left
+                if dx < 0:
+                    self.rect.left = wall.right
+
+        self.rect.y += dy
+        for wall in walls:
+            if self.rect.colliderect(wall):
+                if dy > 0:
+                    self.rect.bottom = wall.top
+                if dy < 0:
+                    self.rect.top = wall.bottom
+
+        self.x = self.rect.x
+        self.y = self.rect.y
 
         # Sync the rect with the new coordinates - Meheraj
         self.rect.topleft = (self.x, self.y)
