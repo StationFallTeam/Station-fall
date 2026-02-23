@@ -47,8 +47,13 @@ async def main():
         # Make the camera follow the player - Meheraj
         camera.update(player)
 
+        player.rect = player.get_rect()
+
         for enemy in enemies:
-            enemy.update(player.get_rect())
+            enemy.update(player.rect)
+
+            if enemy.rect.colliderect(player.rect):
+                player.take_damage(10)
 
         # Removed win.fill because background.update_and_draw handles it - Meheraj
         draw_objects(win, player, enemies, world.walls, camera, background) # Updated to pass camera and background - Meheraj

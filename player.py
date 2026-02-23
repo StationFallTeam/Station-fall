@@ -1,7 +1,10 @@
 import pygame
+from damageable import Damageable
 
-class Player:
+class Player(Damageable):
     def __init__(self, x, y):
+        super().__init__(max_health=100)
+
         self.x = x
         self.y = y
 
@@ -27,6 +30,7 @@ class Player:
         self.moving = False
         # Create a rect for the camera to track - Meheraj
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+   
 
     def _get_frame(self, x, y):
         frame = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
@@ -96,10 +100,25 @@ class Player:
         else:
             self.frame_index = 0
 
+        super().update()
+
+
     def draw(self, screen, camera):
         frame = self.animations[self.direction][int(self.frame_index)]
-        # Use camera.apply to draw the player at the correct SCREEN position - Meheraj
-        screen.blit(frame, camera.apply(self.rect))
+        draw_pos = camera.apply(self.rect)
+
+        if self.is_invincible:
+            # create a red tinted copy
+            flash = frame.copy()
+            flash.fill((225, 0, 0, 120), special_flags = pygame.BLEND_RGBA_ADD)
+            screen.blit(flash, draw_pos)
+        else:
+            screen.blit(frame, draw_pos)
+
+
+        
 
     def get_rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
+    
+    

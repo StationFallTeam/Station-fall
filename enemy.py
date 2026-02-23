@@ -78,3 +78,6 @@ class Enemy:
     def draw(self, screen, camera):
         frame = self.animations[self.direction][int(self.frame_index)]
         screen.blit(frame, camera.apply(self.rect))
+
+    def get_rect(self):
+        return self.rect
