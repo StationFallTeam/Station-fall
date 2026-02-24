@@ -4,30 +4,32 @@ import time
 
 import pygame
 
-# Decay is how much is subtracted per depth in a chain
-######################################################
-# Long Station Preset
-######################################################
 # Left and right of start room
 SIDE_START_CHANCE = 1.0
-SIDE_DECAY = 0.125
+SIDE_DECAY = 0.01
 
 # Branching up and down from side rooms
-BRANCH_FROM_SIDE_START_CHANCE = 0.5
-BRANCH_FROM_SIDE_DECAY = 0.4
+BRANCH_FROM_SIDE_START_CHANCE = 1.0
+BRANCH_FROM_SIDE_DECAY = 0.01
 
 # 2 top and 2 bottom of start room
-TOP_BOTTOM_START_CHANCE = 0
-TOP_BOTTOM_DECAY = 0
+TOP_BOTTOM_START_CHANCE = 1.0
+TOP_BOTTOM_DECAY = 0.01
 
 # Branching left or right from top and bottom rooms
-BRANCH_FROM_TOP_BOTTOM_START_CHANCE = 0
-BRANCH_FROM_TOP_BOTTOM_DECAY = 0
+BRANCH_FROM_TOP_BOTTOM_START_CHANCE = 1.0
+BRANCH_FROM_TOP_BOTTOM_DECAY = 0.01
 
 MIN_BRANCH_CHANCE = 0.0
-MAX_BRANCHING_DEPTH = 10
-######################################################
+MAX_BRANCHING_DEPTH = 100
 
+# Toggle: if True, generate vertical branches first, then horizontal
+# if False (default), generate horizontal branches first, then vertical
+GENERATE_VERTICAL_FIRST = False
+
+# Toggle: if True, hallways can pass through existing rooms without stopping
+# The room won't be placed if it overlaps, but the hallway continues branching
+ALLOW_HALLWAY_THROUGH_ROOMS = False
 
 # Rendering settings
 SCREEN_W = 1700
@@ -40,7 +42,7 @@ CAMERA_SPEED = 18
 # Layout settings
 BASE_ROOM_SIZE = (20, 8)
 ROOM_SIZE = (8, 8)
-HALL_LENGTH = 3
+HALL_LENGTH = 4
 HALL_THICKNESS = 2
 
 # Prefab settings
@@ -148,6 +150,39 @@ def chance_at_depth(start: float, decay: float, depth: int) -> float:
     return clamp_chance(start - (decay * depth))
 
 
+def load_preset(filename: str) -> dict:
+    """Load a configuration preset from a file."""
+    preset = {}
+    try:
+        with open(filename, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    key = key.strip()
+                    value = value.strip()
+                    # Try to parse the value
+                    if value.lower() == 'true':
+                        preset[key] = True
+                    elif value.lower() == 'false':
+                        preset[key] = False
+                    else:
+                        try:
+                            # Try int first
+                            if '.' not in value:
+                                preset[key] = int(value)
+                            else:
+                                preset[key] = float(value)
+                        except ValueError:
+                            # Keep as string if conversion fails
+                            preset[key] = value
+    except FileNotFoundError:
+        print(f"Preset file '{filename}' not found")
+    return preset
+
+
 def room_overlaps(tiles: TileMap, rect: Rect) -> bool:
     for y in range(rect.y, rect.y + rect.h):
         for x in range(rect.x, rect.x + rect.w):
@@ -169,6 +204,8 @@ def generate_layout(
     branch_from_top_bottom_decay: float = BRANCH_FROM_TOP_BOTTOM_DECAY,
     branch_from_side_start_chance: float = BRANCH_FROM_SIDE_START_CHANCE,
     branch_from_side_decay: float = BRANCH_FROM_SIDE_DECAY,
+    allow_hallway_through_rooms: bool = ALLOW_HALLWAY_THROUGH_ROOMS,
+    generate_vertical_first: bool = GENERATE_VERTICAL_FIRST,
     seed: int | None = None,
 ) -> tuple[TileMap, list[Room]]:
     if seed is not None:
@@ -279,55 +316,69 @@ def generate_layout(
             carve_rect(tiles, hall_rect, "h")
             add_door(current_room, door)
             if room_overlaps(tiles, room_rect):
-                break
-            carve_rect(tiles, room_rect, ".")
-            new_room = Room(room_rect, random.randint(1, NUMBER_OF_ROOM_PREFABS))
-            entry_door = edge_point(room_rect, opposite_direction(direction))
-            add_door(new_room, entry_door)
-            rooms.append(new_room)
-            current_room = new_room
+                if not allow_hallway_through_rooms:
+                    break
+                # If allow_hallway_through_rooms is True, skip this room but continue extending the hallway
+            else:
+                carve_rect(tiles, room_rect, ".")
+                new_room = Room(room_rect, random.randint(1, NUMBER_OF_ROOM_PREFABS))
+                entry_door = edge_point(room_rect, opposite_direction(direction))
+                add_door(new_room, entry_door)
+                rooms.append(new_room)
+                current_room = new_room
 
-            if direction in ("up", "down") and side_dir:
-                side_start = clamp_chance(branch_from_top_bottom_start_chance)
-                side_door = edge_point(room_rect, side_dir)
-                branch_chain(
-                    side_dir,
-                    side_door,
-                    current_room,
-                    start_chance_override=side_start,
-                    decay_override=branch_from_top_bottom_decay,
-                    side_dir=None,
-                    allow_side_branches=False,
-                )
-            elif direction in ("left", "right") and allow_side_branches:
-                side_start = clamp_chance(branch_from_side_start_chance)
-                up_door = edge_point(room_rect, "up")
-                down_door = edge_point(room_rect, "down")
-                branch_chain(
-                    "up",
-                    up_door,
-                    current_room,
-                    start_chance_override=side_start,
-                    decay_override=branch_from_side_decay,
-                )
-                branch_chain(
-                    "down",
-                    down_door,
-                    current_room,
-                    start_chance_override=side_start,
-                    decay_override=branch_from_side_decay,
-                )
+                if direction in ("up", "down") and side_dir:
+                    side_start = clamp_chance(branch_from_top_bottom_start_chance)
+                    side_door = edge_point(room_rect, side_dir)
+                    branch_chain(
+                        side_dir,
+                        side_door,
+                        current_room,
+                        start_chance_override=side_start,
+                        decay_override=branch_from_top_bottom_decay,
+                        side_dir=None,
+                        allow_side_branches=False,
+                    )
+                elif direction in ("left", "right") and allow_side_branches:
+                    side_start = clamp_chance(branch_from_side_start_chance)
+                    up_door = edge_point(room_rect, "up")
+                    down_door = edge_point(room_rect, "down")
+                    branch_chain(
+                        "up",
+                        up_door,
+                        current_room,
+                        start_chance_override=side_start,
+                        decay_override=branch_from_side_decay,
+                    )
+                    branch_chain(
+                        "down",
+                        down_door,
+                        current_room,
+                        start_chance_override=side_start,
+                        decay_override=branch_from_side_decay,
+                    )
 
             sx, sy = edge_point(room_rect, direction)
             force = False
             depth += 1
 
-    branch_chain("left", doors["left"], base_room_obj)
-    branch_chain("right", doors["right"], base_room_obj)
-    branch_chain("up", doors["top_left"], base_room_obj, side_dir="left")
-    branch_chain("up", doors["top_right"], base_room_obj, side_dir="right")
-    branch_chain("down", doors["bottom_left"], base_room_obj, side_dir="left")
-    branch_chain("down", doors["bottom_right"], base_room_obj, side_dir="right")
+    # Generate branches in order based on toggle
+    if generate_vertical_first:
+        # Generate vertical branches first, then horizontal
+        branch_chain("up", doors["top_left"], base_room_obj, side_dir="left")
+        branch_chain("up", doors["top_right"], base_room_obj, side_dir="right")
+        branch_chain("down", doors["bottom_left"], base_room_obj, side_dir="left")
+        branch_chain("down", doors["bottom_right"], base_room_obj, side_dir="right")
+        branch_chain("left", doors["left"], base_room_obj)
+        branch_chain("right", doors["right"], base_room_obj)
+    else:
+        # Generate horizontal branches first, then vertical (default)
+        branch_chain("left", doors["left"], base_room_obj)
+        branch_chain("right", doors["right"], base_room_obj)
+        branch_chain("up", doors["top_left"], base_room_obj, side_dir="left")
+        branch_chain("up", doors["top_right"], base_room_obj, side_dir="right")
+        branch_chain("down", doors["bottom_left"], base_room_obj, side_dir="left")
+        branch_chain("down", doors["bottom_right"], base_room_obj, side_dir="right")
 
     if DEBUG_VALIDATE_OVERLAPS:
         for i, room_a in enumerate(rooms):
@@ -370,6 +421,61 @@ def draw_grid(surface: pygame.Surface, tiles: TileMap, tile_size: int, cam_x: in
                 pygame.draw.rect(surface, COLOR_GRID, rect, 1)
 
 
+def find_presets(directory: str = ".") -> list[str]:
+    """Find all .txt preset files in the current directory, excluding README.txt and gen_presets.txt."""
+    import os
+    presets = []
+    try:
+        for file in sorted(os.listdir(directory)):
+            if file.endswith(".txt") and file not in ["README.txt", "gen_presets.txt"]:
+                presets.append(file)
+    except OSError:
+        pass
+    return presets
+
+
+def apply_preset(preset: dict, params: dict) -> None:
+    """Apply preset values to parameters dict, overwriting defaults."""
+    keys = [
+        'SIDE_START_CHANCE', 'SIDE_DECAY',
+        'BRANCH_FROM_SIDE_START_CHANCE', 'BRANCH_FROM_SIDE_DECAY',
+        'TOP_BOTTOM_START_CHANCE', 'TOP_BOTTOM_DECAY',
+        'BRANCH_FROM_TOP_BOTTOM_START_CHANCE', 'BRANCH_FROM_TOP_BOTTOM_DECAY',
+        'GENERATE_VERTICAL_FIRST', 'ALLOW_HALLWAY_THROUGH_ROOMS'
+    ]
+    for key in keys:
+        if key in preset:
+            params[key] = preset[key]
+
+
+def generate_and_center_dungeon(params: dict, tile_size: int) -> tuple[TileMap, list[Room], int, int, int]:
+    """Generate layout with given parameters and return tiles, rooms, camera position, and seed."""
+    seed = time.time_ns()
+    tiles, rooms = generate_layout(
+        seed=seed,
+        side_start_chance=params['SIDE_START_CHANCE'],
+        side_decay=params['SIDE_DECAY'],
+        branch_from_side_start_chance=params['BRANCH_FROM_SIDE_START_CHANCE'],
+        branch_from_side_decay=params['BRANCH_FROM_SIDE_DECAY'],
+        top_bottom_start_chance=params['TOP_BOTTOM_START_CHANCE'],
+        top_bottom_decay=params['TOP_BOTTOM_DECAY'],
+        branch_from_top_bottom_start_chance=params['BRANCH_FROM_TOP_BOTTOM_START_CHANCE'],
+        branch_from_top_bottom_decay=params['BRANCH_FROM_TOP_BOTTOM_DECAY'],
+        generate_vertical_first=params['GENERATE_VERTICAL_FIRST'],
+        allow_hallway_through_rooms=params['ALLOW_HALLWAY_THROUGH_ROOMS'],
+    )
+    
+    base_room = next((room for room in rooms if room.prefab_id is None), None)
+    if base_room is not None:
+        cam_x = base_room.center[0] * tile_size - SCREEN_W // 2
+        cam_y = base_room.center[1] * tile_size - SCREEN_H // 2
+    else:
+        cam_x = 0
+        cam_y = 0
+    
+    return tiles, rooms, cam_x, cam_y, seed
+
+
 def run_pygame() -> None:
     pygame.init()
     pygame.display.set_caption("Dungeon Layout")
@@ -380,17 +486,31 @@ def run_pygame() -> None:
     tile_size = TILE_SIZE_START
     show_grid = False
     show_debug = False
+    
+    # Initialize parameters
+    params = {
+        'SIDE_START_CHANCE': SIDE_START_CHANCE,
+        'SIDE_DECAY': SIDE_DECAY,
+        'BRANCH_FROM_SIDE_START_CHANCE': BRANCH_FROM_SIDE_START_CHANCE,
+        'BRANCH_FROM_SIDE_DECAY': BRANCH_FROM_SIDE_DECAY,
+        'TOP_BOTTOM_START_CHANCE': TOP_BOTTOM_START_CHANCE,
+        'TOP_BOTTOM_DECAY': TOP_BOTTOM_DECAY,
+        'BRANCH_FROM_TOP_BOTTOM_START_CHANCE': BRANCH_FROM_TOP_BOTTOM_START_CHANCE,
+        'BRANCH_FROM_TOP_BOTTOM_DECAY': BRANCH_FROM_TOP_BOTTOM_DECAY,
+        'GENERATE_VERTICAL_FIRST': GENERATE_VERTICAL_FIRST,
+        'ALLOW_HALLWAY_THROUGH_ROOMS': ALLOW_HALLWAY_THROUGH_ROOMS,
+    }
+    
+    # Load initial preset
+    available_presets = find_presets()
+    preset_index = 0
+    current_preset = available_presets[preset_index] if available_presets else "long.txt"
+    
+    preset = load_preset(current_preset)
+    if preset:
+        apply_preset(preset, params)
 
-    seed = time.time_ns()
-    tiles, rooms = generate_layout(seed=seed)
-
-    base_room = next((room for room in rooms if room.prefab_id is None), None)
-    if base_room is not None:
-        cam_x = base_room.center[0] * tile_size - SCREEN_W // 2
-        cam_y = base_room.center[1] * tile_size - SCREEN_H // 2
-    else:
-        cam_x = 0
-        cam_y = 0
+    tiles, rooms, cam_x, cam_y, seed = generate_and_center_dungeon(params, tile_size)
 
     running = True
     while running:
@@ -401,15 +521,21 @@ def run_pygame() -> None:
                 if event.key == pygame.K_ESCAPE:
                     running = False
                 elif event.key == pygame.K_r:
-                    seed = time.time_ns()
-                    tiles, rooms = generate_layout(seed=seed)
-                    base_room = next((room for room in rooms if room.prefab_id is None), None)
-                    if base_room is not None:
-                        cam_x = base_room.center[0] * tile_size - SCREEN_W // 2
-                        cam_y = base_room.center[1] * tile_size - SCREEN_H // 2
-                    else:
-                        cam_x = 0
-                        cam_y = 0
+                    tiles, rooms, cam_x, cam_y, seed = generate_and_center_dungeon(params, tile_size)
+                elif event.key == pygame.K_p:
+                    params['ALLOW_HALLWAY_THROUGH_ROOMS'] = not params['ALLOW_HALLWAY_THROUGH_ROOMS']
+                    tiles, rooms, cam_x, cam_y, seed = generate_and_center_dungeon(params, tile_size)
+                elif event.key == pygame.K_v:
+                    params['GENERATE_VERTICAL_FIRST'] = not params['GENERATE_VERTICAL_FIRST']
+                    tiles, rooms, cam_x, cam_y, seed = generate_and_center_dungeon(params, tile_size)
+                elif event.key == pygame.K_l:
+                    if available_presets:
+                        preset_index = (preset_index + 1) % len(available_presets)
+                        current_preset = available_presets[preset_index]
+                        preset = load_preset(current_preset)
+                        if preset:
+                            apply_preset(preset, params)
+                        tiles, rooms, cam_x, cam_y, seed = generate_and_center_dungeon(params, tile_size)
                 elif event.key == pygame.K_g:
                     show_grid = not show_grid
                 elif event.key == pygame.K_b:
@@ -458,9 +584,11 @@ def run_pygame() -> None:
                     pygame.draw.circle(screen, COLOR_DOOR_DOT, (dot_x, dot_y), max(2, tile_size // 5))
 
         room_count = sum(1 for room in rooms if room.prefab_id is not None)
+        gen_order = "vertical→horizontal" if params['GENERATE_VERTICAL_FIRST'] else "horizontal→vertical"
+        hallway_mode = "through" if params['ALLOW_HALLWAY_THROUGH_ROOMS'] else "stop"
         info = (
-            f"seed {seed} | rooms {room_count} | tile {tile_size}px | "
-            "R regen  G grid  B debug  +/- zoom  arrows/WASD move"
+            f"seed {seed} | rooms {room_count} | tile {tile_size}px | {gen_order} | hallway {hallway_mode} | preset {current_preset} | "
+            "R regen  L preset  V order  P penetrate  G grid  B debug  +/- zoom  arrows/WASD move"
         )
         text = font.render(info, True, COLOR_TEXT)
         screen.blit(text, (10, 10))
