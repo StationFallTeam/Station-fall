@@ -1,28 +1,83 @@
 import pygame
-import random
 
 class Enemy:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.size = 40
-        self.speed = 2.5 # Increased speed for more challenge
-        self.color = (200, 50, 50)
 
-        self.rect = pygame.Rect(self.x, self.y, self.size, self.size)
+        self.width = 48
+        self.height = 48
+        self.speed = 2.5
+
+        # Load sprite sheet
+        self.sprite_sheet = pygame.image.load("player_sheet.png").convert_alpha()
+
+        self.animations = {
+            "down": [],
+            "left": [],
+            "right": [],
+            "up": []
+        }
+
+        self._load_animations()
+
+        self.direction = "down"
+        self.frame_index = 0.0
+        self.anim_speed = 0.1
+        self.moving = True
+
+        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+
+    def _get_frame(self, x, y):
+        frame = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        frame.blit(self.sprite_sheet, (0, 0), (x, y, self.width, self.height))
+        return frame.copy()
+
+    def _load_animations(self):
+        directions = ["down", "left", "right", "up"]
+
+        for row, direction in enumerate(directions):
+            for col in range(4):
+                frame = self._get_frame(
+                    col * self.width,
+                    row * self.height
+                )
+                self.animations[direction].append(frame)
 
     def update(self, player_rect):
+        self.moving = False
 
+        # Movement logic
         if player_rect.x > self.x:
             self.x += self.speed
+            self.direction = "right"
+            self.moving = True
         if player_rect.x < self.x:
             self.x -= self.speed
+            self.direction = "left"
+            self.moving = True
         if player_rect.y > self.y:
             self.y += self.speed
+            self.direction = "down"
+            self.moving = True
         if player_rect.y < self.y:
             self.y -= self.speed
+            self.direction = "up"
+            self.moving = True
 
         self.rect.topleft = (self.x, self.y)
 
-    def draw(self, win):
-        pygame.draw.rect(win, self.color, self.rect)
+        # Animate
+        if self.moving:
+            self.frame_index += self.anim_speed
+            if self.frame_index >= len(self.animations[self.direction]):
+                self.frame_index = 0
+        else:
+            self.frame_index = 0
+
+    def draw(self, screen, camera):
+        frame = self.animations[self.direction][int(self.frame_index)]
+        screen.blit(frame, camera.apply(self.rect))
+
+    def get_rect(self):
+        return self.rect

@@ -1,7 +1,10 @@
 import pygame
+from damageable import Damageable
 
-class Player:
+class Player(Damageable):
     def __init__(self, x, y):
+        super().__init__(max_health=100)
+
         self.x = x
         self.y = y
 
@@ -27,6 +30,7 @@ class Player:
         self.moving = False
         # Create a rect for the camera to track - Meheraj
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+   
 
     def _get_frame(self, x, y):
         frame = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
@@ -44,29 +48,47 @@ class Player:
                 )
                 self.animations[direction].append(frame)
 
-    def update(self, keys, world_width, world_height):
+    def update(self, keys, walls):
         self.moving = False
 
+        dx = 0
+        dy = 0
+
         if keys[pygame.K_a]:
-            self.x -= self.speed
+            dx -= self.speed
             self.direction = "left"
-            self.moving = True
+        self.moving = True
         if keys[pygame.K_d]:
-            self.x += self.speed
+            dx += self.speed
             self.direction = "right"
             self.moving = True
         if keys[pygame.K_w]:
-            self.y -= self.speed
+            dy -= self.speed
             self.direction = "up"
             self.moving = True
         if keys[pygame.K_s]:
-            self.y += self.speed
+            dy += self.speed
             self.direction = "down"
             self.moving = True
 
-        # Update world coordinates
-        self.x = max(0, min(self.x, world_width - self.width))
-        self.y = max(0, min(self.y, world_height - self.height))
+        self.rect.x += dx
+        for wall in walls:
+            if self.rect.colliderect(wall):
+                if dx > 0:
+                    self.rect.right = wall.left
+                if dx < 0:
+                    self.rect.left = wall.right
+
+        self.rect.y += dy
+        for wall in walls:
+            if self.rect.colliderect(wall):
+                if dy > 0:
+                    self.rect.bottom = wall.top
+                if dy < 0:
+                    self.rect.top = wall.bottom
+
+        self.x = self.rect.x
+        self.y = self.rect.y
 
         # Sync the rect with the new coordinates - Meheraj
         self.rect.topleft = (self.x, self.y)
@@ -78,10 +100,25 @@ class Player:
         else:
             self.frame_index = 0
 
+        super().update()
+
+
     def draw(self, screen, camera):
         frame = self.animations[self.direction][int(self.frame_index)]
-        # Use camera.apply to draw the player at the correct SCREEN position - Meheraj
-        screen.blit(frame, camera.apply(self.rect))
+        draw_pos = camera.apply(self.rect)
+
+        if self.is_invincible:
+            # create a red tinted copy
+            flash = frame.copy()
+            flash.fill((225, 0, 0, 120), special_flags = pygame.BLEND_RGBA_ADD)
+            screen.blit(flash, draw_pos)
+        else:
+            screen.blit(frame, draw_pos)
+
+
+        
 
     def get_rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
+    
+    

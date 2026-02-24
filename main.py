@@ -6,6 +6,7 @@ from enemy import Enemy
 from render import draw_objects
 from camera import Camera          # Added for camera - Meheraj
 from background import SpaceBackground # Added for parallax background - Meheraj
+from world import World
 
 async def main():
     pygame.init()
@@ -17,6 +18,8 @@ async def main():
     world_width = 3000
     win = pygame.display.set_mode((screen_width, screen_height))
     pygame.display.set_caption("Station Fall Playtest")
+
+    world = World(world_width, world_height)
 
     clock = pygame.time.Clock()
 
@@ -39,16 +42,21 @@ async def main():
 
         keys = pygame.key.get_pressed()
 
-        player.update(keys, world_width, world_height)
+        player.update(keys, world.walls)
         
         # Make the camera follow the player - Meheraj
         camera.update(player)
 
+        player.rect = player.get_rect()
+
         for enemy in enemies:
-            enemy.update(player.get_rect())
+            enemy.update(player.rect)
+
+            if enemy.rect.colliderect(player.rect):
+                player.take_damage(10)
 
         # Removed win.fill because background.update_and_draw handles it - Meheraj
-        draw_objects(win, player, enemies, camera, background, world_width, world_height) # Updated to pass camera and background - Meheraj
+        draw_objects(win, player, enemies, world.walls, camera, background) # Updated to pass camera and background - Meheraj
 
         pygame.display.flip()
 
