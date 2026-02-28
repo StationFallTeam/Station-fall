@@ -10,7 +10,7 @@ class Enemy:
         self.speed = 2.5
 
         # Load sprite sheet
-        self.sprite_sheet = pygame.image.load("player_sheet.png").convert_alpha()
+        self.sprite_sheet = pygame.image.load("sprites/enemy_human_sheet.png").convert_alpha()
 
         self.animations = {
             "down": [],
