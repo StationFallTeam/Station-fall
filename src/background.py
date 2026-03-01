@@ -2,19 +2,23 @@ import pygame
 import random
 
 class SpaceBackground:
+    #not moving background, just stars that move based on camera position for parallax effect
     def __init__(self, screen_width, screen_height):
         self.width = screen_width
         self.height = screen_height
         self.bg_color = (5, 5, 15)
         self.layers = [
-            {"speed": 0.2, "stars": self._gen(50, (1, 3))},
-            {"speed": 0.5, "stars": self._gen(100, (1, 2))}
+            {"speed": 0.2, "stars": self._gen(50, (1, 2))},  # Farthest layer, slowest
+            {"speed": 0.5, "stars": self._gen(30, (2, 3))},  # Middle layer
+            {"speed": 0.8, "stars": self._gen(20, (3, 4))}   # Closest layer, fastest
         ]
 
+    # Generate stars with random positions, sizes, and brightness
     def _gen(self, count, size_range):
         return [[random.randint(0, self.width), random.randint(0, self.height), 
                  random.randint(*size_range), (random.randint(150, 255),)*3] for _ in range(count)]
 
+    # Draw the background and stars, offset by camera position for parallax effect
     def update_and_draw(self, surface, camera_pos):
         surface.fill(self.bg_color)
         for layer in self.layers:
