@@ -1,4 +1,6 @@
 import pygame
+from damageable import Damageable
+from projectile import Projectile
 
 class Player:
     def __init__(self, x, y):
@@ -28,6 +30,10 @@ class Player:
         # Create a rect for the camera to track - Meheraj
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
+        self.fire_cooldown = 150
+        self.last_shot_time = 0
+
+
     def _get_frame(self, x, y):
         frame = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
         frame.blit(self.sprite_sheet, (0, 0), (x, y, self.width, self.height))
@@ -53,7 +59,7 @@ class Player:
         if keys[pygame.K_a]:
             dx -= self.speed
             self.direction = "left"
-        self.moving = True
+            self.moving = True
         if keys[pygame.K_d]:
             dx += self.speed
             self.direction = "right"
@@ -98,8 +104,28 @@ class Player:
 
     def draw(self, screen, camera):
         frame = self.animations[self.direction][int(self.frame_index)]
-        # Use camera.apply to draw the player at the correct SCREEN position - Meheraj
-        screen.blit(frame, camera.apply(self.rect))
+        draw_pos = camera.apply(self.rect)
+
+        if self.is_invincible:
+            # create a red tinted copy
+            flash = frame.copy()
+            flash.fill((225, 0, 0, 120), special_flags = pygame.BLEND_RGBA_ADD)
+            screen.blit(flash, draw_pos)
+        else:
+            screen.blit(frame, draw_pos)
+
 
     def get_rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
+    
+    def shoot(self, target_world_pos):
+        start = pygame.Vector2(self.rect.center)
+
+        direction = pygame.Vector2(target_world_pos) - start
+        if direction.length_squared() == 0:
+            return None
+        direction = direction.normalize()
+        speed = 10
+        velocity = direction * speed 
+        return Projectile(start, velocity, radius=6, color=(225,50,50), lifetime_ms=1200)
+    

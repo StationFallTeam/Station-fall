@@ -1,6 +1,6 @@
 import pygame
 
-def draw_objects(win, player, enemies, walls, camera, background):
+def draw_objects(win, player, enemies, bullets, walls, camera, background):
     # 1. Draw the parallax background first using camera position
     background.update_and_draw(win, (camera.camera.x, camera.camera.y))
 
@@ -13,4 +13,7 @@ def draw_objects(win, player, enemies, walls, camera, background):
 
     # 3. Draw enemies relative to camera
     for enemy in enemies:
-        pygame.draw.rect(win, enemy.color, camera.apply(enemy.rect))
+        enemy.draw(win, camera)
+
+    for bullet in bullets: 
+        bullet.draw(win, camera)
