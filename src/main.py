@@ -8,6 +8,10 @@ from .camera import Camera          # Added for camera - Meheraj
 from .background import SpaceBackground # Added for parallax background - Meheraj
 from .world import World
 
+# NOTE:
+# When debugging pygbag web crashes, temporarily wrap main() in a try/except
+# with traceback.print_exc() to surface errors in the browser console.
+
 async def main():
     
     pygame.init()
@@ -57,7 +61,7 @@ async def main():
         draw_objects(win, player, enemies, world.walls, camera, background) # Updated to pass camera and background - Meheraj
         pygame.display.flip()
         await asyncio.sleep(0)
-        
+
     pygame.quit()
 
 if __name__ == "__main__":
