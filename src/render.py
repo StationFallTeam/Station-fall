@@ -1,7 +1,7 @@
 import pygame
 from .ui import draw_health_bar
 
-def draw_objects(win, player, enemies, walls, camera, background):
+def draw_objects(win, player, enemies, bullets, walls, camera, background):
     # 1. Draw the parallax background first using camera position
     background.update_and_draw(win, (camera.camera.x, camera.camera.y))
 
@@ -34,3 +34,6 @@ def draw_objects(win, player, enemies, walls, camera, background):
             6,
             border=1
         )
+      
+    for bullet in bullets: 
+        bullet.draw(win, camera)

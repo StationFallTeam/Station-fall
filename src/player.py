@@ -1,5 +1,6 @@
 import pygame
 from .damageable import Damageable
+from .projectile import Projectile
 
 class Player(Damageable):
     def __init__(self, x, y):
@@ -116,9 +117,19 @@ class Player(Damageable):
             screen.blit(frame, draw_pos)
 
 
-        
-
     def get_rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
+    
+    
+    def shoot(self, target_world_pos):
+            start = pygame.Vector2(self.rect.center)
+
+            direction = pygame.Vector2(target_world_pos) - start
+            if direction.length_squared() == 0:
+                return None
+            direction = direction.normalize()
+            speed = 10
+            velocity = direction * speed 
+            return Projectile(start, velocity, radius=6, color=(225,50,50), lifetime_ms=1200)
     
     
