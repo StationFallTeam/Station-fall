@@ -9,6 +9,10 @@ from .camera import Camera          # Added for camera - Meheraj
 from .background import SpaceBackground # Added for parallax background - Meheraj
 from .world import World
 
+# NOTE:
+# When debugging pygbag web crashes, temporarily wrap main() in a try/except
+# with traceback.print_exc() to surface errors in the browser console.
+
 # Start Menu - Loy
 MENU = "menu"
 GAME = "game"
