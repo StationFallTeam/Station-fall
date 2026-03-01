@@ -1,4 +1,5 @@
 import pygame
+from .ui import draw_health_bar
 
 def draw_objects(win, player, enemies, bullets, walls, camera, background):
     # 1. Draw the parallax background first using camera position
@@ -15,5 +16,24 @@ def draw_objects(win, player, enemies, bullets, walls, camera, background):
     for enemy in enemies:
         enemy.draw(win, camera)
 
+    # Player HUD health bar (fixed on screen)
+    draw_health_bar(win, player.health, player.max_health, 20, 20, 250, 18)
+
+    # draw hovering enemy health bars
+    for enemy in enemies:
+        screen_rect = camera.apply(enemy.rect)
+    
+
+        draw_health_bar(
+            win,
+            enemy.health,
+            enemy.max_health,
+            screen_rect.x,
+            screen_rect.y - 10,
+            screen_rect.width,
+            6,
+            border=1
+        )
+      
     for bullet in bullets: 
         bullet.draw(win, camera)
