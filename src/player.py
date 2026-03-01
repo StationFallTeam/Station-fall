@@ -1,9 +1,11 @@
 import pygame
-from damageable import Damageable
-from projectile import Projectile
+from .damageable import Damageable
+from .projectile import Projectile
 
-class Player:
+class Player(Damageable):
     def __init__(self, x, y):
+        super().__init__(max_health=100)
+
         self.x = x
         self.y = y
 
@@ -12,7 +14,7 @@ class Player:
         self.speed = 5
 
         # Load spritesheet (root-relative for pygbag)
-        self.sprite_sheet = pygame.image.load("player_sheet.png").convert_alpha()
+        self.sprite_sheet = pygame.image.load("sprites/player_sheet.png").convert_alpha()
 
         self.animations = {
             "down": [],
@@ -29,10 +31,7 @@ class Player:
         self.moving = False
         # Create a rect for the camera to track - Meheraj
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
-
-        self.fire_cooldown = 150
-        self.last_shot_time = 0
-
+   
 
     def _get_frame(self, x, y):
         frame = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
@@ -102,6 +101,9 @@ class Player:
         else:
             self.frame_index = 0
 
+        super().update()
+
+
     def draw(self, screen, camera):
         frame = self.animations[self.direction][int(self.frame_index)]
         draw_pos = camera.apply(self.rect)
@@ -118,14 +120,16 @@ class Player:
     def get_rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
     
+    
     def shoot(self, target_world_pos):
-        start = pygame.Vector2(self.rect.center)
+            start = pygame.Vector2(self.rect.center)
 
-        direction = pygame.Vector2(target_world_pos) - start
-        if direction.length_squared() == 0:
-            return None
-        direction = direction.normalize()
-        speed = 10
-        velocity = direction * speed 
-        return Projectile(start, velocity, radius=6, color=(225,50,50), lifetime_ms=1200)
+            direction = pygame.Vector2(target_world_pos) - start
+            if direction.length_squared() == 0:
+                return None
+            direction = direction.normalize()
+            speed = 10
+            velocity = direction * speed 
+            return Projectile(start, velocity, radius=6, color=(225,50,50), lifetime_ms=1200)
+    
     
