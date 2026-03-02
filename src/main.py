@@ -1,6 +1,7 @@
 # main menu
 import pygame
 import asyncio
+import math
 
 from .player import Player
 from .enemy import Enemy
@@ -17,8 +18,7 @@ from .world import World
 MENU = "menu"
 GAME = "game"
 
-def draw_menu(win, screen_width, screen_height):
-    win.fill((5, 5, 15))
+def draw_menu(win, screen_width, screen_height, truck_img, float_time):
 
     title_font = pygame.font.SysFont(None, 90)
     small_font = pygame.font.SysFont(None, 32)
@@ -31,13 +31,19 @@ def draw_menu(win, screen_width, screen_height):
     hint = small_font.render("Press ENTER to start", True, (200, 200, 200))
     win.blit(hint, hint.get_rect(center=(screen_width // 2, screen_height // 2 - 120)))
 
+    #ship
+    float_offset = math.sin(float_time) * 15
+    truck_rect = truck_img.get_rect()
+    truck_rect.center = (screen_width // 2, screen_height // 2 + float_offset)
+    win.blit(truck_img, truck_rect)
+
     # Buttons
     btn_w, btn_h = 260, 60
     start_rect = pygame.Rect(0, 0, btn_w, btn_h)
-    start_rect.center = (screen_width // 2, screen_height // 2)
+    start_rect.center = (screen_width // 2, screen_height // 2 +120)
 
     quit_rect = pygame.Rect(0, 0, btn_w, btn_h)
-    quit_rect.center = (screen_width // 2, screen_height // 2 + 90)
+    quit_rect.center = (screen_width // 2, screen_height // 2 + 210)
 
     mx, my = pygame.mouse.get_pos()
 
@@ -73,6 +79,13 @@ async def main():
     enemies = [Enemy(300, 300)]
     bullets = []
 
+    #load menu image
+    truck_img = pygame.image.load("sprites/truck.png").convert_alpha()
+    truck_img = pygame.transform.smoothscale(truck_img, (400, 250))
+    float_time = 0
+    menu_camera_x = 0
+    menu_camera_y = 0
+
     # Create the camera and background objects - Meheraj
     camera = Camera(screen_width, screen_height)
     background = SpaceBackground(screen_width, screen_height)
@@ -81,17 +94,19 @@ async def main():
     pygame.mixer.music.load("sound/starfield.wav")
     pygame.mixer.music.play(-1)
 
-
     # Start Menu System - Loy
     state = MENU
     running = True
 
     while running:
         clock.tick(60)
+        float_time += 0.05
+        menu_camera_x -= 4  # speed of star movement
 
         # Draw Menu - Loy
         if state == MENU:
-            start_rect, quit_rect = draw_menu(win, screen_width, screen_height)
+            background.update_and_draw(win, (menu_camera_x, menu_camera_y))
+            start_rect, quit_rect = draw_menu(win, screen_width, screen_height, truck_img, float_time)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
