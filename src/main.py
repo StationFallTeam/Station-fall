@@ -91,7 +91,7 @@ async def main():
     background = SpaceBackground(screen_width, screen_height)
 
     #music
-    pygame.mixer.music.load("sound/starfield.wav")
+    pygame.mixer.music.load("sound/starfield.ogg")
     pygame.mixer.music.play(-1)
 
     # Start Menu System - Loy
