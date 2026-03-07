@@ -67,7 +67,7 @@ def draw_menu(win, screen_width, screen_height, truck_img, float_time):
 
     return start_rect, quit_rect, credits_rect
 
-# Game over Screen - Wil
+# Game over screen
 def draw_game_over(win, screen_width, screen_height, truck_img, float_time):
     font = pygame.font.SysFont(None, 90)
     small_font = pygame.font.SysFont(None, 32)
@@ -78,10 +78,10 @@ def draw_game_over(win, screen_width, screen_height, truck_img, float_time):
     win.blit(text, text.get_rect(center=(screen_width//2, screen_height//2 - 50)))
     win.blit(hint, hint.get_rect(center=(screen_width//2, screen_height//2 + 50)))
 
-    # Floating truck
+    # Floating truck (top of screen)
     float_offset = math.sin(float_time) * 15
     truck_rect = truck_img.get_rect()
-    truck_rect.center = (screen_width // 2, screen_height // 2 + 150 + float_offset)
+    truck_rect.midtop = (screen_width // 2, 200 + float_offset)
     win.blit(truck_img, truck_rect)
 
 # Credits screen - Wil
@@ -113,8 +113,11 @@ async def main():
     menu_camera_x = 0
     menu_camera_y = 0
 
-    credits_img = pygame.image.load("sprites/credits/Wil.gif").convert_alpha()
+    credits_img = pygame.image.load("sprites/credits/Wil.png").convert_alpha()
     credits_img = pygame.transform.smoothscale(credits_img, (screen_width, screen_height))
+
+    gameOver_img = pygame.image.load("sprites/gameOver.png").convert_alpha()
+    gameOver_img = pygame.transform.smoothscale(gameOver_img, (300, 150))
 
     # Create the camera and background objects - Meheraj
     camera = Camera(screen_width, screen_height)
@@ -210,7 +213,7 @@ async def main():
         
         elif state == GAME_OVER:
             background.update_and_draw(win, (menu_camera_x, menu_camera_y))
-            draw_game_over(win, screen_width, screen_height, truck_img, float_time)
+            draw_game_over(win, screen_width, screen_height, gameOver_img, float_time)
 
         elif state == CREDITS:
             draw_credits(win, credits_img)
