@@ -160,6 +160,25 @@ async def main():
             for bullet in bullets[:]:
                 bullet.update()
 
+                bullet_rect = pygame.Rect (
+                    bullet.pos.x - bullet.radius,
+                    bullet.pos.y - bullet.radius,
+                    bullet.radius * 2,
+                    bullet.radius * 2
+                )
+
+                for enemy in enemies [:]:
+                    if bullet_rect.colliderect(enemy.rect):
+                        enemy.take_damage(10) 
+
+                        if bullet in bullets:
+                            bullets.remove(bullet)
+
+                        if enemy.health <= 0:
+                            enemies.remove(enemy)
+                        
+                        break
+
             # Removed win.fill because background.update_and_draw handles it - Meheraj
             draw_objects(win, player, enemies, bullets, world.walls, camera, background)  # Updated to pass camera and background - Meheraj
 

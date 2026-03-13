@@ -1,8 +1,9 @@
 import pygame
 from .damageable import Damageable
 
-class Enemy:
+class Enemy(Damageable):
     def __init__(self, x, y):
+        super().__init__(50, "Enemy") # enemy MAX HEALTH
 
         self.x = x
         self.y = y
@@ -29,7 +30,6 @@ class Enemy:
         self.moving = True
 
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
-        self.damageable = Damageable(50)
 
     def _get_frame(self, x, y):
         frame = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
@@ -78,7 +78,7 @@ class Enemy:
         else:
             self.frame_index = 0
         
-        self.damageable.update()
+        super().update()
 
     def draw(self, screen, camera):
         frame = self.animations[self.direction][int(self.frame_index)]
@@ -87,13 +87,4 @@ class Enemy:
     def get_rect(self):
         return self.rect
     
-    def take_damage(self, amount: int):
-        self.damageable.take_damage(amount)
-
-    @property
-    def health(self):
-        return self.damageable.health
     
-    @property
-    def max_health(self):
-        return self.damageable.max_health

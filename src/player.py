@@ -4,7 +4,7 @@ from .projectile import Projectile
 
 class Player(Damageable):
     def __init__(self, x, y):
-        super().__init__(max_health=100)
+        super().__init__(100, "Player")
 
         self.x = x
         self.y = y

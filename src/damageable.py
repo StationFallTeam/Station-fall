@@ -1,9 +1,10 @@
 import pygame
 
 class Damageable:
-    def __init__(self, max_health):
+    def __init__(self, max_health, name = "Entity"):
         self.max_health = max_health
         self.health = max_health
+        self.name = name
 
         self.is_invincible = False
         self.invincibility_duration = 500
@@ -19,7 +20,10 @@ class Damageable:
         self.is_invincible = True
         self.last_hit_time = pygame.time.get_ticks()
 
-        print("We've been hit! Health:",  self.health)
+        print(f"{self.name} was hit! Health: {self.health}")
+
+        if self.health <= 0:
+            print(f"{self.name} died!")
 
     def update(self):
         if self.is_invincible:
