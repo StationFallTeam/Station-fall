@@ -19,7 +19,7 @@ class Damageable:
         self.is_invincible = True
         self.last_hit_time = pygame.time.get_ticks()
 
-        print("We;ve been hit! Health:",  self.health)
+        print("We've been hit! Health:",  self.health)
 
     def update(self):
         if self.is_invincible:

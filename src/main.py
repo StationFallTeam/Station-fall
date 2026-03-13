@@ -107,16 +107,11 @@ async def main():
         if state == MENU:
             background.update_and_draw(win, (menu_camera_x, menu_camera_y))
             start_rect, quit_rect = draw_menu(win, screen_width, screen_height, truck_img, float_time)
+            
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: 
-                mouse_screen = pygame.mouse.get_pos()
-                mouse_world = camera.screen_to_world(mouse_screen)
-                bullet = player.shoot(mouse_world)
-                if bullet: 
-                    bullets.append(bullet)
 
             # Menu Input - Loy
             if state == MENU:
@@ -127,17 +122,22 @@ async def main():
                         running = False
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    mx, my = pygame.mouse.get_pos()
-                    if start_rect.collidepoint(mx, my):
+                    if start_rect.collidepoint(event.pos):
                         state = GAME
-                    elif quit_rect.collidepoint(mx, my):
+                    elif quit_rect.collidepoint(event.pos):
                         running = False
 
             # Game Input - Loy
             elif state == GAME:
-                # ESC returns to menu instead of quitting
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     state = MENU
+
+                # Click-to-shoot ONLY in GAME
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    mouse_world = camera.screen_to_world(event.pos)
+                    bullet = player.shoot(mouse_world)
+                    if bullet:
+                        bullets.append(bullet)
 
         
         # Game Update & Draw (only when playing)
