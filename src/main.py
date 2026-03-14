@@ -5,7 +5,7 @@ import math
 
 from .player import Player
 from .enemy import Enemy
-from .render import draw_objects
+from .render import draw_objects, apply_brightness
 from .camera import Camera          # Added for camera - Meheraj
 from .background import SpaceBackground # Added for parallax background - Meheraj
 from .world import World
@@ -93,6 +93,13 @@ async def main():
     #music
     pygame.mixer.music.load("sound/starfield.ogg")
     pygame.mixer.music.play(-1)
+    music_volume = 0.5
+    pygame.mixer.music.set_volume(music_volume)
+    VOLUME_STEP = 0.1
+
+    # brightness
+    brightness = 1.0
+    BRIGHTNESS_STEP = 0.1
 
     # Start Menu System - Loy
     state = MENU
@@ -112,6 +119,29 @@ async def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+
+            elif event.type == pygame.KEYDOWN:
+                # "+, =" increase volume
+                if event.key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
+                    music_volume = min(music_volume + VOLUME_STEP, 1.0) 
+                    pygame.mixer.music.set_volume(music_volume)
+                    print(f"Volume increased to: {music_volume*100:.0f}%")
+
+                # "-, _" decrease volume
+                elif event.key in (pygame.K_MINUS, pygame.K_KP_MINUS):
+                    music_volume = max(music_volume - VOLUME_STEP, 0.0)
+                    pygame.mixer.music.set_volume(music_volume)
+                    print(f"Volume decreased to: {music_volume*100:.0f}%")
+                
+                # "], }" increase volume
+                elif event.key == pygame.K_RIGHTBRACKET:
+                    brightness = min(brightness + BRIGHTNESS_STEP, 1.0)
+                    print(f"Brightness increased to: {brightness*100:.0f}%")
+
+                # "[, {" decrease volume 
+                elif event.key == pygame.K_LEFTBRACKET:
+                    brightness = max(brightness - BRIGHTNESS_STEP, 0.2)
+                    print(f"Brightness decreased to: {brightness*100:.0f}%")
 
             # Menu Input - Loy
             if state == MENU:
@@ -182,6 +212,7 @@ async def main():
             # Removed win.fill because background.update_and_draw handles it - Meheraj
             draw_objects(win, player, enemies, bullets, world.walls, camera, background)  # Updated to pass camera and background - Meheraj
 
+        apply_brightness(win, brightness)
         pygame.display.flip()
         await asyncio.sleep(0)
 
