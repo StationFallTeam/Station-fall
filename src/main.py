@@ -198,7 +198,7 @@ async def main():
             # Make the camera follow the player - Meheraj
             camera.update(player)
             # Check if player died - Wil
-            if player.health <= 0:
+            if player.health <= 0 or keys[pygame.K_k]:
                 state = GAME_OVER
                 continue  # skip the rest of the update loop
             player.rect = player.get_rect()
