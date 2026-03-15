@@ -183,7 +183,7 @@ async def main():
 
 
         if state == INVENTORY:
-            inventory_ui.draw(win, coins)
+            inventory_ui.draw(win, player.money)
 
         pygame.display.flip()
         await asyncio.sleep(0)
