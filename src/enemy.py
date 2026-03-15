@@ -97,3 +97,7 @@ class Enemy:
     @property
     def max_health(self):
         return self.damageable.max_health
+    
+    @property
+    def is_dead(self):
+        return self.health <= 0
