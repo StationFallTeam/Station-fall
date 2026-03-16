@@ -109,7 +109,7 @@ async def main():
     enemies = [Enemy(300, 300)]
     bullets = []
     inventory_ui = InventoryUI(screen_width, screen_height)
-    coins = 0
+    coins = []
 
     #load menu image
     truck_img = pygame.image.load("sprites/truck.png").convert_alpha()
