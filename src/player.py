@@ -31,6 +31,7 @@ class Player(Damageable):
         self.moving = False
         # Create a rect for the camera to track - Meheraj
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.money = 0
    
 
     def _get_frame(self, x, y):
