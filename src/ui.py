@@ -16,3 +16,10 @@ def draw_health_bar(surface, current, maximum, x, y, w, h, *, border =2):
     #border
     pygame.draw.rect(surface, (220, 220, 220), (x, y, w, h), border)
 
+<<<<<<< web-enemy-damage
+=======
+def draw_money(surface, amount, x, y) :
+    font = pygame.font.SysFont("Pixellari.ttf", 25)
+    text = font.render(f"Coins: {amount}", True, (255, 215, 0))
+    surface.blit(text, (x,y))
+>>>>>>> main

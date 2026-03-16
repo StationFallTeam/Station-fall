@@ -1,7 +1,7 @@
 import pygame
-from .ui import draw_health_bar
+from .ui import draw_health_bar, draw_money
 
-def draw_objects(win, player, enemies, bullets, walls, camera, background):
+def draw_objects(win, player, enemies, bullets, walls, camera, background, coins):
     # 1. Draw the parallax background first using camera position
     background.update_and_draw(win, (camera.camera.x, camera.camera.y))
 
@@ -18,6 +18,7 @@ def draw_objects(win, player, enemies, bullets, walls, camera, background):
 
     # Player HUD health bar (fixed on screen)
     draw_health_bar(win, player.health, player.max_health, 20, 20, 250, 18)
+    draw_money(win, player.money, 20, 50)
 
     # draw hovering enemy health bars
     for enemy in enemies:
@@ -38,6 +39,7 @@ def draw_objects(win, player, enemies, bullets, walls, camera, background):
     for bullet in bullets: 
         bullet.draw(win, camera)
 
+<<<<<<< web-enemy-damage
 def apply_brightness(win, brightness):
     if brightness >= 1.0:
         return
@@ -49,3 +51,7 @@ def apply_brightness(win, brightness):
     overlay.set_alpha(darkness)
 
     win.blit(overlay, (0, 0))
+=======
+    for coin in coins:
+        coin.draw(win, camera)
+>>>>>>> main

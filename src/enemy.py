@@ -87,4 +87,21 @@ class Enemy(Damageable):
     def get_rect(self):
         return self.rect
     
+<<<<<<< web-enemy-damage
     
+=======
+    def take_damage(self, amount: int):
+        self.damageable.take_damage(amount)
+
+    @property
+    def health(self):
+        return self.damageable.health
+    
+    @property
+    def max_health(self):
+        return self.damageable.max_health
+    
+    @property
+    def is_dead(self):
+        return self.health <= 0
+>>>>>>> main

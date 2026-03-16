@@ -16,6 +16,6 @@ class Projectile:
     
     def draw(self, screen, camera):
         screen_pos = camera.apply(pygame.Rect(self.pos.x, self.pos.y, 1, 1)).center
-        pygame.draw.circle(screen, (255,80,20), screen_pos, self.radius + 2)
-        pygame.draw.circle(screen, (255,140,40), screen_pos, self.radius + 1)
-        pygame.draw.circle(screen, (255,220,120), screen_pos, self.radius)
+        pygame.draw.circle(screen, (120,0,0), screen_pos, self.radius + 2)
+        pygame.draw.circle(screen, (200,20,20), screen_pos, self.radius + 1)
+        pygame.draw.circle(screen, (255,80,0), screen_pos, self.radius)
