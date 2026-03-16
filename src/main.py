@@ -151,12 +151,8 @@ async def main():
         # Draw Menu - Loy
         if state == MENU:
             background.update_and_draw(win, (menu_camera_x, menu_camera_y))
-<<<<<<< web-enemy-damage
-            start_rect, quit_rect = draw_menu(win, screen_width, screen_height, truck_img, float_time)
             
-=======
             start_rect, quit_rect, credits_rect = draw_menu(win, screen_width, screen_height, truck_img, float_time)
->>>>>>> main
 
         for event in pygame.event.get():
             
@@ -197,19 +193,13 @@ async def main():
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     if start_rect.collidepoint(event.pos):
                         state = GAME
-<<<<<<< web-enemy-damage
-                    elif quit_rect.collidepoint(event.pos):
-=======
                     elif credits_rect.collidepoint(mx, my):
                         state = CREDITS
                     elif quit_rect.collidepoint(mx, my):
->>>>>>> main
                         running = False
 
             # Game Input - Loy
             elif state == GAME:
-<<<<<<< web-enemy-damage
-=======
                 if event.type == pygame.KEYDOWN:
 
                     # Open inventory
@@ -228,7 +218,6 @@ async def main():
                         state = GAME
 
                 # ESC returns to menu instead of quitting
->>>>>>> main
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     state = MENU
             # Game over inputs - Wil
@@ -249,7 +238,6 @@ async def main():
                     if event.key == pygame.K_ESCAPE:
                         state = MENU
 
-<<<<<<< web-enemy-damage
                 # Click-to-shoot ONLY in GAME
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     mouse_world = camera.screen_to_world(event.pos)
@@ -258,8 +246,6 @@ async def main():
                         bullets.append(bullet)
 
         
-=======
->>>>>>> main
         # Game Update & Draw (only when playing)
         if state == GAME:
             keys = pygame.key.get_pressed()
@@ -280,7 +266,6 @@ async def main():
             for bullet in bullets[:]:
                 bullet.update()
 
-<<<<<<< web-enemy-damage
                 bullet_rect = pygame.Rect (
                     bullet.pos.x - bullet.radius,
                     bullet.pos.y - bullet.radius,
@@ -304,22 +289,21 @@ async def main():
             draw_objects(win, player, enemies, bullets, world.walls, camera, background)  # Updated to pass camera and background - Meheraj
 
         apply_brightness(win, brightness)
-=======
-                bullet_rect = pygame.Rect(
-                    int(bullet.pos.x - bullet.radius), 
-                    int(bullet.pos.y - bullet.radius), 
-                    bullet.radius * 2, 
-                    bullet.radius * 2
-                )
-                for enemy in enemies[:]:
-                    if bullet_rect.colliderect(enemy.rect):
-                        enemy.take_damage(10)
-                        if bullet in bullets:
-                            bullets.remove(bullet)
-                        if enemy.is_dead:
-                            coins.append(Coin(enemy.rect.centerx, enemy.rect.centery, value=3))
-                            enemies.remove(enemy)
-                        break
+        bullet_rect = pygame.Rect(
+            int(bullet.pos.x - bullet.radius), 
+            int(bullet.pos.y - bullet.radius), 
+            bullet.radius * 2, 
+            bullet.radius * 2
+        )
+        for enemy in enemies[:]:
+            if bullet_rect.colliderect(enemy.rect):
+                enemy.take_damage(10)
+                if bullet in bullets:
+                    bullets.remove(bullet)
+                if enemy.is_dead:
+                    coins.append(Coin(enemy.rect.centerx, enemy.rect.centery, value=3))
+                    enemies.remove(enemy)
+                break
 
             for coin in coins[:]:
                 coin.update()
@@ -341,7 +325,6 @@ async def main():
         elif state == CREDITS:
             draw_credits(win, credits_img)
             
->>>>>>> main
         pygame.display.flip()
         await asyncio.sleep(0)
 
