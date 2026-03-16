@@ -9,6 +9,7 @@ from .render import draw_objects
 from .camera import Camera          # Added for camera - Meheraj
 from .background import SpaceBackground # Added for parallax background - Meheraj
 from .world import World
+from .coin import Coin
 
 # NOTE:
 # When debugging pygbag web crashes, temporarily wrap main() in a try/except
@@ -105,6 +106,7 @@ async def main():
     player = Player(100, 100)
     enemies = [Enemy(300, 300)]
     bullets = []
+    coins = []
 
     #load menu image
     truck_img = pygame.image.load("sprites/truck.png").convert_alpha()
@@ -208,13 +210,36 @@ async def main():
                     player.take_damage(10)
             for bullet in bullets[:]:
                 bullet.update()
+
+                bullet_rect = pygame.Rect(
+                    int(bullet.pos.x - bullet.radius), 
+                    int(bullet.pos.y - bullet.radius), 
+                    bullet.radius * 2, 
+                    bullet.radius * 2
+                )
+                for enemy in enemies[:]:
+                    if bullet_rect.colliderect(enemy.rect):
+                        enemy.take_damage(10)
+                        if bullet in bullets:
+                            bullets.remove(bullet)
+                        if enemy.is_dead:
+                            coins.append(Coin(enemy.rect.centerx, enemy.rect.centery, value=3))
+                            enemies.remove(enemy)
+                        break
+
+            for coin in coins[:]:
+                coin.update()
+                if player.rect.colliderect(coin.rect):
+                    player.money += coin.value
+                    coins.remove(coin)
+
             # Removed win.fill because background.update_and_draw handles it - Meheraj
-            draw_objects(win, player, enemies, bullets, world.walls, camera, background)  # Updated to pass camera and background - Meheraj
+            draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins)  # Updated to pass camera and background - Meheraj
         
         elif state == GAME_OVER:
             background.update_and_draw(win, (menu_camera_x, menu_camera_y))
             draw_game_over(win, screen_width, screen_height, gameOver_img, float_time)
-
+            
         elif state == CREDITS:
             draw_credits(win, credits_img)
             
