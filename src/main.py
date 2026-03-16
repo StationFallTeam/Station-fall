@@ -5,7 +5,7 @@ import math
 
 from .player import Player
 from .enemy import Enemy
-from .render import draw_objects
+from .render import draw_objects, apply_brightness
 from .camera import Camera          # Added for camera - Meheraj
 from .background import SpaceBackground # Added for parallax background - Meheraj
 from .world import World
@@ -131,6 +131,13 @@ async def main():
     #music
     pygame.mixer.music.load("sound/starfield.ogg")
     pygame.mixer.music.play(-1)
+    music_volume = 0.5
+    pygame.mixer.music.set_volume(music_volume)
+    VOLUME_STEP = 0.1
+
+    # brightness
+    brightness = 1.0
+    BRIGHTNESS_STEP = 0.1
 
     # Start Menu System - Loy
     state = MENU
@@ -144,18 +151,40 @@ async def main():
         # Draw Menu - Loy
         if state == MENU:
             background.update_and_draw(win, (menu_camera_x, menu_camera_y))
+<<<<<<< web-enemy-damage
+            start_rect, quit_rect = draw_menu(win, screen_width, screen_height, truck_img, float_time)
+            
+=======
             start_rect, quit_rect, credits_rect = draw_menu(win, screen_width, screen_height, truck_img, float_time)
+>>>>>>> main
 
         for event in pygame.event.get():
             
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: 
-                mouse_screen = pygame.mouse.get_pos()
-                mouse_world = camera.screen_to_world(mouse_screen)
-                bullet = player.shoot(mouse_world)
-                if bullet: 
-                    bullets.append(bullet)
+
+            elif event.type == pygame.KEYDOWN:
+                # "+, =" increase volume
+                if event.key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
+                    music_volume = min(music_volume + VOLUME_STEP, 1.0) 
+                    pygame.mixer.music.set_volume(music_volume)
+                    print(f"Volume increased to: {music_volume*100:.0f}%")
+
+                # "-, _" decrease volume
+                elif event.key in (pygame.K_MINUS, pygame.K_KP_MINUS):
+                    music_volume = max(music_volume - VOLUME_STEP, 0.0)
+                    pygame.mixer.music.set_volume(music_volume)
+                    print(f"Volume decreased to: {music_volume*100:.0f}%")
+                
+                # "], }" increase volume
+                elif event.key == pygame.K_RIGHTBRACKET:
+                    brightness = min(brightness + BRIGHTNESS_STEP, 1.0)
+                    print(f"Brightness increased to: {brightness*100:.0f}%")
+
+                # "[, {" decrease volume 
+                elif event.key == pygame.K_LEFTBRACKET:
+                    brightness = max(brightness - BRIGHTNESS_STEP, 0.2)
+                    print(f"Brightness decreased to: {brightness*100:.0f}%")
 
             # Menu Input - Loy
             if state == MENU:
@@ -166,16 +195,21 @@ async def main():
                         running = False
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    mx, my = pygame.mouse.get_pos()
-                    if start_rect.collidepoint(mx, my):
+                    if start_rect.collidepoint(event.pos):
                         state = GAME
+<<<<<<< web-enemy-damage
+                    elif quit_rect.collidepoint(event.pos):
+=======
                     elif credits_rect.collidepoint(mx, my):
                         state = CREDITS
                     elif quit_rect.collidepoint(mx, my):
+>>>>>>> main
                         running = False
 
             # Game Input - Loy
             elif state == GAME:
+<<<<<<< web-enemy-damage
+=======
                 if event.type == pygame.KEYDOWN:
 
                     # Open inventory
@@ -194,6 +228,7 @@ async def main():
                         state = GAME
 
                 # ESC returns to menu instead of quitting
+>>>>>>> main
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     state = MENU
             # Game over inputs - Wil
@@ -214,6 +249,17 @@ async def main():
                     if event.key == pygame.K_ESCAPE:
                         state = MENU
 
+<<<<<<< web-enemy-damage
+                # Click-to-shoot ONLY in GAME
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    mouse_world = camera.screen_to_world(event.pos)
+                    bullet = player.shoot(mouse_world)
+                    if bullet:
+                        bullets.append(bullet)
+
+        
+=======
+>>>>>>> main
         # Game Update & Draw (only when playing)
         if state == GAME:
             keys = pygame.key.get_pressed()
@@ -234,6 +280,31 @@ async def main():
             for bullet in bullets[:]:
                 bullet.update()
 
+<<<<<<< web-enemy-damage
+                bullet_rect = pygame.Rect (
+                    bullet.pos.x - bullet.radius,
+                    bullet.pos.y - bullet.radius,
+                    bullet.radius * 2,
+                    bullet.radius * 2
+                )
+
+                for enemy in enemies [:]:
+                    if bullet_rect.colliderect(enemy.rect):
+                        enemy.take_damage(10) 
+
+                        if bullet in bullets:
+                            bullets.remove(bullet)
+
+                        if enemy.health <= 0:
+                            enemies.remove(enemy)
+                        
+                        break
+
+            # Removed win.fill because background.update_and_draw handles it - Meheraj
+            draw_objects(win, player, enemies, bullets, world.walls, camera, background)  # Updated to pass camera and background - Meheraj
+
+        apply_brightness(win, brightness)
+=======
                 bullet_rect = pygame.Rect(
                     int(bullet.pos.x - bullet.radius), 
                     int(bullet.pos.y - bullet.radius), 
@@ -270,6 +341,7 @@ async def main():
         elif state == CREDITS:
             draw_credits(win, credits_img)
             
+>>>>>>> main
         pygame.display.flip()
         await asyncio.sleep(0)
 
