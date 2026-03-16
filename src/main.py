@@ -9,6 +9,7 @@ from .render import draw_objects
 from .camera import Camera          # Added for camera - Meheraj
 from .background import SpaceBackground # Added for parallax background - Meheraj
 from .world import World
+from .inventory_ui import InventoryUI
 from .coin import Coin
 
 # NOTE:
@@ -18,6 +19,7 @@ from .coin import Coin
 # Start Menu - Loy
 MENU = "menu"
 GAME = "game"
+INVENTORY = "inventory"
 GAME_OVER = "game_over"
 CREDITS = "Credits"
 
@@ -106,7 +108,8 @@ async def main():
     player = Player(100, 100)
     enemies = [Enemy(300, 300)]
     bullets = []
-    coins = []
+    inventory_ui = InventoryUI(screen_width, screen_height)
+    coins = 0
 
     #load menu image
     truck_img = pygame.image.load("sprites/truck.png").convert_alpha()
@@ -144,6 +147,7 @@ async def main():
             start_rect, quit_rect, credits_rect = draw_menu(win, screen_width, screen_height, truck_img, float_time)
 
         for event in pygame.event.get():
+            
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: 
@@ -172,6 +176,23 @@ async def main():
 
             # Game Input - Loy
             elif state == GAME:
+                if event.type == pygame.KEYDOWN:
+
+                    # Open inventory
+                    if event.key == pygame.K_i:
+                        state = INVENTORY
+
+                    # ESC returns to menu instead of quitting
+                    elif event.key == pygame.K_ESCAPE:
+                        state = MENU
+
+
+            #Inventory Input
+            elif state == INVENTORY:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_i:
+                        state = GAME
+
                 # ESC returns to menu instead of quitting
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     state = MENU
@@ -197,6 +218,8 @@ async def main():
         if state == GAME:
             keys = pygame.key.get_pressed()
             player.update(keys, world.walls)
+            
+        
             # Make the camera follow the player - Meheraj
             camera.update(player)
             # Check if player died - Wil
@@ -233,6 +256,10 @@ async def main():
                     player.money += coin.value
                     coins.remove(coin)
 
+
+        if state == INVENTORY:
+            inventory_ui.draw(win, player.money)
+
             # Removed win.fill because background.update_and_draw handles it - Meheraj
             draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins)  # Updated to pass camera and background - Meheraj
         
@@ -247,7 +274,6 @@ async def main():
         await asyncio.sleep(0)
 
     pygame.quit()
-
 
 asyncio.run(main())
 
