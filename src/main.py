@@ -102,14 +102,14 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
     pygame.draw.line(win, (100, 100, 255), (screen_width // 2 - 200, 120), (screen_width // 2 + 200, 120), 2)
 
     team = [
-        ("Wil Nahra",            "Temp"),
-        ("Simon Halaszi",        "Temp"),
-        ("Loy Ngo",              "Temp"),
-        ("Mark",                 "Temp"),
-        ("Rowan",                "Temp"),
-        ("Sebastian Bentancourt","Temp"),
-        ("Yusairah Haque",       "Temp"),
-        ("Zachary Evans",        "Temp"),
+        ("Wil Nahra",            "| Developer | Sprite Creation |"),
+        ("Simon Halaszi",        "| Developer |"),
+        ("Loy Ngo",              "| Developer |"),
+        ("Mark",                 "| Developer |"),
+        ("Rowan",                "| Developer |"),
+        ("Sebastian Bentancourt","| Developer |"),
+        ("Yusairah Haque",       "| Developer |"),
+        ("Zachary Evans",        "| Developer |"),
     ]
 
     start_y = 170
@@ -129,7 +129,7 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
     hint = hint_font.render("Press ESC to return", True, (160, 160, 160))
     win.blit(hint, hint.get_rect(center=(screen_width // 2, screen_height - 40)))
 
-async def main():
+async def main(): 
     pygame.init()
     pygame.mixer.init()
 
@@ -154,9 +154,6 @@ async def main():
     float_time = 0
     menu_camera_x = 0
     menu_camera_y = 0
-
-    credits_img = pygame.image.load("sprites/credits/Wil.png").convert_alpha()
-    credits_img = pygame.transform.smoothscale(credits_img, (screen_width, screen_height))
 
     gameOver_img = pygame.image.load("sprites/gameOver.png").convert_alpha()
     gameOver_img = pygame.transform.smoothscale(gameOver_img, (300, 150))
