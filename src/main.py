@@ -86,8 +86,48 @@ def draw_game_over(win, screen_width, screen_height, truck_img, float_time):
     win.blit(truck_img, truck_rect)
 
 # Credits screen - Wil
-def draw_credits(win, credits_img):
-    win.blit(credits_img, (0, 0))
+def draw_credits(win, screen_width, screen_height, background, float_time, menu_camera_x, menu_camera_y):
+    background.update_and_draw(win, (menu_camera_x, menu_camera_y))
+
+    title_font = pygame.font.SysFont(None, 72)
+    name_font = pygame.font.SysFont(None, 42)
+    role_font = pygame.font.SysFont(None, 30)
+    hint_font = pygame.font.SysFont(None, 28)
+
+    # Title
+    title = title_font.render("CREDITS", True, (255, 255, 255))
+    win.blit(title, title.get_rect(center=(screen_width // 2, 80)))
+
+    # Divider line
+    pygame.draw.line(win, (100, 100, 255), (screen_width // 2 - 200, 120), (screen_width // 2 + 200, 120), 2)
+
+    team = [
+        ("Wil Nahra",            "Temp"),
+        ("Simon Halaszi",        "Temp"),
+        ("Loy Ngo",              "Temp"),
+        ("Mark",                 "Temp"),
+        ("Rowan",                "Temp"),
+        ("Sebastian Bentancourt","Temp"),
+        ("Yusairah Haque",       "Temp"),
+        ("Zachary Evans",        "Temp"),
+    ]
+
+    start_y = 170
+    spacing = 90
+
+    for i, (name, role) in enumerate(team):
+        y = start_y + i * spacing
+        float_offset = math.sin(float_time + i * 0.4) * 4
+
+        name_surf = name_font.render(name, True, (220, 220, 255))
+        role_surf = role_font.render(role, True, (140, 140, 200))
+
+        win.blit(name_surf, name_surf.get_rect(center=(screen_width // 2, y + float_offset)))
+        win.blit(role_surf, role_surf.get_rect(center=(screen_width // 2, y + 32 + float_offset)))
+
+    # ESC hint
+    hint = hint_font.render("Press ESC to return", True, (160, 160, 160))
+    win.blit(hint, hint.get_rect(center=(screen_width // 2, screen_height - 40)))
 
 async def main():
     pygame.init()
@@ -241,7 +281,7 @@ async def main():
             draw_game_over(win, screen_width, screen_height, gameOver_img, float_time)
             
         elif state == CREDITS:
-            draw_credits(win, credits_img)
+            draw_credits(win, screen_width, screen_height, background, float_time, menu_camera_x, menu_camera_y)
             
         pygame.display.flip()
         await asyncio.sleep(0)
