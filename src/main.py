@@ -109,7 +109,7 @@ async def main():
     enemies = [Enemy(300, 300)]
     bullets = []
     inventory_ui = InventoryUI(screen_width, screen_height)
-    coins = 0
+    coins = []
 
     #load menu image
     truck_img = pygame.image.load("sprites/truck.png").convert_alpha()
@@ -255,13 +255,15 @@ async def main():
                 if player.rect.colliderect(coin.rect):
                     player.money += coin.value
                     coins.remove(coin)
+            
+            # Removed win.fill because background.update_and_draw handles it - Meheraj
+            draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins)  # Updated to pass camera and background - Meheraj
 
 
         if state == INVENTORY:
+            background.update_and_draw(win, (camera.camera.x, camera.camera.y))
+            draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins)
             inventory_ui.draw(win, player.money)
-
-            # Removed win.fill because background.update_and_draw handles it - Meheraj
-            draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins)  # Updated to pass camera and background - Meheraj
         
         elif state == GAME_OVER:
             background.update_and_draw(win, (menu_camera_x, menu_camera_y))
