@@ -1,9 +1,8 @@
 import pygame
 from .damageable import Damageable
 
-class Enemy(Damageable):
+class Enemy:
     def __init__(self, x, y):
-        super().__init__(50, "Enemy") # enemy MAX HEALTH
 
         self.x = x
         self.y = y
@@ -30,6 +29,7 @@ class Enemy(Damageable):
         self.moving = True
 
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.damageable = Damageable(50)
 
     def _get_frame(self, x, y):
         frame = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
@@ -78,7 +78,7 @@ class Enemy(Damageable):
         else:
             self.frame_index = 0
         
-        super().update()
+        self.damageable.update()
 
     def draw(self, screen, camera):
         frame = self.animations[self.direction][int(self.frame_index)]
@@ -87,9 +87,6 @@ class Enemy(Damageable):
     def get_rect(self):
         return self.rect
     
-<<<<<<< web-enemy-damage
-    
-=======
     def take_damage(self, amount: int):
         self.damageable.take_damage(amount)
 
@@ -104,4 +101,3 @@ class Enemy(Damageable):
     @property
     def is_dead(self):
         return self.health <= 0
->>>>>>> main
