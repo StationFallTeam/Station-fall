@@ -1,266 +1,237 @@
-import tempfile
-import os
 import sys
+import tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import dungeon_gen
+
+DUNGEONGEN_DIR = Path(__file__).resolve().parents[1]
+DUNGEON_TYPES_DIR = DUNGEONGEN_DIR / "dungeon_types"
+sys.path.insert(0, str(DUNGEONGEN_DIR))
+
+from classes import Rect, Room
+from config import (
+    ALLOW_HALLWAY_THROUGH_ROOMS,
+    BASE_ROOM_SIZE,
+    BRANCH_FROM_SIDE_DECAY,
+    BRANCH_FROM_SIDE_START_CHANCE,
+    BRANCH_FROM_TOP_BOTTOM_DECAY,
+    BRANCH_FROM_TOP_BOTTOM_START_CHANCE,
+    GENERATE_VERTICAL_FIRST,
+    HALL_LENGTH,
+    HALL_THICKNESS,
+    MIN_BRANCH_CHANCE,
+    ROOM_SIZE,
+    SIDE_DECAY,
+    SIDE_START_CHANCE,
+    TOP_BOTTOM_DECAY,
+    TOP_BOTTOM_START_CHANCE,
+)
+from generation import carve_rect, chance_at_depth, clamp_chance, generate_layout, room_overlaps
+from loading import (
+    find_presets,
+    load_all_hallway_prefabs,
+    load_all_hallway_wall_prefabs,
+    load_main_room_prefabs,
+    load_main_room_wall_prefabs,
+    load_prefabs,
+    load_preset,
+    load_wall_prefabs,
+)
+
+
+def _default_layout_kwargs(seed: int = 12345, **overrides):
+    kwargs = {
+        "base_room_size": BASE_ROOM_SIZE,
+        "room_size": ROOM_SIZE,
+        "hall_length": HALL_LENGTH,
+        "hall_thickness": HALL_THICKNESS,
+        "side_start_chance": SIDE_START_CHANCE,
+        "side_decay": SIDE_DECAY,
+        "top_bottom_start_chance": TOP_BOTTOM_START_CHANCE,
+        "top_bottom_decay": TOP_BOTTOM_DECAY,
+        "branch_from_top_bottom_start_chance": BRANCH_FROM_TOP_BOTTOM_START_CHANCE,
+        "branch_from_top_bottom_decay": BRANCH_FROM_TOP_BOTTOM_DECAY,
+        "branch_from_side_start_chance": BRANCH_FROM_SIDE_START_CHANCE,
+        "branch_from_side_decay": BRANCH_FROM_SIDE_DECAY,
+        "allow_hallway_through_rooms": ALLOW_HALLWAY_THROUGH_ROOMS,
+        "generate_vertical_first": GENERATE_VERTICAL_FIRST,
+        "seed": seed,
+    }
+    kwargs.update(overrides)
+    return kwargs
+
+
+def _serialize_layout(tiles, rooms, hallways):
+    return (
+        tuple(sorted(tiles.items())),
+        tuple(
+            (
+                room.rect.x,
+                room.rect.y,
+                room.rect.w,
+                room.rect.h,
+                room.prefab_id,
+                room.is_base_room,
+                room.wall_prefab_id,
+                tuple(sorted(room.doors)),
+            )
+            for room in rooms
+        ),
+        tuple(
+            (
+                hallway.rect.x,
+                hallway.rect.y,
+                hallway.rect.w,
+                hallway.rect.h,
+                hallway.direction,
+                hallway.prefab_id,
+                hallway.wall_prefab_id,
+            )
+            for hallway in hallways
+        ),
+    )
+
+
+def _load_station_assets(dungeon_type: str = "station1"):
+    base_path = str(DUNGEON_TYPES_DIR)
+    hallway_prefabs = load_all_hallway_prefabs(dungeon_type, base_path=base_path)
+    hallway_wall_prefabs = load_all_hallway_wall_prefabs(dungeon_type, base_path=base_path)
+    return {
+        "prefabs": load_prefabs(dungeon_type, base_path=base_path),
+        "wall_prefabs": load_wall_prefabs(dungeon_type, base_path=base_path),
+        "main_room_prefabs": load_main_room_prefabs(dungeon_type, base_path=base_path),
+        "main_room_wall_prefabs": load_main_room_wall_prefabs(dungeon_type, base_path=base_path),
+        "hallway_prefabs_upways": hallway_prefabs["upways"],
+        "hallway_prefabs_sideways": hallway_prefabs["sideways"],
+        "hallway_wall_prefabs_sideways": hallway_wall_prefabs["sideways"],
+    }
 
 
 def test_load_valid_preset():
-    temp_dir = tempfile.mkdtemp()
-    old_cwd = os.getcwd()
-    os.chdir(temp_dir)
-    try:
-        os.makedirs("dungeon_gen_presets")
-        preset_content = """SIDE_START_CHANCE = 1.0
-SIDE_DECAY = 0.125
-BRANCH_FROM_SIDE_START_CHANCE = 0.5"""
-        with open("dungeon_gen_presets/test_preset.txt", "w") as f:
-            f.write(preset_content)
-        result = dungeon_gen.load_preset("test_preset.txt")
-        assert result['SIDE_START_CHANCE'] == 1.0
-        assert result['SIDE_DECAY'] == 0.125
-        assert result['BRANCH_FROM_SIDE_START_CHANCE'] == 0.5
-    finally:
-        os.chdir(old_cwd)
-        for f in os.listdir(os.path.join(temp_dir, "dungeon_gen_presets")):
-            os.remove(os.path.join(temp_dir, "dungeon_gen_presets", f))
-        os.rmdir(os.path.join(temp_dir, "dungeon_gen_presets"))
-        os.rmdir(temp_dir)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        preset_dir = Path(temp_dir) / "dungeon_gen_presets"
+        preset_dir.mkdir()
+        (preset_dir / "test_preset.txt").write_text(
+            "SIDE_START_CHANCE = 1.0\n"
+            "SIDE_DECAY = 0.125\n"
+            "BRANCH_FROM_SIDE_START_CHANCE = 0.5\n",
+            encoding="utf-8",
+        )
+
+        result = load_preset("test_preset.txt", directory=str(preset_dir))
+
+        assert result["SIDE_START_CHANCE"] == 1.0
+        assert result["SIDE_DECAY"] == 0.125
+        assert result["BRANCH_FROM_SIDE_START_CHANCE"] == 0.5
 
 
-def test_load_preset_with_comments():
-    temp_dir = tempfile.mkdtemp()
-    old_cwd = os.getcwd()
-    os.chdir(temp_dir)
-    try:
-        os.makedirs("dungeon_gen_presets")
-        preset_content = """# This is a comment
-SIDE_START_CHANCE = 1.0
-# Another comment
-SIDE_DECAY = 0.125"""
-        with open("dungeon_gen_presets/test_preset.txt", "w") as f:
-            f.write(preset_content)
-        result = dungeon_gen.load_preset("test_preset.txt")
-        assert len(result) == 2
-        assert '#' not in str(result)
-    finally:
-        os.chdir(old_cwd)
-        for f in os.listdir(os.path.join(temp_dir, "dungeon_gen_presets")):
-            os.remove(os.path.join(temp_dir, "dungeon_gen_presets", f))
-        os.rmdir(os.path.join(temp_dir, "dungeon_gen_presets"))
-        os.rmdir(temp_dir)
+def test_load_preset_with_comments_and_empty_lines():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        preset_dir = Path(temp_dir) / "dungeon_gen_presets"
+        preset_dir.mkdir()
+        (preset_dir / "test_preset.txt").write_text(
+            "# This is a comment\n"
+            "SIDE_START_CHANCE = 1.0\n"
+            "\n"
+            "# Another comment\n"
+            "SIDE_DECAY = 0.125\n"
+            "\n",
+            encoding="utf-8",
+        )
+
+        result = load_preset("test_preset.txt", directory=str(preset_dir))
+
+        assert result == {
+            "SIDE_START_CHANCE": 1.0,
+            "SIDE_DECAY": 0.125,
+        }
 
 
-def test_load_preset_with_booleans():
-    temp_dir = tempfile.mkdtemp()
-    old_cwd = os.getcwd()
-    os.chdir(temp_dir)
-    try:
-        os.makedirs("dungeon_gen_presets")
-        preset_content = """GENERATE_VERTICAL_FIRST = True
-ALLOW_HALLWAY_THROUGH_ROOMS = False"""
-        with open("dungeon_gen_presets/test_preset.txt", "w") as f:
-            f.write(preset_content)
-        result = dungeon_gen.load_preset("test_preset.txt")
-        assert result['GENERATE_VERTICAL_FIRST'] == True
-        assert result['ALLOW_HALLWAY_THROUGH_ROOMS'] == False
-    finally:
-        os.chdir(old_cwd)
-        for f in os.listdir(os.path.join(temp_dir, "dungeon_gen_presets")):
-            os.remove(os.path.join(temp_dir, "dungeon_gen_presets", f))
-        os.rmdir(os.path.join(temp_dir, "dungeon_gen_presets"))
-        os.rmdir(temp_dir)
+def test_load_preset_with_booleans_and_integers():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        preset_dir = Path(temp_dir) / "dungeon_gen_presets"
+        preset_dir.mkdir()
+        (preset_dir / "test_preset.txt").write_text(
+            "GENERATE_VERTICAL_FIRST = True\n"
+            "ALLOW_HALLWAY_THROUGH_ROOMS = false\n"
+            "MAX_BRANCHING_DEPTH = 100\n",
+            encoding="utf-8",
+        )
 
+        result = load_preset("test_preset.txt", directory=str(preset_dir))
 
-def test_load_preset_with_integers():
-    temp_dir = tempfile.mkdtemp()
-    old_cwd = os.getcwd()
-    os.chdir(temp_dir)
-    try:
-        os.makedirs("dungeon_gen_presets")
-        preset_content = """MAX_BRANCHING_DEPTH = 100
-ROOM_SIZE = 8"""
-        with open("dungeon_gen_presets/test_preset.txt", "w") as f:
-            f.write(preset_content)
-        result = dungeon_gen.load_preset("test_preset.txt")
-        assert result['MAX_BRANCHING_DEPTH'] == 100
-        assert result['ROOM_SIZE'] == 8
-        assert isinstance(result['MAX_BRANCHING_DEPTH'], int)
-    finally:
-        os.chdir(old_cwd)
-        for f in os.listdir(os.path.join(temp_dir, "dungeon_gen_presets")):
-            os.remove(os.path.join(temp_dir, "dungeon_gen_presets", f))
-        os.rmdir(os.path.join(temp_dir, "dungeon_gen_presets"))
-        os.rmdir(temp_dir)
+        assert result["GENERATE_VERTICAL_FIRST"] is True
+        assert result["ALLOW_HALLWAY_THROUGH_ROOMS"] is False
+        assert result["MAX_BRANCHING_DEPTH"] == 100
+        assert isinstance(result["MAX_BRANCHING_DEPTH"], int)
 
 
 def test_load_preset_nonexistent_file():
-    result = dungeon_gen.load_preset("nonexistent.txt")
+    result = load_preset("nonexistent.txt", directory="/tmp/does-not-exist")
     assert result == {}
 
 
-def test_load_preset_with_empty_lines():
-    temp_dir = tempfile.mkdtemp()
-    old_cwd = os.getcwd()
-    os.chdir(temp_dir)
-    try:
-        os.makedirs("dungeon_gen_presets")
-        preset_content = """SIDE_START_CHANCE = 1.0
+def test_find_presets_filters_and_sorts():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        preset_dir = Path(temp_dir) / "dungeon_gen_presets"
+        preset_dir.mkdir()
+        (preset_dir / "z_preset.txt").touch()
+        (preset_dir / "a_preset.txt").touch()
+        (preset_dir / "m_preset.txt").touch()
+        (preset_dir / "README.txt").touch()
+        (preset_dir / "gen_presets.txt").touch()
+        (preset_dir / "other.py").touch()
 
-SIDE_DECAY = 0.125
+        result = find_presets(directory=str(preset_dir))
 
-"""
-        with open("dungeon_gen_presets/test_preset.txt", "w") as f:
-            f.write(preset_content)
-        result = dungeon_gen.load_preset("test_preset.txt")
-        assert len(result) == 2
-    finally:
-        os.chdir(old_cwd)
-        for f in os.listdir(os.path.join(temp_dir, "dungeon_gen_presets")):
-            os.remove(os.path.join(temp_dir, "dungeon_gen_presets", f))
-        os.rmdir(os.path.join(temp_dir, "dungeon_gen_presets"))
-        os.rmdir(temp_dir)
-
-
-def test_find_presets_basic():
-    temp_dir = tempfile.mkdtemp()
-    old_cwd = os.getcwd()
-    os.chdir(temp_dir)
-    try:
-        os.makedirs("dungeon_gen_presets")
-        Path("dungeon_gen_presets/preset1.txt").touch()
-        Path("dungeon_gen_presets/preset2.txt").touch()
-        Path("dungeon_gen_presets/other.py").touch()
-        result = dungeon_gen.find_presets()
-        assert "preset1.txt" in result
-        assert "preset2.txt" in result
-        assert "other.py" not in result
-    finally:
-        os.chdir(old_cwd)
-        for f in os.listdir(os.path.join(temp_dir, "dungeon_gen_presets")):
-            os.remove(os.path.join(temp_dir, "dungeon_gen_presets", f))
-        os.rmdir(os.path.join(temp_dir, "dungeon_gen_presets"))
-        os.rmdir(temp_dir)
-
-
-def test_find_presets_excludes_readme():
-    temp_dir = tempfile.mkdtemp()
-    old_cwd = os.getcwd()
-    os.chdir(temp_dir)
-    try:
-        os.makedirs("dungeon_gen_presets")
-        Path("dungeon_gen_presets/README.txt").touch()
-        Path("dungeon_gen_presets/preset.txt").touch()
-        result = dungeon_gen.find_presets()
-        assert "README.txt" not in result
-        assert "preset.txt" in result
-    finally:
-        os.chdir(old_cwd)
-        for f in os.listdir(os.path.join(temp_dir, "dungeon_gen_presets")):
-            os.remove(os.path.join(temp_dir, "dungeon_gen_presets", f))
-        os.rmdir(os.path.join(temp_dir, "dungeon_gen_presets"))
-        os.rmdir(temp_dir)
-
-
-def test_find_presets_excludes_gen_presets():
-    temp_dir = tempfile.mkdtemp()
-    old_cwd = os.getcwd()
-    os.chdir(temp_dir)
-    try:
-        os.makedirs("dungeon_gen_presets")
-        Path("dungeon_gen_presets/gen_presets.txt").touch()
-        Path("dungeon_gen_presets/long.txt").touch()
-        result = dungeon_gen.find_presets()
-        assert "gen_presets.txt" not in result
-        assert "long.txt" in result
-    finally:
-        os.chdir(old_cwd)
-        for f in os.listdir(os.path.join(temp_dir, "dungeon_gen_presets")):
-            os.remove(os.path.join(temp_dir, "dungeon_gen_presets", f))
-        os.rmdir(os.path.join(temp_dir, "dungeon_gen_presets"))
-        os.rmdir(temp_dir)
-
-
-def test_find_presets_sorted():
-    temp_dir = tempfile.mkdtemp()
-    old_cwd = os.getcwd()
-    os.chdir(temp_dir)
-    try:
-        os.makedirs("dungeon_gen_presets")
-        Path("dungeon_gen_presets/z_preset.txt").touch()
-        Path("dungeon_gen_presets/a_preset.txt").touch()
-        Path("dungeon_gen_presets/m_preset.txt").touch()
-        result = dungeon_gen.find_presets()
         assert result == ["a_preset.txt", "m_preset.txt", "z_preset.txt"]
-    finally:
-        os.chdir(old_cwd)
-        for f in os.listdir(os.path.join(temp_dir, "dungeon_gen_presets")):
-            os.remove(os.path.join(temp_dir, "dungeon_gen_presets", f))
-        os.rmdir(os.path.join(temp_dir, "dungeon_gen_presets"))
-        os.rmdir(temp_dir)
 
 
 def test_find_presets_empty_directory():
-    temp_dir = tempfile.mkdtemp()
-    old_cwd = os.getcwd()
-    os.chdir(temp_dir)
-    try:
-        os.makedirs("dungeon_gen_presets")
-        result = dungeon_gen.find_presets()
+    with tempfile.TemporaryDirectory() as temp_dir:
+        preset_dir = Path(temp_dir) / "dungeon_gen_presets"
+        preset_dir.mkdir()
+        result = find_presets(directory=str(preset_dir))
         assert result == []
-    finally:
-        os.chdir(old_cwd)
-        os.rmdir(os.path.join(temp_dir, "dungeon_gen_presets"))
-        os.rmdir(temp_dir)
 
 
 def test_clamp_below_min():
-    result = dungeon_gen.clamp_chance(-0.5)
-    assert result == 0.0
+    assert clamp_chance(-0.5) == MIN_BRANCH_CHANCE
 
 
 def test_clamp_above_max():
-    result = dungeon_gen.clamp_chance(1.5)
-    assert result == 1.0
+    assert clamp_chance(1.5) == 1.0
 
 
 def test_clamp_within_range():
-    result = dungeon_gen.clamp_chance(0.5)
-    assert result == 0.5
+    assert clamp_chance(0.5) == 0.5
 
 
 def test_clamp_at_boundaries():
-    assert dungeon_gen.clamp_chance(0.0) == 0.0
-    assert dungeon_gen.clamp_chance(1.0) == 1.0
+    assert clamp_chance(MIN_BRANCH_CHANCE) == MIN_BRANCH_CHANCE
+    assert clamp_chance(1.0) == 1.0
 
 
 def test_chance_at_depth_zero():
-    result = dungeon_gen.chance_at_depth(1.0, 0.1, 0)
-    assert result == 1.0
+    assert chance_at_depth(1.0, 0.1, 0) == 1.0
 
 
 def test_chance_at_depth_decreases():
-    depth0 = dungeon_gen.chance_at_depth(1.0, 0.1, 0)
-    depth1 = dungeon_gen.chance_at_depth(1.0, 0.1, 1)
-    depth2 = dungeon_gen.chance_at_depth(1.0, 0.1, 2)
-    assert depth0 > depth1
-    assert depth1 > depth2
+    depth0 = chance_at_depth(1.0, 0.1, 0)
+    depth1 = chance_at_depth(1.0, 0.1, 1)
+    depth2 = chance_at_depth(1.0, 0.1, 2)
+    assert depth0 > depth1 > depth2
 
 
 def test_chance_at_depth_with_decay():
-    result = dungeon_gen.chance_at_depth(1.0, 0.1, 5)
-    assert result == 0.5
+    assert chance_at_depth(1.0, 0.1, 5) == 0.5
 
 
 def test_chance_at_depth_clamped():
-    result = dungeon_gen.chance_at_depth(0.5, 0.2, 10)
-    assert result == 0.0
+    assert chance_at_depth(0.5, 0.2, 10) == MIN_BRANCH_CHANCE
 
 
 def test_rect_creation():
-    rect = dungeon_gen.Rect(10, 20, 30, 40)
+    rect = Rect(10, 20, 30, 40)
     assert rect.x == 10
     assert rect.y == 20
     assert rect.w == 30
@@ -268,264 +239,149 @@ def test_rect_creation():
 
 
 def test_rect_right_property():
-    rect = dungeon_gen.Rect(10, 20, 30, 40)
-    assert rect.right == 39
+    assert Rect(10, 20, 30, 40).right == 39
 
 
 def test_rect_bottom_property():
-    rect = dungeon_gen.Rect(10, 20, 30, 40)
-    assert rect.bottom == 59
+    assert Rect(10, 20, 30, 40).bottom == 59
 
 
 def test_rect_center_property():
-    rect = dungeon_gen.Rect(0, 0, 10, 10)
-    cx, cy = rect.center
-    assert cx == 5
-    assert cy == 5
+    assert Rect(0, 0, 10, 10).center == (5, 5)
 
 
 def test_room_creation():
-    rect = dungeon_gen.Rect(0, 0, 10, 10)
-    room = dungeon_gen.Room(rect, 5)
+    rect = Rect(0, 0, 10, 10)
+    room = Room(rect, prefab_id=5, is_base_room=True)
     assert room.prefab_id == 5
     assert room.rect == rect
+    assert room.is_base_room is True
+    assert room.wall_prefab_id is None
     assert room.doors == []
 
 
 def test_room_center_property():
-    rect = dungeon_gen.Rect(0, 0, 10, 10)
-    room = dungeon_gen.Room(rect, None)
-    cx, cy = room.center
-    assert cx == 5
-    assert cy == 5
+    assert Room(Rect(0, 0, 10, 10)).center == (5, 5)
 
 
 def test_no_overlap_empty_tiles():
-    tiles = {}
-    rect = dungeon_gen.Rect(0, 0, 5, 5)
-    assert not dungeon_gen.room_overlaps(tiles, rect)
+    assert not room_overlaps({}, Rect(0, 0, 5, 5))
 
 
 def test_overlap_with_room():
-    tiles = {(0, 0): ".", (1, 1): "."}
-    rect = dungeon_gen.Rect(0, 0, 5, 5)
-    assert dungeon_gen.room_overlaps(tiles, rect)
+    assert room_overlaps({(0, 0): ".", (1, 1): "."}, Rect(0, 0, 5, 5))
 
 
 def test_no_overlap_with_hallway():
-    tiles = {(0, 0): "h", (1, 1): "h"}
-    rect = dungeon_gen.Rect(0, 0, 5, 5)
-    assert not dungeon_gen.room_overlaps(tiles, rect)
+    assert not room_overlaps({(0, 0): "h", (1, 1): "h"}, Rect(0, 0, 5, 5))
 
 
 def test_overlap_partial():
-    tiles = {(4, 4): "."}
-    rect = dungeon_gen.Rect(0, 0, 5, 5)
-    assert dungeon_gen.room_overlaps(tiles, rect)
-
-
-def test_generate_layout_basic():
-    tiles, rooms = dungeon_gen.generate_layout(seed=42)
-    assert isinstance(tiles, dict)
-    assert isinstance(rooms, list)
-    assert len(tiles) > 0
-    assert len(rooms) > 0
-
-
-def test_generate_layout_with_seed_reproducible():
-    tiles1, rooms1 = dungeon_gen.generate_layout(seed=12345)
-    tiles2, rooms2 = dungeon_gen.generate_layout(seed=12345)
-    assert len(tiles1) == len(tiles2)
-    assert len(rooms1) == len(rooms2)
-
-
-def test_generate_layout_different_seeds():
-    tiles1, rooms1 = dungeon_gen.generate_layout(seed=111)
-    tiles2, rooms2 = dungeon_gen.generate_layout(seed=222)
-    assert len(tiles1) != len(tiles2) or len(rooms1) != len(rooms2)
-
-
-def test_generate_layout_has_base_room():
-    tiles, rooms = dungeon_gen.generate_layout(seed=42)
-    base_rooms = [r for r in rooms if r.prefab_id is None]
-    assert len(base_rooms) == 1
-
-
-def test_generate_layout_vertical_first_toggle():
-    tiles1, rooms1 = dungeon_gen.generate_layout(seed=42, generate_vertical_first=False)
-    tiles2, rooms2 = dungeon_gen.generate_layout(seed=42, generate_vertical_first=True)
-    assert len(rooms1) != len(rooms2) or len(tiles1) != len(tiles2)
-
-
-def test_generate_layout_hallway_penetration():
-    tiles1, rooms1 = dungeon_gen.generate_layout(seed=42, allow_hallway_through_rooms=False)
-    tiles2, rooms2 = dungeon_gen.generate_layout(seed=42, allow_hallway_through_rooms=True)
-    assert tiles1 is not None
-    assert tiles2 is not None
-
-
-def test_generate_layout_custom_parameters():
-    tiles, rooms = dungeon_gen.generate_layout(side_start_chance=0.8, side_decay=0.05, seed=42)
-    assert len(rooms) > 0
-
-
-def test_generate_layout_high_decay():
-    tiles_low, rooms_low = dungeon_gen.generate_layout(side_decay=0.01, seed=42)
-    tiles_high, rooms_high = dungeon_gen.generate_layout(side_decay=0.5, seed=42)
-    assert len(rooms_high) <= len(rooms_low)
-
-
-def test_generate_layout_zero_chance():
-    tiles, rooms = dungeon_gen.generate_layout(
-        side_start_chance=0.0,
-        top_bottom_start_chance=0.0,
-        branch_from_side_start_chance=0.0,
-        branch_from_top_bottom_start_chance=0.0,
-        seed=42
-    )
-    assert len(rooms) == 1
+    assert room_overlaps({(4, 4): "."}, Rect(0, 0, 5, 5))
 
 
 def test_carve_basic():
     tiles = {}
-    rect = dungeon_gen.Rect(0, 0, 3, 3)
-    dungeon_gen.carve_rect(tiles, rect, ".")
+    carve_rect(tiles, Rect(0, 0, 3, 3), ".")
     assert len(tiles) == 9
-    assert all(v == "." for v in tiles.values())
+    assert all(value == "." for value in tiles.values())
 
 
 def test_carve_hallway_skips_rooms():
     tiles = {(0, 0): ".", (1, 1): "."}
-    rect = dungeon_gen.Rect(0, 0, 3, 3)
-    dungeon_gen.carve_rect(tiles, rect, "h")
+    carve_rect(tiles, Rect(0, 0, 3, 3), "h")
     assert tiles[(0, 0)] == "."
     assert tiles[(1, 1)] == "."
+
+
+def test_generate_layout_basic():
+    tiles, rooms, hallways, collision_map = generate_layout(**_default_layout_kwargs(seed=42))
+
+    assert isinstance(tiles, dict)
+    assert isinstance(rooms, list)
+    assert isinstance(hallways, list)
+    assert isinstance(collision_map, dict)
+    assert len(tiles) > 0
+    assert len(rooms) > 0
+    assert len(hallways) > 0
+
+
+def test_generate_layout_with_seed_reproducible():
+    layout1 = generate_layout(**_default_layout_kwargs(seed=12345))
+    layout2 = generate_layout(**_default_layout_kwargs(seed=12345))
+
+    assert _serialize_layout(*layout1[:3]) == _serialize_layout(*layout2[:3])
+    assert layout1[3] == layout2[3]
+
+
+def test_generate_layout_different_seeds():
+    layout1 = generate_layout(**_default_layout_kwargs(seed=111))
+    layout2 = generate_layout(**_default_layout_kwargs(seed=222))
+
+    assert _serialize_layout(*layout1[:3]) != _serialize_layout(*layout2[:3])
+
+
+def test_generate_layout_has_single_base_room():
+    _, rooms, _, _ = generate_layout(**_default_layout_kwargs(seed=42))
+    base_rooms = [room for room in rooms if room.is_base_room]
+    assert len(base_rooms) == 1
+
+
+def test_generate_layout_vertical_first_toggle_changes_layout():
+    layout1 = generate_layout(**_default_layout_kwargs(seed=42, generate_vertical_first=False))
+    layout2 = generate_layout(**_default_layout_kwargs(seed=42, generate_vertical_first=True))
+
+    assert _serialize_layout(*layout1[:3]) != _serialize_layout(*layout2[:3])
+
+
+def test_generate_layout_zero_chance_only_generates_base_room():
+    tiles, rooms, hallways, collision_map = generate_layout(
+        **_default_layout_kwargs(
+            seed=42,
+            side_start_chance=0.0,
+            top_bottom_start_chance=0.0,
+            branch_from_side_start_chance=0.0,
+            branch_from_top_bottom_start_chance=0.0,
+        )
+    )
+
+    assert len(rooms) == 1
+    assert len(hallways) == 0
+    assert len(tiles) == BASE_ROOM_SIZE[0] * BASE_ROOM_SIZE[1]
+    assert collision_map == {}
+
+
+def test_generate_layout_with_assets_builds_collision_map():
+    assets = _load_station_assets()
+    tiles, rooms, hallways, collision_map = generate_layout(
+        **_default_layout_kwargs(seed=42, **assets)
+    )
+
+    assert assets["prefabs"]
+    assert assets["main_room_prefabs"]
+    assert assets["hallway_prefabs_upways"]
+    assert assets["hallway_prefabs_sideways"]
+    assert len(tiles) > 0
+    assert len(rooms) > 0
+    assert len(hallways) > 0
+    assert len(collision_map) > 0
+    assert any(room.prefab_id is not None for room in rooms)
+    assert all(hallway.direction in {"upways", "sideways"} for hallway in hallways)
 
 
 def main():
     print("Running tests...")
     print()
-    
-    test_load_valid_preset()
-    print("test_load_valid_preset")
-    
-    test_load_preset_with_comments()
-    print("test_load_preset_with_comments")
-    
-    test_load_preset_with_booleans()
-    print("test_load_preset_with_booleans")
-    
-    test_load_preset_with_integers()
-    print("test_load_preset_with_integers")
-    
-    test_load_preset_nonexistent_file()
-    print("test_load_preset_nonexistent_file")
-    
-    test_load_preset_with_empty_lines()
-    print("test_load_preset_with_empty_lines")
-    
-    test_find_presets_basic()
-    print("test_find_presets_basic")
-    
-    test_find_presets_excludes_readme()
-    print("test_find_presets_excludes_readme")
-    
-    test_find_presets_excludes_gen_presets()
-    print("test_find_presets_excludes_gen_presets")
-    
-    test_find_presets_sorted()
-    print("test_find_presets_sorted")
-    
-    test_find_presets_empty_directory()
-    print("test_find_presets_empty_directory")
-    
-    test_clamp_below_min()
-    print("test_clamp_below_min")
-    
-    test_clamp_above_max()
-    print("test_clamp_above_max")
-    
-    test_clamp_within_range()
-    print("test_clamp_within_range")
-    
-    test_clamp_at_boundaries()
-    print("test_clamp_at_boundaries")
-    
-    test_chance_at_depth_zero()
-    print("test_chance_at_depth_zero")
-    
-    test_chance_at_depth_decreases()
-    print("test_chance_at_depth_decreases")
-    
-    test_chance_at_depth_with_decay()
-    print("test_chance_at_depth_with_decay")
-    
-    test_chance_at_depth_clamped()
-    print("test_chance_at_depth_clamped")
-    
-    test_rect_creation()
-    print("test_rect_creation")
-    
-    test_rect_right_property()
-    print("test_rect_right_property")
-    
-    test_rect_bottom_property()
-    print("test_rect_bottom_property")
-    
-    test_rect_center_property()
-    print("test_rect_center_property")
-    
-    test_room_creation()
-    print("test_room_creation")
-    
-    test_room_center_property()
-    print("test_room_center_property")
-    
-    test_no_overlap_empty_tiles()
-    print("test_no_overlap_empty_tiles")
-    
-    test_overlap_with_room()
-    print("test_overlap_with_room")
-    
-    test_no_overlap_with_hallway()
-    print("test_no_overlap_with_hallway")
-    
-    test_overlap_partial()
-    print("test_overlap_partial")
-    
-    test_generate_layout_basic()
-    print("test_generate_layout_basic")
-    
-    test_generate_layout_with_seed_reproducible()
-    print("test_generate_layout_with_seed_reproducible")
-    
-    test_generate_layout_different_seeds()
-    print("test_generate_layout_different_seeds")
-    
-    test_generate_layout_has_base_room()
-    print("test_generate_layout_has_base_room")
-    
-    test_generate_layout_vertical_first_toggle()
-    print("test_generate_layout_vertical_first_toggle")
-    
-    test_generate_layout_hallway_penetration()
-    print("test_generate_layout_hallway_penetration")
-    
-    test_generate_layout_custom_parameters()
-    print("test_generate_layout_custom_parameters")
-    
-    test_generate_layout_high_decay()
-    print("test_generate_layout_high_decay")
-    
-    test_generate_layout_zero_chance()
-    print("test_generate_layout_zero_chance")
-    
-    test_carve_basic()
-    print("test_carve_basic")
-    
-    test_carve_hallway_skips_rooms()
-    print("test_carve_hallway_skips_rooms")
-    
+
+    tests = sorted(
+        [value for name, value in globals().items() if name.startswith("test_") and callable(value)],
+        key=lambda test_func: test_func.__name__,
+    )
+
+    for test_func in tests:
+        test_func()
+        print(test_func.__name__)
+
     print()
     print("All tests passed!")
 
