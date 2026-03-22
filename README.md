@@ -16,14 +16,16 @@ Team Motto: "It's Magic, Don't Ask!"
 We follow Test-Driven Development principles to collect evidence of the system's value Running Test Cases
 
 To run the automated test suite for the camera and background modules, navigate to the src directory and use unittest discover:
-
-### Navigate to source directory
+'''bash
+#Navigate to source directory
 
 cd src
 
 ### Run all tests in the test_cases folder
 
 python3 -m unittest discover test_cases
+
+'''
 
 #### Why we test
 
