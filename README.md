@@ -13,7 +13,9 @@ Team Motto: "It's Magic, Don't Ask!"
 
 ## Testing (TDD Workflow)
 
-We follow Test-Driven Development principles to collect evidence of the system's value Running Test CasesTo run the automated test suite for the camera and background modules, navigate to the src directory and use unittest discovery:
+We follow Test-Driven Development principles to collect evidence of the system's value Running Test Cases
+
+To run the automated test suite for the camera and background modules, navigate to the src directory and use unittest discovery:
 
 ### Navigate to source directory
 
