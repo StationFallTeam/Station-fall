@@ -10,6 +10,7 @@ from .camera import Camera          # Added for camera - Meheraj
 from .background import SpaceBackground # Added for parallax background - Meheraj
 from .world import World
 from .coin import Coin
+from .inventory_ui import InventoryUI
 
 # NOTE:
 # When debugging pygbag web crashes, temporarily wrap main() in a try/except
@@ -20,6 +21,7 @@ MENU = "menu"
 GAME = "game"
 GAME_OVER = "game_over"
 CREDITS = "Credits"
+INVENTORY = "inventory"
 
 def draw_menu(win, screen_width, screen_height, truck_img, float_time):
 
@@ -210,6 +212,11 @@ async def main():
 
             # Game Input - Loy
             elif state == GAME:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_i:
+                        state = INVENTORY
+                    elif event.key == pygame.K_ESCAPE:
+                        state = MENU
                 # ESC returns to menu instead of quitting
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     state = MENU
@@ -229,6 +236,13 @@ async def main():
             elif state == CREDITS:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
+                        state = MENU
+
+            elif state == INVENTORY:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_i:
+                        state = GAME
+                    elif event.key == pygame.K_ESCAPE:
                         state = MENU
 
         # Game Update & Draw (only when playing)
@@ -286,7 +300,7 @@ async def main():
             
         elif state == CREDITS:
             draw_credits(win, screen_width, screen_height, background, float_time, menu_camera_x, menu_camera_y)
-            
+
         pygame.display.flip()
         await asyncio.sleep(0)
 
