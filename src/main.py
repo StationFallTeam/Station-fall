@@ -9,7 +9,6 @@ from .render import draw_objects
 from .camera import Camera          # Added for camera - Meheraj
 from .background import SpaceBackground # Added for parallax background - Meheraj
 from .world import World
-from .inventory_ui import InventoryUI
 from .coin import Coin
 
 # NOTE:
@@ -19,7 +18,6 @@ from .coin import Coin
 # Start Menu - Loy
 MENU = "menu"
 GAME = "game"
-INVENTORY = "inventory"
 GAME_OVER = "game_over"
 CREDITS = "Credits"
 
@@ -88,10 +86,50 @@ def draw_game_over(win, screen_width, screen_height, truck_img, float_time):
     win.blit(truck_img, truck_rect)
 
 # Credits screen - Wil
-def draw_credits(win, credits_img):
-    win.blit(credits_img, (0, 0))
+def draw_credits(win, screen_width, screen_height, background, float_time, menu_camera_x, menu_camera_y):
+    background.update_and_draw(win, (menu_camera_x, menu_camera_y))
 
-async def main():
+    title_font = pygame.font.SysFont(None, 72)
+    name_font = pygame.font.SysFont(None, 42)
+    role_font = pygame.font.SysFont(None, 30)
+    hint_font = pygame.font.SysFont(None, 28)
+
+    # Title
+    title = title_font.render("CREDITS", True, (255, 255, 255))
+    win.blit(title, title.get_rect(center=(screen_width // 2, 80)))
+
+    # Divider line
+    pygame.draw.line(win, (100, 100, 255), (screen_width // 2 - 200, 120), (screen_width // 2 + 200, 120), 2)
+
+    team = [
+        ("Wil Nahra",            "| Developer | Sprite Creation |"),
+        ("Simon Halaszi",        "| Developer |"),
+        ("Loy Ngo",              "| Developer |"),
+        ("Mark",                 "| Developer |"),
+        ("Rowan",                "| Developer |"),
+        ("Sebastian Bentancourt","| Developer |"),
+        ("Yusairah Haque",       "| Developer |"),
+        ("Zachary Evans",        "| Developer |"),
+    ]
+
+    start_y = 170
+    spacing = 90
+
+    for i, (name, role) in enumerate(team):
+        y = start_y + i * spacing
+        float_offset = math.sin(float_time + i * 0.4) * 4
+
+        name_surf = name_font.render(name, True, (220, 220, 255))
+        role_surf = role_font.render(role, True, (140, 140, 200))
+
+        win.blit(name_surf, name_surf.get_rect(center=(screen_width // 2, y + float_offset)))
+        win.blit(role_surf, role_surf.get_rect(center=(screen_width // 2, y + 32 + float_offset)))
+
+    # ESC hint
+    hint = hint_font.render("Press ESC to return", True, (160, 160, 160))
+    win.blit(hint, hint.get_rect(center=(screen_width // 2, screen_height - 40)))
+
+async def main(): 
     pygame.init()
     pygame.mixer.init()
 
@@ -117,9 +155,6 @@ async def main():
     float_time = 0
     menu_camera_x = 0
     menu_camera_y = 0
-
-    credits_img = pygame.image.load("sprites/credits/Wil.png").convert_alpha()
-    credits_img = pygame.transform.smoothscale(credits_img, (screen_width, screen_height))
 
     gameOver_img = pygame.image.load("sprites/gameOver.png").convert_alpha()
     gameOver_img = pygame.transform.smoothscale(gameOver_img, (300, 150))
@@ -147,7 +182,6 @@ async def main():
             start_rect, quit_rect, credits_rect = draw_menu(win, screen_width, screen_height, truck_img, float_time)
 
         for event in pygame.event.get():
-            
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: 
@@ -176,23 +210,6 @@ async def main():
 
             # Game Input - Loy
             elif state == GAME:
-                if event.type == pygame.KEYDOWN:
-
-                    # Open inventory
-                    if event.key == pygame.K_i:
-                        state = INVENTORY
-
-                    # ESC returns to menu instead of quitting
-                    elif event.key == pygame.K_ESCAPE:
-                        state = MENU
-
-
-            #Inventory Input
-            elif state == INVENTORY:
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_i:
-                        state = GAME
-
                 # ESC returns to menu instead of quitting
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     state = MENU
@@ -218,8 +235,6 @@ async def main():
         if state == GAME:
             keys = pygame.key.get_pressed()
             player.update(keys, world.walls)
-            
-        
             # Make the camera follow the player - Meheraj
             camera.update(player)
             # Check if player died - Wil
@@ -270,12 +285,13 @@ async def main():
             draw_game_over(win, screen_width, screen_height, gameOver_img, float_time)
             
         elif state == CREDITS:
-            draw_credits(win, credits_img)
+            draw_credits(win, screen_width, screen_height, background, float_time, menu_camera_x, menu_camera_y)
             
         pygame.display.flip()
         await asyncio.sleep(0)
 
     pygame.quit()
+
 
 asyncio.run(main())
 
