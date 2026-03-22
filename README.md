@@ -18,11 +18,11 @@ We follow Test-Driven Development principles to collect evidence of the system's
 To run the automated test suite for the camera and background modules, navigate to the src directory and use unittest discover:
 
 
-# Navigate to source directory
+#### Navigate to source directory
 
 cd src
 
-# Run all tests in the test_cases folder
+#### Run all tests in the test_cases folder
 
 python3 -m unittest discover test_cases
 
