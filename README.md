@@ -17,11 +17,11 @@ We follow Test-Driven Development principles to collect evidence of the system's
 
 ### Navigate to source directory
 
-cd src
+'cd src'
 
 ### Run all tests in the test_cases folder
 
-python3 -m unittest discover -s test_cases
+python3 -m unittest discover test_cases
 
 #### Why we test
 
