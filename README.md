@@ -42,12 +42,13 @@ To run the automated test suite for the camera and background modules, navigate 
 
 #### Navigate to source directory
 
+```bash 
 cd src
+```
 
 #### Run all tests in the test_cases folder
 
 ```bash
-
 python3 -m unittest discover test_cases
 ```
 
