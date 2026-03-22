@@ -11,27 +11,7 @@ Team Motto: "It's Magic, Don't Ask!"
 
 ---
 
-## Local Run (Desktop)
-
-### First-time setup
-Create and activate a virtual environment, then install dependencies:
-
-```bash
-python3 -m venv station_fall_venv
-source station_fall_venv/bin/activate
-pip install -r requirements.txt
-
-To run: python3 -m src.main
-
-## Web build (pygbag)
-# First time only
-chmod +x run_web.sh
-
-To launch: ./run_web.sh
-# open http://localhost:8000
-
-
-Testing (TDD Workflow)
+##Testing (TDD Workflow)
 
 We follow Test-Driven Development principles to collect evidence of the system's value Running Test CasesTo run the automated test suite for the camera and background modules, navigate to the src directory and use unittest discovery:
 
@@ -54,3 +34,22 @@ Summary of what these tests verify:
 Camera: Validates the translation of world coordinates to screen coordinates and smooth centering logic.
 
 Background: Verifies the generation of parallax star layers, including star density and movement speeds.
+
+## Local Run (Desktop)
+
+### First-time setup
+Create and activate a virtual environment, then install dependencies:
+
+```bash
+python3 -m venv station_fall_venv
+source station_fall_venv/bin/activate
+pip install -r requirements.txt
+
+To run: python3 -m src.main
+
+## Web build (pygbag)
+# First time only
+chmod +x run_web.sh
+
+To launch: ./run_web.sh
+# open http://localhost:8000
