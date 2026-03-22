@@ -5,7 +5,7 @@ import math
 
 from .player import Player
 from .enemy import Enemy
-from .render import draw_objects
+from .render import draw_objects, apply_brightness
 from .camera import Camera          # Added for camera - Meheraj
 from .background import SpaceBackground # Added for parallax background - Meheraj
 from .world import World
@@ -165,9 +165,16 @@ async def main():
     camera = Camera(screen_width, screen_height)
     background = SpaceBackground(screen_width, screen_height)
 
-    #music
+    # music
     pygame.mixer.music.load("sound/starfield.ogg")
     pygame.mixer.music.play(-1)
+    music_volume = 0.5
+    pygame.mixer.music.set_volume(music_volume)
+    VOLUME_STEP = 0.1
+
+    # brightness
+    brightness = 1.0
+    BRIGHTNESS_STEP = 0.1
 
     # Start Menu System - Loy
     state = MENU
@@ -186,6 +193,30 @@ async def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            # Global keyword controls
+            elif event.type == pygame.KEYDOWN:
+                # volume up
+                if event.key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
+                    music_volume = min(music_volume + VOLUME_STEP, 1.0)
+                    pygame.mixer.music.set_volume(music_volume)
+                    print(f"Volume increased to: {music_volume*100:.0f}%")
+
+                # volume down
+                elif event.key in (pygame.K_MINUS, pygame.K_KP_MINUS):
+                    music_volume = max(music_volume - VOLUME_STEP, 0.0)
+                    pygame.mixer.music.set_volume(music_volume)
+                    print(f"Volume decreased to: {music_volume*100:.0f}%")
+                
+                # brightness up
+                elif event.key == pygame.K_RIGHTBRACKET:
+                    brightness = min(brightness + BRIGHTNESS_STEP, 1.0)
+                    print(f"Brightness increased to: {brightness*100:.0f}%")
+
+                # "[, {" decrease volume 
+                elif event.key == pygame.K_LEFTBRACKET:
+                    brightness = max(brightness - BRIGHTNESS_STEP, 0.2)
+                    print(f"Brightness decreased to: {brightness*100:.0f}%")
+
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: 
                 mouse_screen = pygame.mouse.get_pos()
                 mouse_world = camera.screen_to_world(mouse_screen)
@@ -300,7 +331,8 @@ async def main():
             
         elif state == CREDITS:
             draw_credits(win, screen_width, screen_height, background, float_time, menu_camera_x, menu_camera_y)
-
+            
+        apply_brightness(win, brightness)
         pygame.display.flip()
         await asyncio.sleep(0)
 
