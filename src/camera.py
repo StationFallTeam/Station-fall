@@ -25,7 +25,3 @@ class Camera:
 
     def screen_to_world(self, screen_pos):
         return (screen_pos[0] - self.camera.x, screen_pos[1] - self.camera.y)
-    
-    # Smooth camera movement (Lerp) - 0.2 makes it 'lag' slightly for a professional feel
-        self.camera.x += (x - self.camera.x) * 0.2
-        self.camera.y += (y - self.camera.y) * 0.2
