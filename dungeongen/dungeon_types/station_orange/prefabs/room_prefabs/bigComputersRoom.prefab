@@ -1,0 +1,33 @@
+[COLLISION]
+fcbl, fcbr, ., ., ., ., ., fcbl, fcbr
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+fctl, fctr, ., ., ., ., ., fctl, fctr
+fcbl, fcbr, ., ., ., ., ., fcbl, fcbr
+., ., ., ., ., ., ., ., .
+
+
+[OBSTACLE]
+fcbl, fcbr, ., ., ., ., ., fcbl, fcbr
+., ., ., ., ., ., ., ., lfc
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+fctl, fctr, ., ., ., ., ., fctl, fctr
+fcbl, fcbr, ., ., ., ., ., fcbl, fcbr
+rfc, ., ., ., ., ., ., ., lfc
+
+[BASE]
+flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2
+flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2
+flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2
+flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2
+flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2
+flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2
+flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2
+flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2
+flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2, flr2

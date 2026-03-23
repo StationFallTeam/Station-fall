@@ -6,6 +6,8 @@ DUNGEONGEN_DIR = Path(__file__).resolve().parents[1]
 DUNGEON_TYPES_DIR = DUNGEONGEN_DIR / "dungeon_types"
 sys.path.insert(0, str(DUNGEONGEN_DIR))
 
+TEST_DUNGEON_TYPES = ("station_orange", "station_pink")
+
 from config import (
     ALLOW_HALLWAY_THROUGH_ROOMS,
     BASE_ROOM_SIZE,
@@ -35,13 +37,21 @@ from loading import (
 
 def _setup_collision_test():
     """Load assets and build a real collision map for collision tests."""
+    dungeon_type = None
+    for candidate in TEST_DUNGEON_TYPES:
+        if (DUNGEON_TYPES_DIR / candidate).is_dir():
+            dungeon_type = candidate
+            break
+
+    assert dungeon_type is not None, "No compatible dungeon type found for collision tests"
+
     base_path = str(DUNGEON_TYPES_DIR)
-    prefabs = load_prefabs("station1", base_path=base_path)
-    wall_prefabs = load_wall_prefabs("station1", base_path=base_path)
-    main_room_prefabs = load_main_room_prefabs("station1", base_path=base_path)
-    main_room_wall_prefabs = load_main_room_wall_prefabs("station1", base_path=base_path)
-    hallway_prefabs = load_all_hallway_prefabs("station1", base_path=base_path)
-    hallway_wall_prefabs = load_all_hallway_wall_prefabs("station1", base_path=base_path)
+    prefabs = load_prefabs(dungeon_type, base_path=base_path)
+    wall_prefabs = load_wall_prefabs(dungeon_type, base_path=base_path)
+    main_room_prefabs = load_main_room_prefabs(dungeon_type, base_path=base_path)
+    main_room_wall_prefabs = load_main_room_wall_prefabs(dungeon_type, base_path=base_path)
+    hallway_prefabs = load_all_hallway_prefabs(dungeon_type, base_path=base_path)
+    hallway_wall_prefabs = load_all_hallway_wall_prefabs(dungeon_type, base_path=base_path)
 
     tiles, rooms, hallways, collision_map = generate_layout(
         base_room_size=BASE_ROOM_SIZE,

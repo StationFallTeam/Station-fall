@@ -1,0 +1,32 @@
+[COLLISION]
+btrus, ppmid, bgag, ., ., ., ., ppmid, btrus
+.,     dppfr, ., ., ., ., ., dppfr, .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+pptop, pptop, ., ., ., ., ., pptop, pptop
+ppmid, ppmid, ., ., ., ., ., ppmid, ppmid
+sppfr, sppfr, ., ., ., ., ., sppfr, sppfr
+
+[OBSTACLE]
+btrus, ppmid, bgag, ., ., ., ., ppmid, btrus
+.,     dppfr, ., ., ., ., ., dppfr, .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+pptop, pptop, ., ., ., ., ., pptop, pptop
+ppmid, ppmid, ., ., ., ., ., ppmid, ppmid
+sppfr, sppfr, ., ., ., ., ., sppfr, sppfr
+
+[BASE]
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1

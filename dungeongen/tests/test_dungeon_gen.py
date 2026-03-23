@@ -7,6 +7,8 @@ DUNGEONGEN_DIR = Path(__file__).resolve().parents[1]
 DUNGEON_TYPES_DIR = DUNGEONGEN_DIR / "dungeon_types"
 sys.path.insert(0, str(DUNGEONGEN_DIR))
 
+TEST_DUNGEON_TYPES = ("station_orange", "station_pink")
+
 from classes import Rect, Room
 from config import (
     ALLOW_HALLWAY_THROUGH_ROOMS,
@@ -91,7 +93,21 @@ def _serialize_layout(tiles, rooms, hallways):
     )
 
 
-def _load_station_assets(dungeon_type: str = "station1"):
+def _resolve_test_dungeon_type(preferred: str | None = None):
+    candidates = []
+    if preferred:
+        candidates.append(preferred)
+    candidates.extend(TEST_DUNGEON_TYPES)
+
+    for dungeon_type in candidates:
+        if (DUNGEON_TYPES_DIR / dungeon_type).is_dir():
+            return dungeon_type
+
+    raise AssertionError("No compatible dungeon type found for test assets")
+
+
+def _load_station_assets(dungeon_type: str | None = None):
+    dungeon_type = _resolve_test_dungeon_type(dungeon_type)
     base_path = str(DUNGEON_TYPES_DIR)
     hallway_prefabs = load_all_hallway_prefabs(dungeon_type, base_path=base_path)
     hallway_wall_prefabs = load_all_hallway_wall_prefabs(dungeon_type, base_path=base_path)

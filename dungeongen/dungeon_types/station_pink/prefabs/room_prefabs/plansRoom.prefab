@@ -1,0 +1,32 @@
+[COLLISION]
+trsh, bcab, bcab, ., ., ., bcab, plntl, plntr
+., ., ., ., ., ., ., plnbl, plnbr
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+plntl, plntr, ., ., ., ., ., ., .
+plnbl, plnbr, ., ., ., ., ., ., .
+., ., ., ., ., ., lcab, rcab, trsh
+
+[OBSTACLE]
+trsh, bcab, bcab, ., ., ., bcab, plntl, plntr
+., ., ., ., ., ., ., plnbl, plnbr
+., ., ., ., ., ., ., chr, chr
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+plntl, plntr, ., ., ., ., ., ., .
+plnbl, plnbr, ., ., ., ., ., ., .
+chr, chr, ., ., ., ., lcab, rcab, trsh
+
+[BASE]
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
