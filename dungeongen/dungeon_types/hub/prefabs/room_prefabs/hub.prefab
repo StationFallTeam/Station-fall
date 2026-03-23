@@ -3,11 +3,11 @@
 ., ., ., ., ., ., ., ., .
 bbl, bbr, ., ., ., ., ., lcab, rcab
 ., ., ., ., ., ., ., ., .
-., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., trsh
 ., ., ., ., ., ., ., ., lct
-., ., ., ., ., ., ., ., tblmg
-tplt, ., ., ., ., ., ., ., .
-bplt, ., ., ., ., ., ., ., plt
+sfbtl, sfbtr, ., ., ., ., ., ., tblmg
+sfbbl, sfbbr, ., ., ., ., ., ., tplt
+., ., ., ., ., ., ., plt, bplt
 
 [OBSTACLE]
 ., ., ., ., scmpb, ., ., ., .
@@ -16,9 +16,9 @@ bbl, bbr, ., ., ., ., ., lcab, rcab
 ., ., ., ., ., ., ., ., .
 ., ., ., sfrtl, sfrtm, sfrtr, ., ., trsh
 ., ., ., sfrml, sfrm, sfrmr, ., sfrfc, lct
-., ., ., sfrbl, sfrbm, sfrbr, ., ., tblmg
-tplt, ., ., ., ., ., ., ., .
-bplt, ., ., ., ., ., ., ., plt
+sfbtl, sfbtr, ., sfrbl, sfrbm, sfrbr, ., ., tblmg
+sfbbl, sfbbr, ., ., ., ., ., ., tplt
+brghl, brghr, ., ., ., ., ., plt, bplt
 
 [BASE]
 ., ., ., flr1, flr1, flr1, ., ., .
