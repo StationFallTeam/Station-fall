@@ -13,7 +13,7 @@ sfbbl, sfbbr, ., ., ., ., ., ., tplt
 ., ., ., ., scmpb, ., ., ., .
 ., ., ., brghl, brghm, brghr, ., ., .
 bbl, bbr, ., ., ., ., ., lcab, rcab
-., ., ., ., ., ., ., ., .
+brghl, brghr, ., ., ., ., ., ., .
 ., ., ., sfrtl, sfrtm, sfrtr, ., ., trsh
 ., ., ., sfrml, sfrm, sfrmr, ., sfrfc, lct
 sfbtl, sfbtr, ., sfrbl, sfrbm, sfrbr, ., ., tblmg
