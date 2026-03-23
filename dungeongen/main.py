@@ -161,6 +161,11 @@ def run_pygame():
 
         if show_debug:
             for room in rooms:
+                for dx, dy in room.doors:
+                    dot_x = dx * tile_size + tile_size // 2 - cam_x
+                    dot_y = dy * tile_size + tile_size // 2 - cam_y
+                    pygame.draw.circle(screen, COLOR_DOOR_DOT, (dot_x, dot_y), max(2, tile_size // 5))
+
                 if room.is_base_room and room is not far_room:
                     continue
                 label_id = 0 if room is far_room else room.prefab_id
@@ -169,11 +174,6 @@ def run_pygame():
                 label = font.render(str(label_id), True, COLOR_TEXT)
                 rect = label.get_rect(center=(px, py))
                 screen.blit(label, rect)
-
-                for dx, dy in room.doors:
-                    dot_x = dx * tile_size + tile_size // 2 - cam_x
-                    dot_y = dy * tile_size + tile_size // 2 - cam_y
-                    pygame.draw.circle(screen, COLOR_DOOR_DOT, (dot_x, dot_y), max(2, tile_size // 5))
 
         room_count = sum(1 for room in rooms if not room.is_base_room)
         hallway_count = len(hallways)

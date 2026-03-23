@@ -385,6 +385,51 @@ def test_generate_layout_with_assets_builds_collision_map():
     assert all(hallway.direction in {"upways", "sideways"} for hallway in hallways)
 
 
+def test_generate_layout_penetration_keeps_doors_on_room_edges():
+    _, rooms, _, _ = generate_layout(
+        **_default_layout_kwargs(seed=85, allow_hallway_through_rooms=True)
+    )
+
+    for room in rooms:
+        for door_x, door_y in room.doors:
+            on_room_bounds = room.rect.x <= door_x <= room.rect.right and room.rect.y <= door_y <= room.rect.bottom
+            on_edge = (
+                door_x == room.rect.x
+                or door_x == room.rect.right
+                or door_y == room.rect.y
+                or door_y == room.rect.bottom
+            )
+            assert on_room_bounds and on_edge
+
+
+def test_generate_layout_penetration_detects_hallway_room_contacts_as_doors():
+    _, rooms, hallways, _ = generate_layout(
+        **_default_layout_kwargs(seed=1774301974314605753, allow_hallway_through_rooms=True)
+    )
+
+    for hallway in hallways:
+        for room in rooms:
+            if hallway.direction == "sideways":
+                overlap_start = max(hallway.rect.y, room.rect.y)
+                overlap_end = min(hallway.rect.bottom, room.rect.bottom)
+                if overlap_start <= overlap_end:
+                    door_y = (overlap_start + overlap_end) // 2
+                    if hallway.rect.right == room.rect.x - 1:
+                        assert (room.rect.x, door_y) in room.doors
+                    if hallway.rect.x == room.rect.right + 1:
+                        assert (room.rect.right, door_y) in room.doors
+
+            if hallway.direction == "upways":
+                overlap_start = max(hallway.rect.x, room.rect.x)
+                overlap_end = min(hallway.rect.right, room.rect.right)
+                if overlap_start <= overlap_end:
+                    door_x = (overlap_start + overlap_end) // 2
+                    if hallway.rect.bottom == room.rect.y - 1:
+                        assert (door_x, room.rect.y) in room.doors
+                    if hallway.rect.y == room.rect.bottom + 1:
+                        assert (door_x, room.rect.bottom) in room.doors
+
+
 def main():
     print("Running tests...")
     print()

@@ -139,6 +139,8 @@ def _prefab_open_sides(prefab):
 def _required_room_sides(room):
     needed = set()
     for dx, dy in room.doors:
+        if not _is_point_on_room_edge(room.rect, (dx, dy)):
+            continue
         if dy == room.rect.y:
             needed.add("top")
         if dy == room.rect.bottom:
@@ -148,6 +150,14 @@ def _required_room_sides(room):
         if dx == room.rect.right:
             needed.add("right")
     return needed
+
+
+def _is_point_on_room_edge(room_rect: Rect, point: tuple[int, int]):
+    x, y = point
+    in_bounds = room_rect.x <= x <= room_rect.right and room_rect.y <= y <= room_rect.bottom
+    if not in_bounds:
+        return False
+    return x == room_rect.x or x == room_rect.right or y == room_rect.y or y == room_rect.bottom
 
 
 def _choose_room_prefab_for_doors(room, room_prefabs):
@@ -166,6 +176,54 @@ def _choose_room_prefab_for_doors(room, room_prefabs):
 
     # Fallback so generation can continue even if no perfect prefab exists.
     return random.randint(0, len(room_prefabs) - 1)
+
+
+def _range_overlap(a0: int, a1: int, b0: int, b1: int):
+    start = max(a0, b0)
+    end = min(a1, b1)
+    if start > end:
+        return None
+    return (start, end)
+
+
+def _add_missing_room_edge_doors_from_hallways(rooms: list[Room], hallways: list[Hallway]):
+    # Ensure room doors stay in sync with carved hallway-room contacts, including penetration mode.
+    for hallway in hallways:
+        hall_rect = hallway.rect
+        for room in rooms:
+            room_rect = room.rect
+
+            if hallway.direction == "sideways":
+                overlap = _range_overlap(hall_rect.y, hall_rect.bottom, room_rect.y, room_rect.bottom)
+                if overlap is None:
+                    continue
+                overlap_y0, overlap_y1 = overlap
+                door_y = (overlap_y0 + overlap_y1) // 2
+
+                if hall_rect.right == room_rect.x - 1:
+                    door = (room_rect.x, door_y)
+                    if _is_point_on_room_edge(room_rect, door) and door not in room.doors:
+                        room.doors.append(door)
+                if hall_rect.x == room_rect.right + 1:
+                    door = (room_rect.right, door_y)
+                    if _is_point_on_room_edge(room_rect, door) and door not in room.doors:
+                        room.doors.append(door)
+
+            if hallway.direction == "upways":
+                overlap = _range_overlap(hall_rect.x, hall_rect.right, room_rect.x, room_rect.right)
+                if overlap is None:
+                    continue
+                overlap_x0, overlap_x1 = overlap
+                door_x = (overlap_x0 + overlap_x1) // 2
+
+                if hall_rect.bottom == room_rect.y - 1:
+                    door = (door_x, room_rect.y)
+                    if _is_point_on_room_edge(room_rect, door) and door not in room.doors:
+                        room.doors.append(door)
+                if hall_rect.y == room_rect.bottom + 1:
+                    door = (door_x, room_rect.bottom)
+                    if _is_point_on_room_edge(room_rect, door) and door not in room.doors:
+                        room.doors.append(door)
 
 
 def build_collision_map(
@@ -396,6 +454,8 @@ def generate_layout(
         return "left"
 
     def add_door(room: Room, door: tuple[int, int]):
+        if not _is_point_on_room_edge(room.rect, door):
+            return
         if door not in room.doors:
             room.doors.append(door)
 
@@ -552,6 +612,8 @@ def generate_layout(
                         f"A=({room_a.rect.x},{room_a.rect.y},{room_a.rect.w},{room_a.rect.h})",
                         f"B=({room_b.rect.x},{room_b.rect.y},{room_b.rect.w},{room_b.rect.h})",
                     )
+
+    _add_missing_room_edge_doors_from_hallways(rooms, hallways)
 
     # Finalize room prefab IDs based on actual attached hallway sides, then walls.
     for room in rooms:
