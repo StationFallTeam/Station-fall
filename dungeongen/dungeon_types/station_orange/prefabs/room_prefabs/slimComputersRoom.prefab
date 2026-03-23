@@ -1,25 +1,25 @@
 [COLLISION]
-scmpb, rghl, rghr, ., ., ., rghl, rghr, scmpb
-., plt, ., ., ., ., ., plt, .
+scmpb, plt, ., ., ., ., ., plt, scmpb
 ., ., ., ., ., ., ., ., .
 ., ., ., ., ., ., ., ., .
 ., ., ., ., ., ., ., ., .
 ., ., ., ., ., ., ., ., .
 ., ., ., ., ., ., ., ., .
 scmpt, ., ., ., ., ., ., ., scmpt
-scmpb, rghl, rghr, ., ., ., rghl, rghr, scmpb
+scmpb, plt, ., ., ., ., ., plt, scmpb
+., ., ., ., ., ., ., ., .
 
 
 [OBSTACLE]
-scmpb, rghl, rghr, ., ., ., rghl, rghr, scmpb
-., plt, ., ., ., ., ., plt, .
-., ., ., ., ., ., ., ., .
+scmpb, plt, ., ., ., ., ., plt, scmpb
+rghl, rghr, ., ., ., ., ., rghl, rghr
 ., ., ., ., ., ., ., ., .
 ., ., ., ., ., ., ., ., .
 ., ., ., ., ., ., ., ., .
 ., ., ., ., ., ., ., ., .
 scmpt, ., ., ., ., ., ., ., scmpt
-scmpb, rghl, rghr, ., ., ., rghl, rghr, scmpb
+scmpb, plt, ., ., ., ., ., plt, scmpb
+rghl, rghr, ., ., ., ., ., rghl, rghr
 
 [BASE]
 flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1

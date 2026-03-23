@@ -93,8 +93,7 @@ def run_pygame():
                     if available_presets:
                         preset_index = (preset_index + 1) % len(available_presets)
                         current_preset = available_presets[preset_index]
-                        dungeon.generateDungeonOfPreset(current_preset)
-                        current_dungeon_type = dungeon.dungeon_type or current_dungeon_type
+                        dungeon.generateDungeonSpecific(current_dungeon_type, current_preset)
                         active_generator = dungeon
                         active_mode = "dungeon"
                         cam_x, cam_y = dungeon.cam_x, dungeon.cam_y
@@ -102,8 +101,7 @@ def run_pygame():
                     if available_dungeon_types:
                         dungeon_type_index = (dungeon_type_index + 1) % len(available_dungeon_types)
                         current_dungeon_type = available_dungeon_types[dungeon_type_index]
-                        dungeon.generateDungeonOfType(current_dungeon_type)
-                        current_preset = dungeon.preset_name or current_preset
+                        dungeon.generateDungeonSpecific(current_dungeon_type, current_preset)
                         print_loaded_assets()
                         active_generator = dungeon
                         active_mode = "dungeon"
