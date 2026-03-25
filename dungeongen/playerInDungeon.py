@@ -1,33 +1,20 @@
 import asyncio
-import os
-import sys
-from pathlib import Path
 
 import pygame
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+from src.background import SpaceBackground
+from src.camera import Camera
+from src.player import Player
+from src.ui import draw_health_bar
 
-if __package__ in (None, ""):
-	if str(PROJECT_ROOT) not in sys.path:
-		sys.path.insert(0, str(PROJECT_ROOT))
-	from src.background import SpaceBackground
-	from src.camera import Camera
-	from src.player import Player
-	from src.ui import draw_health_bar
-else:
-	from .background import SpaceBackground
-	from .camera import Camera
-	from .player import Player
-	from .ui import draw_health_bar
-
-
-DUNGEONGEN_DIR = Path(__file__).resolve().parents[1] / "dungeongen"
-DUNGEON_TYPES_DIR = DUNGEONGEN_DIR / "dungeon_types"
-DUNGEON_PRESETS_DIR = DUNGEONGEN_DIR / "dungeon_gen_presets"
-if str(DUNGEONGEN_DIR) not in sys.path:
-	sys.path.insert(0, str(DUNGEONGEN_DIR))
-
-from classes import DungeonGen, HubGen
+from dungeongen.classes import DungeonGen, HubGen
+from dungeongen.loading import (
+    get_available_dungeon_types, 
+    get_available_presets,
+    create_hub_generator,
+    create_dungeon_generator,
+    get_first_available_dungeon_type
+)
 
 
 def _hub_spawn(hub: HubGen, tile_size: int):
@@ -48,7 +35,7 @@ TILE_SIZE = 40
 
 
 def _make_hub(hub_type: str):
-	hub = HubGen(hub_path=str(DUNGEON_TYPES_DIR / hub_type))
+	hub = create_hub_generator(hub_type)
 	hub.loadAllAssets()
 	hub.generateHubRoom()
 	walls = hub.getCollisionRects(tile_size=TILE_SIZE)
@@ -56,17 +43,13 @@ def _make_hub(hub_type: str):
 
 
 def _make_dungeon():
-	dungeon = DungeonGen(
-		base_path=str(DUNGEON_TYPES_DIR),
-		preset_directory=str(DUNGEON_PRESETS_DIR),
-	)
+	dungeon = create_dungeon_generator()
 	dungeon.generateDungeonRandom()
 	walls = dungeon.getCollisionRects(tile_size=TILE_SIZE)
 	return dungeon, walls
 
 
 async def main():
-	os.chdir(str(PROJECT_ROOT))
 	pygame.init()
 
 	screen_width = 1280
@@ -82,7 +65,7 @@ async def main():
 	camera = Camera(screen_width, screen_height)
 
 	# --- start in hub ---
-	hub_type = sorted(os.listdir(str(DUNGEON_TYPES_DIR)))[0]
+	hub_type = "hub"  # Explicitly use the hub directory
 	state = "hub"
 	active_gen, walls = _make_hub(hub_type)
 	spawn = _hub_spawn(active_gen, tile_size)

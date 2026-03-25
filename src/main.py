@@ -4,14 +4,14 @@ import asyncio
 import math
 import sys
 
-from .player import Player
-from .enemy import Enemy
-from .render import draw_objects, apply_brightness
-from .camera import Camera          # Added for camera - Meheraj
-from .background import SpaceBackground # Added for parallax background - Meheraj
-from .world import World
-from .coin import Coin
-from .inventory_ui import InventoryUI
+from src.player import Player
+from src.enemy import Enemy
+from src.render import draw_objects, apply_brightness
+from src.camera import Camera          # Added for camera - Meheraj
+from src.background import SpaceBackground # Added for parallax background - Meheraj
+from src.world import World
+from src.coin import Coin
+from src.inventory_ui import InventoryUI
 
 # NOTE:
 # When debugging pygbag web crashes, temporarily wrap main() in a try/except

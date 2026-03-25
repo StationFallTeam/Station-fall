@@ -206,7 +206,7 @@ class DungeonGen:
         self.generated = False
 
     def _default_params(self):
-        from config import (
+        from dungeongen.config import (
             ALLOW_HALLWAY_THROUGH_ROOMS,
             BRANCH_FROM_SIDE_DECAY,
             BRANCH_FROM_SIDE_START_CHANCE,
@@ -233,7 +233,7 @@ class DungeonGen:
         return params
 
     def _default_tile_size(self):
-        from config import TILE_SIZE_START
+        from dungeongen.config import TILE_SIZE_START
 
         return TILE_SIZE_START
 
@@ -274,8 +274,8 @@ class DungeonGen:
         return True
 
     def _generate_current_selection(self, seed=None):
-        from config import BASE_ROOM_SIZE, HALL_LENGTH, HALL_THICKNESS, ROOM_SIZE, SCREEN_H, SCREEN_W
-        from generation import generate_layout
+        from dungeongen.config import BASE_ROOM_SIZE, HALL_LENGTH, HALL_THICKNESS, ROOM_SIZE, SCREEN_H, SCREEN_W
+        from dungeongen.generation import generate_layout
 
         if self.dungeon_type is None:
             print("No dungeon type selected.")
@@ -315,7 +315,7 @@ class DungeonGen:
         self.centerCamera(SCREEN_W, SCREEN_H)
 
     def loadAllAssets(self):
-        from loading import (
+        from dungeongen.loading import (
             find_dungeon_types,
             find_presets,
             load_all_hallway_prefabs,
@@ -350,7 +350,7 @@ class DungeonGen:
     def _load_preset_values(self, preset_name):
         if preset_name is None:
             return None
-        from loading import load_preset
+        from dungeongen.loading import load_preset
 
         return load_preset(preset_name, self.preset_directory)
 
@@ -464,7 +464,7 @@ class DungeonGen:
         self.cam_y = base_room.center[1] * active_tile_size - screen_h // 2
 
     def draw(self, surface=None, tile_size=None, cam_x=None, cam_y=None, show_sprites=True, show_collision_map=False, show_grid=False):
-        from rendering import draw_grid
+        from dungeongen.rendering import draw_grid
 
         if not self.generated:
             print("No dungeon has been generated yet.")
@@ -593,7 +593,7 @@ class HubGen:
         return None
 
     def _load_sprites(self, root_path):
-        from loading import load_sprite
+        from dungeongen.loading import load_sprite
 
         sprites = {"obstacles": {}, "bases": {}, "walls": {}}
         for layer in sprites.keys():
@@ -610,7 +610,7 @@ class HubGen:
         return sprites
 
     def loadHubAssets(self):
-        from loading import load_prefab
+        from dungeongen.loading import load_prefab
 
         resolved = self._resolve_hub_path()
         if resolved is None:
@@ -722,7 +722,7 @@ class HubGen:
         self.collision_map = self._build_collision_map(room, room_prefab)
 
         self.generated = True
-        from config import SCREEN_W, SCREEN_H
+        from dungeongen.config import SCREEN_W, SCREEN_H
         self.cam_x = room.center[0] * self.tile_size - SCREEN_W // 2
         self.cam_y = room.center[1] * self.tile_size - SCREEN_H // 2
 
@@ -730,7 +730,7 @@ class HubGen:
         self.formRoom(room_prefab_index, wall_prefab_index)
 
     def draw(self, surface=None, tile_size=None, cam_x=None, cam_y=None, show_sprites=True, show_collision_map=False, show_grid=False):
-        from rendering import draw_grid
+        from dungeongen.rendering import draw_grid
 
         if not self.generated:
             print("Hub room has not been formed yet.")

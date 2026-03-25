@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock
 import pygame
-from camera import Camera
+from src.camera import Camera
 
 class TestCamera(unittest.TestCase):
     # Set up a test camera and a mock target for testing

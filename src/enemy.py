@@ -1,5 +1,5 @@
 import pygame
-from .damageable import Damageable
+from src.damageable import Damageable
 
 class Enemy:
     def __init__(self, x, y):

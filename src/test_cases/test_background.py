@@ -1,6 +1,6 @@
 import unittest
 import pygame
-from background import SpaceBackground
+from src.background import SpaceBackground
 
 class TestBackground(unittest.TestCase):
 
