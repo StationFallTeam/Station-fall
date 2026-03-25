@@ -2,6 +2,7 @@
 import pygame
 import asyncio
 import math
+import sys
 
 from .player import Player
 from .enemy import Enemy
@@ -133,7 +134,8 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
 
 async def main(): 
     pygame.init()
-    pygame.mixer.init()
+    if sys.platform != "emscripten":
+        pygame.mixer.init()
 
     screen_width = 1000
     screen_height = 1000
@@ -167,10 +169,11 @@ async def main():
 
     # music
     pygame.mixer.music.load("sound/starfield.ogg")
-    pygame.mixer.music.play(-1)
+    #pygame.mixer.music.play(-1)
     music_volume = 0.5
     pygame.mixer.music.set_volume(music_volume)
     VOLUME_STEP = 0.1
+    music_started = False
 
     # brightness
     brightness = 1.0
@@ -183,79 +186,51 @@ async def main():
     while running:
         clock.tick(60)
         float_time += 0.05
-        menu_camera_x -= 4  # speed of star movement
-
-        # Draw Menu - Loy
-        if state == MENU:
-            background.update_and_draw(win, (menu_camera_x, menu_camera_y))
-            start_rect, quit_rect, credits_rect = draw_menu(win, screen_width, screen_height, truck_img, float_time)
+        menu_camera_x -= 4
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            # Global keyword controls
+
             elif event.type == pygame.KEYDOWN:
-                # volume up
+                # Global controls
                 if event.key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
                     music_volume = min(music_volume + VOLUME_STEP, 1.0)
                     pygame.mixer.music.set_volume(music_volume)
-                    print(f"Volume increased to: {music_volume*100:.0f}%")
+                    print(f"Volume increased to: {music_volume*100:.0f}%", flush=True)
 
-                # volume down
                 elif event.key in (pygame.K_MINUS, pygame.K_KP_MINUS):
                     music_volume = max(music_volume - VOLUME_STEP, 0.0)
                     pygame.mixer.music.set_volume(music_volume)
-                    print(f"Volume decreased to: {music_volume*100:.0f}%")
-                
-                # brightness up
-                elif event.key == pygame.K_RIGHTBRACKET:
+                    print(f"Volume decreased to: {music_volume*100:.0f}%", flush=True)
+
+                # Use 9 / 0 for web reliability
+                elif event.key == pygame.K_0:
                     brightness = min(brightness + BRIGHTNESS_STEP, 1.0)
-                    print(f"Brightness increased to: {brightness*100:.0f}%")
+                    print(f"Brightness increased to: {brightness*100:.0f}%", flush=True)
 
-                # "[, {" decrease volume 
-                elif event.key == pygame.K_LEFTBRACKET:
+                elif event.key == pygame.K_9:
                     brightness = max(brightness - BRIGHTNESS_STEP, 0.2)
-                    print(f"Brightness decreased to: {brightness*100:.0f}%")
+                    print(f"Brightness decreased to: {brightness*100:.0f}%", flush=True)
 
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: 
-                mouse_screen = pygame.mouse.get_pos()
-                mouse_world = camera.screen_to_world(mouse_screen)
-                bullet = player.shoot(mouse_world)
-                if bullet: 
-                    bullets.append(bullet)
-
-            # Menu Input - Loy
-            if state == MENU:
-                if event.type == pygame.KEYDOWN:
+                # State-specific keyboard input
+                elif state == MENU:
                     if event.key == pygame.K_RETURN:
                         state = GAME
+                        if not music_started:
+                            pygame.mixer.music.play(-1)
+                            music_started = True
                     elif event.key == pygame.K_ESCAPE:
                         running = False
 
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    mx, my = pygame.mouse.get_pos()
-                    if start_rect.collidepoint(mx, my):
-                        state = GAME
-                    elif credits_rect.collidepoint(mx, my):
-                        state = CREDITS
-                    elif quit_rect.collidepoint(mx, my):
-                        running = False
-
-            # Game Input - Loy
-            elif state == GAME:
-                if event.type == pygame.KEYDOWN:
+                elif state == GAME:
                     if event.key == pygame.K_i:
                         state = INVENTORY
                     elif event.key == pygame.K_ESCAPE:
                         state = MENU
-                # ESC returns to menu instead of quitting
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    state = MENU
-            # Game over inputs - Wil
-            elif state == GAME_OVER:
-                if event.type == pygame.KEYDOWN:
+
+                elif state == GAME_OVER:
                     if event.key == pygame.K_RETURN:
-                        # Reset game
                         player.health = 100
                         player.rect.topleft = (100, 100)
                         bullets.clear()
@@ -264,74 +239,105 @@ async def main():
                         state = GAME
                     elif event.key == pygame.K_ESCAPE:
                         running = False
-            elif state == CREDITS:
-                if event.type == pygame.KEYDOWN:
+
+                elif state == CREDITS:
                     if event.key == pygame.K_ESCAPE:
                         state = MENU
 
-            elif state == INVENTORY:
-                if event.type == pygame.KEYDOWN:
+                elif state == INVENTORY:
                     if event.key == pygame.K_i:
                         state = GAME
                     elif event.key == pygame.K_ESCAPE:
                         state = MENU
 
-        # Game Update & Draw (only when playing)
-        if state == GAME:
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if state == MENU:
+                    if start_rect.collidepoint(event.pos):
+                        state = GAME
+                        if not music_started:
+                            pygame.mixer.music.play(-1)
+                            music_started = True
+                    elif credits_rect.collidepoint(event.pos):
+                        state = CREDITS
+                        if not music_started:
+                            pygame.mixer.music.play(-1)
+                            music_started = True
+                    elif quit_rect.collidepoint(event.pos):
+                        running = False
+
+                elif state == GAME:
+                    mouse_world = camera.screen_to_world(event.pos)
+                    bullet = player.shoot(mouse_world)
+                    if bullet:
+                        bullets.append(bullet)
+
+        # ---------- DRAW / UPDATE PHASE ----------
+        win.fill((0, 0, 0))
+
+        if state == MENU:
+            background.update_and_draw(win, (menu_camera_x, menu_camera_y))
+            start_rect, quit_rect, credits_rect = draw_menu(
+                win, screen_width, screen_height, truck_img, float_time
+            )
+
+        elif state == GAME:
             keys = pygame.key.get_pressed()
             player.update(keys, world.walls)
-            # Make the camera follow the player - Meheraj
             camera.update(player)
-            # Check if player died - Wil
+
             if player.health <= 0 or keys[pygame.K_k]:
                 state = GAME_OVER
-                continue  # skip the rest of the update loop
-            player.rect = player.get_rect()
-            for enemy in enemies:
-                enemy.update(player.rect)
-                if enemy.rect.colliderect(player.rect):
-                    player.take_damage(10)
-            for bullet in bullets[:]:
-                bullet.update()
+            else:
+                player.rect = player.get_rect()
 
-                bullet_rect = pygame.Rect(
-                    int(bullet.pos.x - bullet.radius), 
-                    int(bullet.pos.y - bullet.radius), 
-                    bullet.radius * 2, 
-                    bullet.radius * 2
-                )
-                for enemy in enemies[:]:
-                    if bullet_rect.colliderect(enemy.rect):
-                        enemy.take_damage(10)
-                        if bullet in bullets:
-                            bullets.remove(bullet)
-                        if enemy.is_dead:
-                            coins.append(Coin(enemy.rect.centerx, enemy.rect.centery, value=3))
-                            enemies.remove(enemy)
-                        break
+                for enemy in enemies:
+                    enemy.update(player.rect)
+                    if enemy.rect.colliderect(player.rect):
+                        player.take_damage(10)
 
-            for coin in coins[:]:
-                coin.update()
-                if player.rect.colliderect(coin.rect):
-                    player.money += coin.value
-                    coins.remove(coin)
-            
-            # Removed win.fill because background.update_and_draw handles it - Meheraj
-            draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins)  # Updated to pass camera and background - Meheraj
+                for bullet in bullets[:]:
+                    bullet.update()
 
+                    bullet_rect = pygame.Rect(
+                        int(bullet.pos.x - bullet.radius),
+                        int(bullet.pos.y - bullet.radius),
+                        bullet.radius * 2,
+                        bullet.radius * 2
+                    )
 
-        if state == INVENTORY:
+                    for enemy in enemies[:]:
+                        if bullet_rect.colliderect(enemy.rect):
+                            enemy.take_damage(10)
+
+                            if bullet in bullets:
+                                bullets.remove(bullet)
+
+                            if enemy.is_dead:
+                                coins.append(Coin(enemy.rect.centerx, enemy.rect.centery, value=3))
+                                enemies.remove(enemy)
+
+                            break
+
+                for coin in coins[:]:
+                    coin.update()
+                    if player.rect.colliderect(coin.rect):
+                        player.money += coin.value
+                        coins.remove(coin)
+
+                draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins)
+
+        elif state == INVENTORY:
             background.update_and_draw(win, (camera.camera.x, camera.camera.y))
             draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins)
             inventory_ui.draw(win, player.money)
-        
+
         elif state == GAME_OVER:
             background.update_and_draw(win, (menu_camera_x, menu_camera_y))
             draw_game_over(win, screen_width, screen_height, gameOver_img, float_time)
-            
+
         elif state == CREDITS:
             draw_credits(win, screen_width, screen_height, background, float_time, menu_camera_x, menu_camera_y)
-            
+
         apply_brightness(win, brightness)
         pygame.display.flip()
         await asyncio.sleep(0)
