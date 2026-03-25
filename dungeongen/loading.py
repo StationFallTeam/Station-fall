@@ -1,25 +1,39 @@
-"""Loading functions for prefabs, sprites, and presets."""
-
 import os
 import pygame
 from classes import Prefab
 from config import BASE_ROOM_SIZE, ROOM_SIZE, HALL_LENGTH, HALL_THICKNESS, WALL_HEIGHT
 
 
-def load_prefab(filepath: str) -> Prefab | None:
-    """Load a prefab from a .prefab file.
-    
-    File format:
-    [COLLISION]
-    lines of characters
-    [OBSTACLE]
-    lines of characters
-    [BASE] for room prefabs or [WALL] for wall prefabs
-    lines of characters
-    
-    Rule: Wall prefabs MUST use [WALL], room prefabs MUST use [BASE].
-    """
+def _normalize_tile_token(token):
+    token = token.strip()
+    if token == "" or token == ".":
+        return "."
+    lower = token.lower()
+    if lower.endswith(".png") or lower.endswith(".jpg"):
+        token = token.rsplit('.', 1)[0]
+    return token
+
+
+def _parse_prefab_row(line):
+    return [_normalize_tile_token(part) for part in line.split(",")]
+
+
+def _rectangularize(rows):
+    if not rows:
+        return rows
+    width = max(len(row) for row in rows)
+    out = []
+    for row in rows:
+        if len(row) < width:
+            out.append(row + ["."] * (width - len(row)))
+        else:
+            out.append(row)
+    return out
+
+
+def load_prefab(filepath: str):
     try:
+        prefab_name = os.path.splitext(os.path.basename(filepath))[0]
         with open(filepath, 'r') as f:
             content = f.read().strip()
         
@@ -35,7 +49,7 @@ def load_prefab(filepath: str) -> Prefab | None:
                 current_section = line[1:-1]
                 current_data = []
             elif line and current_section:
-                current_data.append(line)
+                current_data.append(_parse_prefab_row(line))
         
         if current_section:
             sections[current_section] = current_data
@@ -60,6 +74,10 @@ def load_prefab(filepath: str) -> Prefab | None:
                 print(f"Syntax error in {filepath}: Room prefabs must have [BASE] section")
                 return None
         
+        # Normalize grids to consistent row width.
+        for key in list(sections.keys()):
+            sections[key] = _rectangularize(sections[key])
+
         # Determine which layer to use
         base_layer = sections.get('BASE') or sections.get('WALL')
         
@@ -72,9 +90,9 @@ def load_prefab(filepath: str) -> Prefab | None:
             width = 9
         
         if 'COLLISION' not in sections or len(sections['COLLISION']) == 0:
-            sections['COLLISION'] = ['.' * width for _ in range(size)]
+            sections['COLLISION'] = [["."] * width for _ in range(size)]
         if 'OBSTACLE' not in sections or len(sections['OBSTACLE']) == 0:
-            sections['OBSTACLE'] = ['.' * width for _ in range(size)]
+            sections['OBSTACLE'] = [["."] * width for _ in range(size)]
         
         # Map to BASE for the Prefab class
         if 'WALL' in sections and 'BASE' not in sections:
@@ -83,15 +101,15 @@ def load_prefab(filepath: str) -> Prefab | None:
         return Prefab(
             sections['COLLISION'],
             sections['OBSTACLE'],
-            sections['BASE']
+            sections['BASE'],
+            prefab_name,
         )
     except Exception as e:
         print(f"Failed to load prefab {filepath}: {e}")
         return None
 
 
-def validate_dungeon_type(dungeon_type: str, base_path: str = "dungeon_types") -> bool:
-    """Validate that a dungeon type has all required folders and valid files."""
+def validate_dungeon_type(dungeon_type: str, base_path: str = "dungeon_types"):
     type_path = os.path.join(base_path, dungeon_type)
     
     # Check required prefab directories
@@ -102,21 +120,6 @@ def validate_dungeon_type(dungeon_type: str, base_path: str = "dungeon_types") -
         'prefabs/hallway_prefabs/sideways',
         'prefabs/hallway_wall_prefabs/sideways',
     ]
-    
-    # Check for base room prefabs (either name works)
-    has_base_room = (
-        os.path.isdir(os.path.join(type_path, 'prefabs/base_room_prefabs')) or
-        os.path.isdir(os.path.join(type_path, 'prefabs/main_room_prefabs'))
-    )
-    
-    # Check for base room wall prefabs (either name works)
-    has_base_room_walls = (
-        os.path.isdir(os.path.join(type_path, 'prefabs/base_room_wall_prefabs')) or
-        os.path.isdir(os.path.join(type_path, 'prefabs/main_room_wall_prefabs'))
-    )
-    
-    if not has_base_room or not has_base_room_walls:
-        return False
     
     for dir_path in required_prefab_dirs:
         full_path = os.path.join(type_path, dir_path)
@@ -134,25 +137,15 @@ def validate_dungeon_type(dungeon_type: str, base_path: str = "dungeon_types") -
     used_tiles = set()
     prefab_checks = [
         ('prefabs/room_prefabs', ROOM_SIZE),
-        ('prefabs/wall_prefabs', (ROOM_SIZE[0], WALL_HEIGHT)),
+        ('prefabs/wall_prefabs', None),
         ('prefabs/hallway_prefabs/upways', (HALL_THICKNESS, HALL_LENGTH)),
         ('prefabs/hallway_prefabs/sideways', (HALL_LENGTH, HALL_THICKNESS)),
-        ('prefabs/hallway_wall_prefabs/sideways', (HALL_LENGTH, WALL_HEIGHT)),
+        ('prefabs/hallway_wall_prefabs/sideways', None),
     ]
     
-    # Add base room directories with their expected dimensions
-    base_room_checks = []
-    if os.path.isdir(os.path.join(type_path, 'prefabs/base_room_prefabs')):
-        base_room_checks.append(('prefabs/base_room_prefabs', BASE_ROOM_SIZE))
-    if os.path.isdir(os.path.join(type_path, 'prefabs/main_room_prefabs')):
-        base_room_checks.append(('prefabs/main_room_prefabs', BASE_ROOM_SIZE))
-    if os.path.isdir(os.path.join(type_path, 'prefabs/base_room_wall_prefabs')):
-        base_room_checks.append(('prefabs/base_room_wall_prefabs', (BASE_ROOM_SIZE[0], WALL_HEIGHT)))
-    if os.path.isdir(os.path.join(type_path, 'prefabs/main_room_wall_prefabs')):
-        base_room_checks.append(('prefabs/main_room_wall_prefabs', (BASE_ROOM_SIZE[0], WALL_HEIGHT)))
-    
-    # Validate all prefabs
-    for prefab_dir, expected_size in prefab_checks + base_room_checks:
+    # Validate only core dungeon prefabs for type validity.
+    # Base-room prefab sets are optional and may contain hub-only tiles.
+    for prefab_dir, expected_size in prefab_checks:
         prefab_path = os.path.join(type_path, prefab_dir)
         try:
             for filename in os.listdir(prefab_path):
@@ -165,7 +158,7 @@ def validate_dungeon_type(dungeon_type: str, base_path: str = "dungeon_types") -
                     # Validate dimensions
                     height = len(prefab.base)
                     width = len(prefab.base[0]) if prefab.base else 0
-                    if (width, height) != expected_size:
+                    if expected_size is not None and (width, height) != expected_size:
                         print(f"Invalid dimensions in {filepath}: expected {expected_size}, got ({width}, {height})")
                         return False
                     
@@ -173,12 +166,18 @@ def validate_dungeon_type(dungeon_type: str, base_path: str = "dungeon_types") -
                     for layer in [prefab.collision, prefab.obstacle]:
                         layer_height = len(layer)
                         layer_width = len(layer[0]) if layer else 0
-                        if (layer_width, layer_height) != expected_size:
-                            print(f"Mismatched layer dimensions in {filepath}")
-                            return False
+                        if expected_size is not None:
+                            if (layer_width, layer_height) != expected_size:
+                                print(f"Mismatched layer dimensions in {filepath}")
+                                return False
+                        else:
+                            if (layer_width, layer_height) != (width, height):
+                                print(f"Mismatched layer dimensions in {filepath}")
+                                return False
                     
-                    # Collect all non-empty tile characters from all layers
-                    for layer in [prefab.collision, prefab.obstacle, prefab.base]:
+                    # Collect non-empty tile characters only from rendered layers.
+                    # Collision markers (e.g. X, #) are logic-only and should not require sprites.
+                    for layer in [prefab.obstacle, prefab.base]:
                         for row in layer:
                             for char in row:
                                 if char not in ('.', ' ', ''):
@@ -207,8 +206,7 @@ def validate_dungeon_type(dungeon_type: str, base_path: str = "dungeon_types") -
     return True
 
 
-def find_dungeon_types(base_path: str = "dungeon_types") -> list[str]:
-    """Find all valid dungeon types with complete assets."""
+def find_dungeon_types(base_path: str = "dungeon_types"):
     types = []
     try:
         if os.path.isdir(base_path):
@@ -222,8 +220,7 @@ def find_dungeon_types(base_path: str = "dungeon_types") -> list[str]:
     return types
 
 
-def load_prefabs(dungeon_type: str, base_path: str = "dungeon_types") -> list[Prefab]:
-    """Load all room prefabs from a dungeon type."""
+def load_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
     prefabs = []
     prefabs_path = os.path.join(base_path, dungeon_type, 'prefabs', 'room_prefabs')
     
@@ -240,8 +237,7 @@ def load_prefabs(dungeon_type: str, base_path: str = "dungeon_types") -> list[Pr
     return prefabs
 
 
-def load_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types") -> list[Prefab]:
-    """Load all wall prefabs from a dungeon type."""
+def load_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
     prefabs = []
     prefabs_path = os.path.join(base_path, dungeon_type, 'prefabs', 'wall_prefabs')
     
@@ -258,8 +254,7 @@ def load_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types") -> li
     return prefabs
 
 
-def load_main_room_prefabs(dungeon_type: str, base_path: str = "dungeon_types") -> list[Prefab]:
-    """Load all base room prefabs from a dungeon type."""
+def load_main_room_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
     prefabs = []
     candidate_dirs = [
         os.path.join(base_path, dungeon_type, 'prefabs', 'base_room_prefabs'),
@@ -282,8 +277,7 @@ def load_main_room_prefabs(dungeon_type: str, base_path: str = "dungeon_types") 
     return prefabs
 
 
-def load_main_room_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types") -> list[Prefab]:
-    """Load all base room wall prefabs from a dungeon type."""
+def load_main_room_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
     prefabs = []
     candidate_dirs = [
         os.path.join(base_path, dungeon_type, 'prefabs', 'base_room_wall_prefabs'),
@@ -306,8 +300,7 @@ def load_main_room_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_typ
     return prefabs
 
 
-def load_hallway_prefabs(dungeon_type: str, direction: str, base_path: str = "dungeon_types") -> list[Prefab]:
-    """Load hallway prefabs for a specific direction (upways or sideways)."""
+def load_hallway_prefabs(dungeon_type: str, direction: str, base_path: str = "dungeon_types"):
     prefabs = []
     prefabs_path = os.path.join(base_path, dungeon_type, 'prefabs', 'hallway_prefabs', direction)
     
@@ -324,16 +317,14 @@ def load_hallway_prefabs(dungeon_type: str, direction: str, base_path: str = "du
     return prefabs
 
 
-def load_all_hallway_prefabs(dungeon_type: str, base_path: str = "dungeon_types") -> dict[str, list[Prefab]]:
-    """Load all hallway prefabs organized by direction."""
+def load_all_hallway_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
     return {
         'upways': load_hallway_prefabs(dungeon_type, 'upways', base_path),
         'sideways': load_hallway_prefabs(dungeon_type, 'sideways', base_path),
     }
 
 
-def load_hallway_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types") -> list[Prefab]:
-    """Load hallway wall prefabs (sideways-only)."""
+def load_hallway_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
     prefabs = []
     prefabs_path = os.path.join(base_path, dungeon_type, 'prefabs', 'hallway_wall_prefabs', 'sideways')
     
@@ -350,16 +341,14 @@ def load_hallway_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types
     return prefabs
 
 
-def load_all_hallway_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types") -> dict[str, list[Prefab]]:
-    """Load hallway wall prefabs (sideways-only)."""
+def load_all_hallway_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
     return {
         'sideways': load_hallway_wall_prefabs(dungeon_type, base_path),
     }
 
 
 
-def load_sprite(sprite_path: str) -> pygame.Surface | None:
-    """Load a sprite image and return it as a pygame Surface."""
+def load_sprite(sprite_path: str):
     try:
         return pygame.image.load(sprite_path)
     except Exception as e:
@@ -367,8 +356,7 @@ def load_sprite(sprite_path: str) -> pygame.Surface | None:
         return None
 
 
-def load_sprites_for_dungeon_type(dungeon_type: str, base_path: str = "dungeon_types") -> dict[str, dict[str, pygame.Surface]]:
-    """Load all sprites for a dungeon type. Returns dict with 'obstacles', 'bases', and 'walls' keys."""
+def load_sprites_for_dungeon_type(dungeon_type: str, base_path: str = "dungeon_types"):
     sprites = {'obstacles': {}, 'bases': {}, 'walls': {}}
     
     for layer in sprites.keys():
@@ -384,8 +372,7 @@ def load_sprites_for_dungeon_type(dungeon_type: str, base_path: str = "dungeon_t
     return sprites
 
 
-def load_preset(filename: str, directory: str = "dungeon_gen_presets") -> dict:
-    """Load a configuration preset from a file."""
+def load_preset(filename: str, directory: str = "dungeon_gen_presets"):
     preset = {}
     try:
         filepath = os.path.join(directory, filename)
@@ -418,8 +405,7 @@ def load_preset(filename: str, directory: str = "dungeon_gen_presets") -> dict:
     return preset
 
 
-def find_presets(directory: str = "dungeon_gen_presets") -> list[str]:
-    """Find all .txt preset files in the dungeon_gen_presets directory, excluding README.txt and gen_presets.txt."""
+def find_presets(directory: str = "dungeon_gen_presets"):
     presets = []
     try:
         for file in sorted(os.listdir(directory)):

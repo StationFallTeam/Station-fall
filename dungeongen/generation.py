@@ -1,9 +1,3 @@
-"""Dungeon layout generation logic.
-
-Standard room and hallway dimensions are defined in config.py.
-These values should match all prefab asset dimensions.
-"""
-
 import random
 from classes import Rect, Room, Hallway, TileMap, Prefab
 from config import MIN_BRANCH_CHANCE, MAX_BRANCHING_DEPTH
@@ -11,18 +5,16 @@ from config import MIN_BRANCH_CHANCE, MAX_BRANCHING_DEPTH
 # Will print results of generation
 DEBUG_VALIDATE_OVERLAPS = True
 
-
-def carve_rect(tiles: TileMap, rect: Rect, tile: str = ".") -> None:
-    """Carve a rectangular area into the tilemap."""
+# Carve a rectangle
+def carve_rect(tiles: TileMap, rect: Rect, tile: str = "."):
     for y in range(rect.y, rect.y + rect.h):
         for x in range(rect.x, rect.x + rect.w):
             if tile == "h" and tiles.get((x, y)) == ".":
                 continue
             tiles[(x, y)] = tile
 
-
-def hallway_rect_from(door: tuple[int, int], direction: str, length: int, thickness: int) -> Rect:
-    """Create a hallway rectangle from a door in a given direction."""
+# Branch a hallway from a room
+def hallway_rect_from(door: tuple[int, int], direction: str, length: int, thickness: int):
     dx, dy = door
     if direction == "up":
         x0 = dx - (thickness - 1) // 2
@@ -41,8 +33,7 @@ def hallway_rect_from(door: tuple[int, int], direction: str, length: int, thickn
     return Rect(x0, y0, length, thickness)
 
 
-def door_positions(room: Rect) -> dict[str, tuple[int, int]]:
-    """Get all possible door positions for a room."""
+def door_positions(room: Rect):
     half_w = room.w // 2
     half_center = (half_w - 1) // 2
     left_cx = room.x + half_center
@@ -58,8 +49,7 @@ def door_positions(room: Rect) -> dict[str, tuple[int, int]]:
     }
 
 
-def clamp_chance(value: float) -> float:
-    """Clamp a chance value between MIN_BRANCH_CHANCE and 1.0."""
+def clamp_chance(value: float):
     if value > 1.0:
         return 1.0
     if value < MIN_BRANCH_CHANCE:
@@ -67,13 +57,11 @@ def clamp_chance(value: float) -> float:
     return value
 
 
-def chance_at_depth(start: float, decay: float, depth: int) -> float:
-    """Calculate branch chance at a given depth."""
+def chance_at_depth(start: float, decay: float, depth: int):
     return clamp_chance(start - (decay * depth))
 
 
-def room_overlaps(tiles: TileMap, rect: Rect) -> bool:
-    """Check if a room rectangle overlaps with existing rooms."""
+def room_overlaps(tiles: TileMap, rect: Rect):
     for y in range(rect.y, rect.y + rect.h):
         for x in range(rect.x, rect.x + rect.w):
             if tiles.get((x, y)) == ".":
@@ -81,12 +69,161 @@ def room_overlaps(tiles: TileMap, rect: Rect) -> bool:
     return False
 
 
-def hallway_direction(direction: str) -> str:
-    """Convert direction string to hallway type (upways or sideways)."""
+def hallway_direction(direction: str):
     if direction in ("up", "down"):
         return "upways"
     else:
         return "sideways"
+
+
+def lowest_top_edge(prefab):
+    if not prefab or not prefab.base:
+        return 0
+    num_rows = len(prefab.base)
+    num_cols = len(prefab.base[0]) if num_rows > 0 else 0
+    lowest = 0
+    for col in range(num_cols):
+        for row in range(num_rows):
+            if prefab.base[row][col] != '.':
+                if row > lowest:
+                    lowest = row
+                break
+    return lowest
+
+
+def aligned_wall_y(floor_prefab, wall_prefab, anchor_y):
+    if not wall_prefab or not wall_prefab.base:
+        return anchor_y
+    wall_height = len(wall_prefab.base)
+    return anchor_y + lowest_top_edge(floor_prefab) - wall_height
+
+
+def _choose_matching_wall_index(floor_prefab, wall_prefabs):
+    if floor_prefab is None or not wall_prefabs:
+        return None
+
+    floor_name = getattr(floor_prefab, "name", None)
+    if not floor_name:
+        return None
+
+    for idx in range(len(wall_prefabs)):
+        wall_name = getattr(wall_prefabs[idx], "name", None)
+        if wall_name == floor_name:
+            return idx
+
+    return None
+
+
+def _prefab_open_sides(prefab):
+    sides = set()
+    if prefab is None or not prefab.base:
+        return sides
+
+    h = len(prefab.base)
+    w = len(prefab.base[0]) if h > 0 else 0
+    if h == 0 or w == 0:
+        return sides
+
+    if any(prefab.base[0][x] != '.' for x in range(w)):
+        sides.add("top")
+    if any(prefab.base[h - 1][x] != '.' for x in range(w)):
+        sides.add("bottom")
+    if any(prefab.base[y][0] != '.' for y in range(h)):
+        sides.add("left")
+    if any(prefab.base[y][w - 1] != '.' for y in range(h)):
+        sides.add("right")
+
+    return sides
+
+
+def _required_room_sides(room):
+    needed = set()
+    for dx, dy in room.doors:
+        if not _is_point_on_room_edge(room.rect, (dx, dy)):
+            continue
+        if dy == room.rect.y:
+            needed.add("top")
+        if dy == room.rect.bottom:
+            needed.add("bottom")
+        if dx == room.rect.x:
+            needed.add("left")
+        if dx == room.rect.right:
+            needed.add("right")
+    return needed
+
+
+def _is_point_on_room_edge(room_rect: Rect, point: tuple[int, int]):
+    x, y = point
+    in_bounds = room_rect.x <= x <= room_rect.right and room_rect.y <= y <= room_rect.bottom
+    if not in_bounds:
+        return False
+    return x == room_rect.x or x == room_rect.right or y == room_rect.y or y == room_rect.bottom
+
+
+def _choose_room_prefab_for_doors(room, room_prefabs):
+    if not room_prefabs:
+        return None
+
+    needed = _required_room_sides(room)
+    compatible = []
+    for idx in range(len(room_prefabs)):
+        open_sides = _prefab_open_sides(room_prefabs[idx])
+        if needed.issubset(open_sides):
+            compatible.append(idx)
+
+    if compatible:
+        return random.choice(compatible)
+
+    # Fallback so generation can continue even if no perfect prefab exists.
+    return random.randint(0, len(room_prefabs) - 1)
+
+
+def _range_overlap(a0: int, a1: int, b0: int, b1: int):
+    start = max(a0, b0)
+    end = min(a1, b1)
+    if start > end:
+        return None
+    return (start, end)
+
+
+def _add_missing_room_edge_doors_from_hallways(rooms: list[Room], hallways: list[Hallway]):
+    # Ensure room doors stay in sync with carved hallway-room contacts, including penetration mode.
+    for hallway in hallways:
+        hall_rect = hallway.rect
+        for room in rooms:
+            room_rect = room.rect
+
+            if hallway.direction == "sideways":
+                overlap = _range_overlap(hall_rect.y, hall_rect.bottom, room_rect.y, room_rect.bottom)
+                if overlap is None:
+                    continue
+                overlap_y0, overlap_y1 = overlap
+                door_y = (overlap_y0 + overlap_y1) // 2
+
+                if hall_rect.right == room_rect.x - 1:
+                    door = (room_rect.x, door_y)
+                    if _is_point_on_room_edge(room_rect, door) and door not in room.doors:
+                        room.doors.append(door)
+                if hall_rect.x == room_rect.right + 1:
+                    door = (room_rect.right, door_y)
+                    if _is_point_on_room_edge(room_rect, door) and door not in room.doors:
+                        room.doors.append(door)
+
+            if hallway.direction == "upways":
+                overlap = _range_overlap(hall_rect.x, hall_rect.right, room_rect.x, room_rect.right)
+                if overlap is None:
+                    continue
+                overlap_x0, overlap_x1 = overlap
+                door_x = (overlap_x0 + overlap_x1) // 2
+
+                if hall_rect.bottom == room_rect.y - 1:
+                    door = (door_x, room_rect.y)
+                    if _is_point_on_room_edge(room_rect, door) and door not in room.doors:
+                        room.doors.append(door)
+                if hall_rect.y == room_rect.bottom + 1:
+                    door = (door_x, room_rect.bottom)
+                    if _is_point_on_room_edge(room_rect, door) and door not in room.doors:
+                        room.doors.append(door)
 
 
 def build_collision_map(
@@ -97,19 +234,36 @@ def build_collision_map(
     hallway_prefabs_upways: list[Prefab] | None,
     hallway_prefabs_sideways: list[Prefab] | None,
     border_width: int = 1,
-) -> dict[tuple[int, int], str]:
-    """
-    Build a global collision map from all rooms and hallways.
-    
-    Stamps each room/hallway's prefab collision data into world coordinates.
-    Adds a tight border around the dungeon perimeter (only adjacent to actual dungeon tiles).
-    
-    Returns:
-        dict mapping (x, y) tile coordinates to collision values:
-        - '.' = walkable
-        - '#' or '0' = solid/wall (collision)
-    """
+):
     collision_map: dict[tuple[int, int], str] = {}
+    footprint: set[tuple[int, int]] = set()
+
+    def stamp_prefab(prefab, anchor_x, anchor_y):
+        if prefab is None:
+            return
+
+        # Build footprint from BASE so collision follows real shape (supports notches).
+        local_footprint = set()
+        for local_y in range(len(prefab.base)):
+            for local_x in range(len(prefab.base[local_y])):
+                if prefab.base[local_y][local_x] == ".":
+                    continue
+                world_x = anchor_x + local_x
+                world_y = anchor_y + local_y
+                local_footprint.add((world_x, world_y))
+                footprint.add((world_x, world_y))
+                collision_map[(world_x, world_y)] = "."
+
+        # Apply prefab COLLISION data only where BASE exists.
+        for local_y in range(len(prefab.collision)):
+            for local_x in range(len(prefab.collision[local_y])):
+                world_x = anchor_x + local_x
+                world_y = anchor_y + local_y
+                if (world_x, world_y) not in local_footprint:
+                    continue
+                collision_value = prefab.collision[local_y][local_x]
+                if collision_value != ".":
+                    collision_map[(world_x, world_y)] = collision_value
     
     # Stamp room collision data
     for room in rooms:
@@ -122,14 +276,7 @@ def build_collision_map(
         # Get the prefab if valid
         if room.prefab_id is not None and 0 <= room.prefab_id < len(prefabs_list):
             prefab = prefabs_list[room.prefab_id]
-            
-            # Stamp collision data into world coordinates
-            for local_y in range(len(prefab.collision)):
-                for local_x in range(len(prefab.collision[local_y])):
-                    world_x = room.rect.x + local_x
-                    world_y = room.rect.y + local_y
-                    collision_value = prefab.collision[local_y][local_x]
-                    collision_map[(world_x, world_y)] = collision_value
+            stamp_prefab(prefab, room.rect.x, room.rect.y)
     
     # Stamp hallway collision data
     for hallway in hallways:
@@ -144,25 +291,18 @@ def build_collision_map(
         # Get the prefab if valid
         if hallway.prefab_id is not None and 0 <= hallway.prefab_id < len(prefabs_list):
             prefab = prefabs_list[hallway.prefab_id]
-            
-            # Stamp collision data into world coordinates
-            for local_y in range(len(prefab.collision)):
-                for local_x in range(len(prefab.collision[local_y])):
-                    world_x = hallway.rect.x + local_x
-                    world_y = hallway.rect.y + local_y
-                    collision_value = prefab.collision[local_y][local_x]
-                    collision_map[(world_x, world_y)] = collision_value
+            stamp_prefab(prefab, hallway.rect.x, hallway.rect.y)
     
     # Add a tight border around the dungeon perimeter
     # Check all edges of the dungeon and add collision tiles just outside
     border_tiles: set[tuple[int, int]] = set()
     
-    for (x, y) in collision_map.keys():
+    for (x, y) in footprint:
         # Check all 4 cardinal directions
         for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
             neighbor = (x + dx, y + dy)
-            # If neighbor is not in collision map, it's outside dungeon - mark as border
-            if neighbor not in collision_map:
+            # If neighbor is outside footprint, mark as border
+            if neighbor not in footprint:
                 border_tiles.add(neighbor)
     
     # Add border tiles to collision map
@@ -172,18 +312,7 @@ def build_collision_map(
     return collision_map
 
 
-def check_collision(collision_map: dict[tuple[int, int], str], x: int, y: int) -> bool:
-    """
-    Check if a tile position has collision.
-    
-    Args:
-        collision_map: The global collision map
-        x: Tile x coordinate
-        y: Tile y coordinate
-    
-    Returns:
-        True if the position is solid (collision), False if walkable or out of bounds
-    """
+def check_collision(collision_map: dict[tuple[int, int], str], x: int, y: int):
     tile_value = collision_map.get((x, y), '#')  # Default to solid if not in map
     return tile_value != '.'
 
@@ -195,21 +324,7 @@ def check_rect_collision(
     width: int,
     height: int,
     tile_size: int = 1,
-) -> bool:
-    """
-    Check if a rect (in pixel coordinates) collides with the collision map.
-    
-    Args:
-        collision_map: The global collision map
-        x: Pixel x coordinate (top-left)
-        y: Pixel y coordinate (top-left)
-        width: Width in pixels
-        height: Height in pixels
-        tile_size: Size of each tile in pixels
-    
-    Returns:
-        True if any part of the rect is colliding
-    """
+):
     # Convert pixel coordinates to tile coordinates
     tile_x1 = int(x // tile_size)
     tile_y1 = int(y // tile_size)
@@ -248,8 +363,7 @@ def generate_layout(
     hallway_prefabs_sideways: list[Prefab] | None = None,
     hallway_wall_prefabs_sideways: list[Prefab] | None = None,
     seed: int | None = None,
-) -> tuple[TileMap, list[Room], list[Hallway], dict[tuple[int, int], str]]:
-    """Generate a dungeon layout with rooms and hallways, including a global collision map."""
+):
     if seed is not None:
         random.seed(seed)
     
@@ -281,7 +395,10 @@ def generate_layout(
         base_room_prefab_id = random.randint(0, len(main_room_prefabs) - 1)
     base_room_obj = Room(base_room, prefab_id=base_room_prefab_id, is_base_room=True)
     if main_room_wall_prefabs:
-        base_room_obj.wall_prefab_id = random.randint(0, len(main_room_wall_prefabs) - 1)
+        base_room_prefab = None
+        if base_room_prefab_id is not None and 0 <= base_room_prefab_id < len(main_room_prefabs):
+            base_room_prefab = main_room_prefabs[base_room_prefab_id]
+        base_room_obj.wall_prefab_id = _choose_matching_wall_index(base_room_prefab, main_room_wall_prefabs)
     rooms.append(base_room_obj)
 
     room_w, room_h = room_size
@@ -296,7 +413,7 @@ def generate_layout(
     doors["right"] = (base_room.right, base_room.center[1])
 
     # Placement helpers
-    def edge_point(room_rect: Rect, direction: str) -> tuple[int, int]:
+    def edge_point(room_rect: Rect, direction: str):
         if direction == "up":
             return (room_rect.x + (room_rect.w - 1) // 2, room_rect.y)
         if direction == "down":
@@ -305,7 +422,7 @@ def generate_layout(
             return (room_rect.x, room_rect.y + (room_rect.h - 1) // 2)
         return (room_rect.right, room_rect.y + (room_rect.h - 1) // 2)
 
-    def place_room_from_hall_end(end: tuple[int, int], direction: str, align_x: int | None = None) -> Rect:
+    def place_room_from_hall_end(end: tuple[int, int], direction: str, align_x: int | None = None):
         ex, ey = end
         if direction == "up":
             x0 = ex - (room_w - 1) // 2 if align_x is None else align_x
@@ -317,7 +434,7 @@ def generate_layout(
             return Rect(ex - room_w, ey - (room_h - 1) // 2, room_w, room_h)
         return Rect(ex + 1, ey - (room_h - 1) // 2, room_w, room_h)
 
-    def hall_end_from_door(door: tuple[int, int], direction: str) -> tuple[int, int]:
+    def hall_end_from_door(door: tuple[int, int], direction: str):
         dx, dy = door
         if direction == "up":
             return (dx, dy - hall_length)
@@ -327,7 +444,7 @@ def generate_layout(
             return (dx - hall_length, dy)
         return (dx + hall_length, dy)
 
-    def opposite_direction(direction: str) -> str:
+    def opposite_direction(direction: str):
         if direction == "up":
             return "down"
         if direction == "down":
@@ -336,7 +453,9 @@ def generate_layout(
             return "right"
         return "left"
 
-    def add_door(room: Room, door: tuple[int, int]) -> None:
+    def add_door(room: Room, door: tuple[int, int]):
+        if not _is_point_on_room_edge(room.rect, door):
+            return
         if door not in room.doors:
             room.doors.append(door)
 
@@ -349,7 +468,7 @@ def generate_layout(
         start_chance_override: float | None = None,
         decay_override: float | None = None,
         allow_side_branches: bool = True,
-    ) -> None:
+    ):
         depth = 0
         sx, sy = start
         current_room = source_room
@@ -392,10 +511,11 @@ def generate_layout(
             
             hallway = Hallway(hall_rect, hall_dir, hallway_prefab_id)
             
-            # Only assign hallway wall prefab to SIDEWAYS hallways (they can have dead ends)
-            # UPWAYS hallways don't need walls - they're part of the main branching chain
             if hall_dir == "sideways" and hallway_wall_prefabs_sideways:
-                hallway.wall_prefab_id = random.randint(0, len(hallway_wall_prefabs_sideways) - 1)
+                hallway_floor_prefab = None
+                if hallway_prefab_id is not None and 0 <= hallway_prefab_id < len(hallway_prefabs_sideways):
+                    hallway_floor_prefab = hallway_prefabs_sideways[hallway_prefab_id]
+                hallway.wall_prefab_id = _choose_matching_wall_index(hallway_floor_prefab, hallway_wall_prefabs_sideways)
             
             hallways.append(hallway)
             
@@ -414,11 +534,11 @@ def generate_layout(
                     prefab_id = None
                 new_room = Room(room_rect, prefab_id)
                 
-                # Assign a wall prefab for the north face (always assign if walls available)
                 if wall_prefabs:
-                    new_room.wall_prefab_id = random.randint(0, len(wall_prefabs) - 1)
-                else:
-                    new_room.wall_prefab_id = 0  # Default wall if none loaded
+                    room_floor_prefab = None
+                    if prefab_id is not None and 0 <= prefab_id < len(prefabs):
+                        room_floor_prefab = prefabs[prefab_id]
+                    new_room.wall_prefab_id = _choose_matching_wall_index(room_floor_prefab, wall_prefabs)
                 
                 entry_door = edge_point(room_rect, opposite_direction(direction))
                 add_door(new_room, entry_door)
@@ -492,6 +612,25 @@ def generate_layout(
                         f"A=({room_a.rect.x},{room_a.rect.y},{room_a.rect.w},{room_a.rect.h})",
                         f"B=({room_b.rect.x},{room_b.rect.y},{room_b.rect.w},{room_b.rect.h})",
                     )
+
+    _add_missing_room_edge_doors_from_hallways(rooms, hallways)
+
+    # Finalize room prefab IDs based on actual attached hallway sides, then walls.
+    for room in rooms:
+        if room.is_base_room:
+            room_prefabs_list = main_room_prefabs
+            wall_prefabs_list = main_room_wall_prefabs
+        else:
+            room_prefabs_list = prefabs
+            wall_prefabs_list = wall_prefabs
+
+        room.prefab_id = _choose_room_prefab_for_doors(room, room_prefabs_list)
+
+        floor_prefab = None
+        if room.prefab_id is not None and 0 <= room.prefab_id < len(room_prefabs_list):
+            floor_prefab = room_prefabs_list[room.prefab_id]
+
+        room.wall_prefab_id = _choose_matching_wall_index(floor_prefab, wall_prefabs_list)
 
     # Build global collision map
     collision_map = build_collision_map(
