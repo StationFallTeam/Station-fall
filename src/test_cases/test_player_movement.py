@@ -1,8 +1,10 @@
 import unittest
 from unittest.mock import patch
 import pygame
-from player import Player
-
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+from src.player import Player
 
 class FakeKeys:
     def __init__(self, pressed=None):

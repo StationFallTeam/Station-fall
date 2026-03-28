@@ -1,9 +1,11 @@
 import unittest
 from unittest.mock import patch
 import pygame
-from player import Player
-from projectile import Projectile
-
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+from src.player import Player
+from src.projectile import Projectile
 
 class TestProjectile(unittest.TestCase):
 
