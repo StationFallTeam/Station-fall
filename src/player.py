@@ -1,6 +1,6 @@
 import pygame
-from .damageable import Damageable
-from .projectile import Projectile
+from damageable import Damageable
+from projectile import Projectile
 
 class Player(Damageable):
     def __init__(self, x, y):
