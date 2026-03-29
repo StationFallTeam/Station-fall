@@ -1,9 +1,3 @@
-"""Global configuration constants for dungeon generation.
-
-These values define the core dimensions of dungeon elements and should not be changed
-as all prefabs and assets are designed to match these exact specifications.
-"""
-
 # Room dimensions (width, height) in tiles
 BASE_ROOM_SIZE = (24, 9)  # Starting room size
 ROOM_SIZE = (9, 9)        # Standard room size
@@ -20,7 +14,7 @@ SCREEN_W = 1700
 SCREEN_H = 900
 TILE_SIZE_START = 4
 TILE_SIZE_MIN = 1
-TILE_SIZE_MAX = 32
+TILE_SIZE_MAX = 40
 CAMERA_SPEED = 18
 
 # Default generation parameters

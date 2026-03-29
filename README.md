@@ -29,4 +29,40 @@ chmod +x run_web.sh
 
 To launch: ./run_web.sh
 # open http://localhost:8000
+```
 
+---
+
+## Testing (TDD Workflow)
+
+We follow Test-Driven Development principles to collect evidence of the system's value Running Test Cases
+
+To run the automated test suite for the camera and background modules, navigate to the src directory and use unittest discover:
+
+
+#### Navigate to source directory
+
+```bash 
+cd src
+```
+
+#### Run all tests in the test_cases folder
+
+```bash
+python3 -m unittest discover test_cases
+```
+
+
+#### Why we test
+
+- Evidence Collection: Testing provides technical information about the quality of our components.
+
+- Beck's Rules: We only write new business code when an automated test has failed and always eliminate duplication.
+
+- Organic Development: Our highly cohesive, loosely coupled components make testing and maintenance easier.
+
+#### Summary of what these tests verify:
+
+- Camera: Validates the translation of world coordinates to screen coordinates and smooth centering logic.
+
+- Background: Verifies the generation of parallax star layers, including star density and movement speeds.

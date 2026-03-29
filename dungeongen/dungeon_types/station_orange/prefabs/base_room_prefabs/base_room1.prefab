@@ -1,0 +1,33 @@
+[COLLISION]
+plt, ., ., ., ., ., ., bbl, bbr, ., scmpb, ., ., scmpb, ., bbl, bbr, ., ., ., ., ., ., plt
+., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., btl, btr, ., ., ., ., ., ., btl, btr, ., ., ., ., ., ., .
+., ., ., ., ., ., ., bbl, bbr, ., ., ., ., ., ., bbl, bbr, ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., btl, btr, ., ., ., ., ., ., btl, btr, ., ., ., ., ., ., .
+plt, ., ., ., ., ., ., bbl, bbr, ., ., ., ., ., ., bbl, bbr, ., ., ., ., ., ., plt
+
+
+[OBSTACLE]
+plt, ., ., ., ., ., ., bbl, bbr, ., scmpb, ., ., scmpb, ., bbl, bbr, ., ., ., ., ., ., plt
+., ., ., ., ., ., ., rghl, rghr, ., ., ., ., ., ., rghl, rghr, ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., btl, btr, ., bgrtl, bgrtm, bgrtm, bgrtr, ., btl, btr, ., ., ., ., ., ., .
+., ., ., ., ., ., ., bbl, bbr, ., bgrml, bgrm, bgrm, bgrmr, ., bbl, bbr, ., ., ., ., ., ., .
+., ., ., ., ., ., ., rghl, rghr, ., bgrbl, bgrbm, bgrbm, bgrbr, ., rghl, rghr, ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., btl, btr, ., ., ., ., ., ., btl, btr, ., ., ., ., ., ., .
+plt, ., ., ., ., ., ., bbl, bbr, ., ., ., ., ., ., bbl, bbr, ., ., ., ., ., ., plt
+
+[BASE]
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1

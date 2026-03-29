@@ -1,0 +1,32 @@
+[COLLISION]
+bgag, bgag, brad, ., ., ., ., bcab, bgag
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., tgag, ., ., ., trad, ., .
+., ., bgag, ., ., ., brad, ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+trad, tgag, ., ., ., ., ., tgag, tgag
+brad, bgag, ., ., ., ., ., bgag, bgag
+
+[OBSTACLE]
+bgag, bgag, brad, ., ., ., ., bcab, bgag
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., tgag, ., ., ., trad, ., .
+., ., bgag, ., ., ., brad, ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+trad, tgag, ., ., ., ., ., tgag, tgag
+brad, bgag, ., ., ., ., ., bgag, bgag
+
+[BASE]
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1

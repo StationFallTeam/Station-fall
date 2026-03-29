@@ -1,0 +1,5 @@
+[WALL]
+., ., .,        ctop, tww, ctop, ., ., .
+., ., .,        cbot, scmpt, cbot, ., ., .
+twwh, twwh, ctop, ., ., .,         ctop, twwh, twwh
+btl, btr, cbot, ., ., .,         cbot, bwwh, bwwh

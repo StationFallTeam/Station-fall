@@ -1,0 +1,14 @@
+[COLLISION]
+., ., ., ., ., .
+., ., ., ., ., .
+., ., ., ., ., .
+
+[OBSTACLE]
+., rgvt, ., ., rgvt, .
+., rgvm, ., ., rgvm, .
+., rgvb, ., ., rgvb, .
+
+[BASE]
+flr1l, flr1, flr1, flr1, flr1, flr1r
+flr1l, flr1, flr1, flr1, flr1, flr1r
+flr1l, flr1, flr1, flr1, flr1, flr1r

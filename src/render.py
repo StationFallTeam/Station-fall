@@ -41,3 +41,15 @@ def draw_objects(win, player, enemies, bullets, walls, camera, background, coins
 
     for coin in coins:
         coin.draw(win, camera)
+
+def apply_brightness(win, brightness):
+    if brightness >= 1.0:
+        return
+    
+    darkness = int((1.0 - brightness) * 255)
+    
+    overlay = pygame.Surface(win.get_size())
+    overlay.fill((0, 0, 0))
+    overlay.set_alpha(darkness)
+
+    win.blit(overlay, (0, 0))
