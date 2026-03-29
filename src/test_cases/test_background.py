@@ -1,3 +1,6 @@
+import os
+os.environ["SDL_VIDEODRIVER"] = "dummy"
+
 import unittest
 import pygame
 from background import SpaceBackground
