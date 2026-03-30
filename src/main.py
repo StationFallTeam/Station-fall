@@ -12,6 +12,7 @@ from .background import SpaceBackground # Added for parallax background - Mehera
 from .world import World
 from .coin import Coin
 from .inventory_ui import InventoryUI
+from .floating_text import FloatingText  # Added for floating damage text - Meheraj
 
 # NOTE:
 # When debugging pygbag web crashes, temporarily wrap main() in a try/except
@@ -108,7 +109,7 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
         ("Wil Nahra",            "| Developer | Sprite Creation |"),
         ("Simon Halaszi",        "| Developer |"),
         ("Loy Ngo",              "| Developer |"),
-        ("Mark",                 "| Developer |"),
+        ("Meheraj Khatri",       "| Developer |"),
         ("Rowan",                "| Developer |"),
         ("Sebastian Bentancourt","| Developer |"),
         ("Yusairah Haque",       "| Developer |"),
@@ -152,6 +153,7 @@ async def main():
     bullets = []
     inventory_ui = InventoryUI(screen_width, screen_height)
     coins = []
+    floating_texts = [] # Initialize floating text list
 
     #load menu image
     truck_img = pygame.image.load("sprites/truck.png").convert_alpha()
@@ -236,6 +238,7 @@ async def main():
                         bullets.clear()
                         enemies.clear()
                         enemies.append(Enemy(300, 300))
+                        floating_texts.clear()
                         state = GAME
                     elif event.key == pygame.K_ESCAPE:
                         running = False
@@ -285,6 +288,9 @@ async def main():
             player.update(keys, world.walls)
             camera.update(player)
 
+            # Update floating texts (fading/moving)
+            floating_texts = [ft for ft in floating_texts if ft.update()]
+
             if player.health <= 0 or keys[pygame.K_k]:
                 state = GAME_OVER
             else:
@@ -293,7 +299,10 @@ async def main():
                 for enemy in enemies:
                     enemy.update(player.rect)
                     if enemy.rect.colliderect(player.rect):
-                        player.take_damage(10)
+                        if not player.is_invincible:
+                            player.take_damage(10)
+                            # Action Effect: Player hit text
+                            floating_texts.append(FloatingText(player.x, player.y - 20, "Player has been Hit!!! -10", color=(255, 0, 0)))
 
                 for bullet in bullets[:]:
                     bullet.update()
@@ -308,6 +317,8 @@ async def main():
                     for enemy in enemies[:]:
                         if bullet_rect.colliderect(enemy.rect):
                             enemy.take_damage(10)
+                            # Action Effect: Enemy hit text
+                            floating_texts.append(FloatingText(enemy.x, enemy.y - 20, "-10", color=(255, 255, 0)))
 
                             if bullet in bullets:
                                 bullets.remove(bullet)
@@ -324,11 +335,11 @@ async def main():
                         player.money += coin.value
                         coins.remove(coin)
 
-                draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins)
+                draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins, floating_texts)
 
         elif state == INVENTORY:
             background.update_and_draw(win, (camera.camera.x, camera.camera.y))
-            draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins)
+            draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins, floating_texts)
             inventory_ui.draw(win, player.money)
 
         elif state == GAME_OVER:
@@ -346,5 +357,3 @@ async def main():
 
 
 asyncio.run(main())
-
-
