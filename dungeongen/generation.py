@@ -1,6 +1,6 @@
 import random
-from classes import Rect, Room, Hallway, TileMap, Prefab
-from config import MIN_BRANCH_CHANCE, MAX_BRANCHING_DEPTH
+from dungeongen.classes import Rect, Room, Hallway, TileMap, Prefab
+from dungeongen.config import MIN_BRANCH_CHANCE, MAX_BRANCHING_DEPTH
 
 # Will print results of generation
 DEBUG_VALIDATE_OVERLAPS = True

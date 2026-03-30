@@ -1,13 +1,14 @@
-import sys
 import pygame
 
-from classes import DungeonGen, HubGen
-from loading import (
-    find_dungeon_types,
-    find_presets,
+from dungeongen.classes import DungeonGen, HubGen
+from dungeongen.loading import (
+    get_available_dungeon_types,
+    get_available_presets,
+    create_hub_generator,
+    create_dungeon_generator,
 )
-from rendering import COLOR_BG, COLOR_TEXT, COLOR_FURTHEST, COLOR_DOOR_DOT
-from config import (
+from dungeongen.rendering import COLOR_BG, COLOR_TEXT, COLOR_FURTHEST, COLOR_DOOR_DOT
+from dungeongen.config import (
     ROOM_SIZE,
     SCREEN_W,
     SCREEN_H,
@@ -16,7 +17,6 @@ from config import (
     TILE_SIZE_MAX,
     CAMERA_SPEED,
 )
-
 
 def run_pygame():
     pygame.init()
@@ -31,15 +31,15 @@ def run_pygame():
     show_sprites = True
 
     # Load dungeon types and presets
-    available_dungeon_types = find_dungeon_types()
+    available_dungeon_types = get_available_dungeon_types()
     dungeon_type_index = 0
     current_dungeon_type = available_dungeon_types[dungeon_type_index] if available_dungeon_types else "station"
 
-    available_presets = find_presets()
+    available_presets = get_available_presets()
     preset_index = 0
     current_preset = available_presets[preset_index] if available_presets else "long.txt"
 
-    dungeon = DungeonGen(dungeon_type=current_dungeon_type, preset_name=current_preset)
+    dungeon = create_dungeon_generator()
     dungeon.loadAllAssets()
 
     def print_loaded_assets():
@@ -56,7 +56,7 @@ def run_pygame():
     print_loaded_assets()
     cam_x, cam_y = dungeon.cam_x, dungeon.cam_y
 
-    hub = HubGen("hub")
+    hub = create_hub_generator("hub")
     active_generator = dungeon
     active_mode = "dungeon"
 
@@ -203,7 +203,6 @@ def run_pygame():
         clock.tick(60)
 
     pygame.quit()
-    sys.exit(0)
 
 
 def main():

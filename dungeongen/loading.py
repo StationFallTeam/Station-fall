@@ -1,7 +1,13 @@
 import os
 import pygame
-from classes import Prefab
-from config import BASE_ROOM_SIZE, ROOM_SIZE, HALL_LENGTH, HALL_THICKNESS, WALL_HEIGHT
+from pathlib import Path
+from dungeongen.classes import Prefab
+from dungeongen.config import BASE_ROOM_SIZE, ROOM_SIZE, HALL_LENGTH, HALL_THICKNESS, WALL_HEIGHT
+
+# Internal path resolution - external code doesn't need to know these paths
+_DUNGEONGEN_ROOT = Path(__file__).parent
+_DUNGEON_TYPES_DIR = _DUNGEONGEN_ROOT / "dungeon_types"  
+_DUNGEON_PRESETS_DIR = _DUNGEONGEN_ROOT / "dungeon_gen_presets"
 
 
 def _normalize_tile_token(token):
@@ -109,7 +115,10 @@ def load_prefab(filepath: str):
         return None
 
 
-def validate_dungeon_type(dungeon_type: str, base_path: str = "dungeon_types"):
+def validate_dungeon_type(dungeon_type: str, base_path: str = None):
+    """Check if a dungeon type directory exists and has required structure."""
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
     type_path = os.path.join(base_path, dungeon_type)
     
     # Check required prefab directories
@@ -206,7 +215,9 @@ def validate_dungeon_type(dungeon_type: str, base_path: str = "dungeon_types"):
     return True
 
 
-def find_dungeon_types(base_path: str = "dungeon_types"):
+def find_dungeon_types(base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
     types = []
     try:
         if os.path.isdir(base_path):
@@ -405,7 +416,9 @@ def load_preset(filename: str, directory: str = "dungeon_gen_presets"):
     return preset
 
 
-def find_presets(directory: str = "dungeon_gen_presets"):
+def find_presets(directory: str = None):
+    if directory is None:
+        directory = str(_DUNGEON_PRESETS_DIR)
     presets = []
     try:
         for file in sorted(os.listdir(directory)):
@@ -414,3 +427,38 @@ def find_presets(directory: str = "dungeon_gen_presets"):
     except OSError:
         pass
     return presets
+
+
+# ===== NEW PUBLIC INTERFACE FUNCTIONS =====
+# These handle all path resolution internally
+
+def get_available_dungeon_types():
+    """Get list of available dungeon types without needing to know file paths."""
+    return find_dungeon_types(str(_DUNGEON_TYPES_DIR))
+
+
+def get_available_presets():
+    """Get list of available presets without needing to know file paths."""
+    return find_presets(str(_DUNGEON_PRESETS_DIR))
+
+
+def create_hub_generator(dungeon_type: str):
+    """Create a HubGen instance for the specified dungeon type."""
+    from dungeongen.classes import HubGen
+    hub_path = str(_DUNGEON_TYPES_DIR / dungeon_type)
+    return HubGen(hub_path=hub_path)
+
+
+def create_dungeon_generator():
+    """Create a DungeonGen instance with proper internal paths."""
+    from dungeongen.classes import DungeonGen
+    return DungeonGen(
+        base_path=str(_DUNGEON_TYPES_DIR), 
+        preset_directory=str(_DUNGEON_PRESETS_DIR)
+    )
+
+
+def get_first_available_dungeon_type():
+    """Get the first available dungeon type (for default selection)."""
+    types = get_available_dungeon_types()
+    return types[0] if types else None

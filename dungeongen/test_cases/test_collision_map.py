@@ -1,14 +1,12 @@
-import sys
+import unittest
 from pathlib import Path
 
-
-DUNGEONGEN_DIR = Path(__file__).resolve().parents[1]
+DUNGEONGEN_DIR = Path(__file__).resolve().parents[2] / "dungeongen"
 DUNGEON_TYPES_DIR = DUNGEONGEN_DIR / "dungeon_types"
-sys.path.insert(0, str(DUNGEONGEN_DIR))
 
 TEST_DUNGEON_TYPES = ("station_orange", "station_pink")
 
-from config import (
+from dungeongen.config import (
     ALLOW_HALLWAY_THROUGH_ROOMS,
     BASE_ROOM_SIZE,
     BRANCH_FROM_SIDE_DECAY,
@@ -24,8 +22,8 @@ from config import (
     TOP_BOTTOM_DECAY,
     TOP_BOTTOM_START_CHANCE,
 )
-from generation import check_collision, check_rect_collision, generate_layout
-from loading import (
+from dungeongen.generation import check_collision, check_rect_collision, generate_layout
+from dungeongen.loading import (
     load_all_hallway_prefabs,
     load_all_hallway_wall_prefabs,
     load_main_room_prefabs,
@@ -81,64 +79,43 @@ def _setup_collision_test():
     return tiles, rooms, hallways, collision_map
 
 
-def test_collision_map_generation():
-    """Test that collision data is stamped when real prefabs are loaded."""
-    _, rooms, hallways, collision_map = _setup_collision_test()
+class TestCollisionMap(unittest.TestCase):
+    """Test collision map generation and functionality."""
 
-    assert len(rooms) > 0
-    assert len(hallways) > 0
-    assert len(collision_map) > 0
-    assert any(value == "." for value in collision_map.values())
-    assert any(value != "." for value in collision_map.values())
+    def test_collision_map_generation(self):
+        """Test that collision data is stamped when real prefabs are loaded."""
+        _, rooms, hallways, collision_map = _setup_collision_test()
 
+        self.assertGreater(len(rooms), 0)
+        self.assertGreater(len(hallways), 0)
+        self.assertGreater(len(collision_map), 0)
+        self.assertTrue(any(value == "." for value in collision_map.values()))
+        self.assertTrue(any(value != "." for value in collision_map.values()))
 
-def test_collision_map_walkable():
-    """Test that the base room center is walkable in the collision map."""
-    _, rooms, _, collision_map = _setup_collision_test()
+    def test_collision_map_walkable(self):
+        """Test that the base room center is walkable in the collision map."""
+        _, rooms, _, collision_map = _setup_collision_test()
 
-    base_room = next(room for room in rooms if room.is_base_room)
-    center_x, center_y = base_room.center
-    assert collision_map[(center_x, center_y)] == "."
-    assert not check_collision(collision_map, center_x, center_y)
+        base_room = next(room for room in rooms if room.is_base_room)
+        center_x, center_y = base_room.center
+        self.assertEqual(collision_map[(center_x, center_y)], ".")
+        self.assertFalse(check_collision(collision_map, center_x, center_y))
 
+    def test_collision_map_border_is_solid(self):
+        """Test that generated border tiles are solid and collide."""
+        _, _, _, collision_map = _setup_collision_test()
 
-def test_collision_map_border_is_solid():
-    """Test that generated border tiles are solid and collide."""
-    _, _, _, collision_map = _setup_collision_test()
+        border_tile = next((position for position, value in collision_map.items() if value == "#"), None)
+        self.assertIsNotNone(border_tile)
+        self.assertTrue(check_collision(collision_map, *border_tile))
 
-    border_tile = next((position for position, value in collision_map.items() if value == "#"), None)
-    assert border_tile is not None
-    assert check_collision(collision_map, *border_tile)
+    def test_rect_collision_check(self):
+        """Test both walkable and solid rect collision checks."""
+        _, rooms, _, collision_map = _setup_collision_test()
 
+        base_room = next(room for room in rooms if room.is_base_room)
+        center_x, center_y = base_room.center
+        solid_x, solid_y = next(position for position, value in collision_map.items() if value == "#")
 
-def test_rect_collision_check():
-    """Test both walkable and solid rect collision checks."""
-    _, rooms, _, collision_map = _setup_collision_test()
-
-    base_room = next(room for room in rooms if room.is_base_room)
-    center_x, center_y = base_room.center
-    solid_x, solid_y = next(position for position, value in collision_map.items() if value == "#")
-
-    assert check_rect_collision(collision_map, center_x, center_y, 1, 1, tile_size=1) is False
-    assert check_rect_collision(collision_map, solid_x, solid_y, 1, 1, tile_size=1) is True
-
-
-def main():
-    print("Running collision map tests...")
-    print()
-
-    tests = sorted(
-        [value for name, value in globals().items() if name.startswith("test_") and callable(value)],
-        key=lambda test_func: test_func.__name__,
-    )
-
-    for test_func in tests:
-        test_func()
-        print(test_func.__name__)
-
-    print()
-    print("All collision map tests passed!")
-
-
-if __name__ == '__main__':
-    main()
+        self.assertFalse(check_rect_collision(collision_map, center_x, center_y, 1, 1, tile_size=1))
+        self.assertTrue(check_rect_collision(collision_map, solid_x, solid_y, 1, 1, tile_size=1))
