@@ -35,6 +35,10 @@ class Player(Damageable):
         # Create a rect for the camera to track - Meheraj
         self.drawRect = pygame.Rect(self.x, self.y, self.drawWidth, self.drawHeight)
         self.collisionRect = pygame.Rect(self.x, self.y, self.collisionWidth, self.collisionHeight)
+        # Backward-compatibility aliases used by tests and older game code.
+        self.rect = self.collisionRect
+        self.width = self.collisionWidth
+        self.height = self.collisionHeight
         self.money = 0
    
 
