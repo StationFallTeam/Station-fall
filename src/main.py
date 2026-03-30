@@ -5,15 +5,15 @@ import math
 import sys
 import math
 
-from player import Player
-from enemy import Enemy
-from render import draw_objects, apply_brightness, draw_credits, render_menu_screen, render_inventory_screen, render_game_over_screen
-from camera import Camera          # Added for camera - Meheraj
-from background import SpaceBackground # Added for parallax background - Meheraj
-from world import World
-from coin import Coin
-from inventory_ui import InventoryUI
-from floating_texts import FloatingText  # Added for floating damage text - Meheraj
+from .player import Player
+from .enemy import Enemy
+from .render import draw_objects, apply_brightness
+from .camera import Camera          # Added for camera - Meheraj
+from .background import SpaceBackground # Added for parallax background - Meheraj
+from .world import World
+from .coin import Coin
+from .inventory_ui import InventoryUI
+from .floating_texts import FloatingText  # Added for floating damage text - Meheraj
 
 # NOTE:
 # When debugging pygbag web crashes, temporarily wrap main() in a try/except
@@ -295,8 +295,6 @@ async def main():
             if player.health <= 0 or keys[pygame.K_k]:
                 state = GAME_OVER
             else:
-                player.rect = player.get_rect()
-
                 for enemy in enemies:
                     enemy.update(player.rect)
                     if enemy.rect.colliderect(player.rect):
