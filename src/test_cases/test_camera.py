@@ -3,9 +3,6 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 import unittest
-import pygame
-from src.background import SpaceBackground
-import unittest
 from unittest.mock import Mock
 import pygame
 from src.camera import Camera
