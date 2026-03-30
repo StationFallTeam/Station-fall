@@ -1,6 +1,6 @@
 import pygame
-from .damageable import Damageable
-from .projectile import Projectile
+from src.damageable import Damageable
+from src.projectile import Projectile
 
 class Player(Damageable):
     def __init__(self, x, y):
@@ -9,9 +9,12 @@ class Player(Damageable):
         self.x = x
         self.y = y
 
-        self.width = 48
-        self.height = 48
+        self.drawWidth = 48
+        self.drawHeight = 48
         self.speed = 5
+
+        self.collisionWidth = 32
+        self.collisionHeight = 32
 
         # Load spritesheet (root-relative for pygbag)
         self.sprite_sheet = pygame.image.load("sprites/player_sheet.png").convert_alpha()
@@ -30,13 +33,14 @@ class Player(Damageable):
         self.anim_speed = 0.15
         self.moving = False
         # Create a rect for the camera to track - Meheraj
-        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.drawRect = pygame.Rect(self.x, self.y, self.drawWidth, self.drawHeight)
+        self.collisionRect = pygame.Rect(self.x, self.y, self.collisionWidth, self.collisionHeight)
         self.money = 0
    
 
     def _get_frame(self, x, y):
-        frame = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
-        frame.blit(self.sprite_sheet, (0, 0), (x, y, self.width, self.height))
+        frame = pygame.Surface((self.drawWidth, self.drawHeight), pygame.SRCALPHA)
+        frame.blit(self.sprite_sheet, (0, 0), (x, y, self.drawWidth, self.drawHeight))
         return frame.copy()  # REQUIRED for pygbag
 
     def _load_animations(self):
@@ -45,8 +49,8 @@ class Player(Damageable):
         for row, direction in enumerate(directions):
             for col in range(4):
                 frame = self._get_frame(
-                    col * self.width,
-                    row * self.height
+                    col * self.drawWidth,
+                    row * self.drawHeight
                 )
                 self.animations[direction].append(frame)
 
@@ -73,27 +77,28 @@ class Player(Damageable):
             self.direction = "down"
             self.moving = True
 
-        self.rect.x += dx
+        self.collisionRect.x += dx
         for wall in walls:
-            if self.rect.colliderect(wall):
+            if self.collisionRect.colliderect(wall):
                 if dx > 0:
-                    self.rect.right = wall.left
+                    self.collisionRect.right = wall.left
                 if dx < 0:
-                    self.rect.left = wall.right
+                    self.collisionRect.left = wall.right
 
-        self.rect.y += dy
+        self.collisionRect.y += dy
         for wall in walls:
-            if self.rect.colliderect(wall):
+            if self.collisionRect.colliderect(wall):
                 if dy > 0:
-                    self.rect.bottom = wall.top
+                    self.collisionRect.bottom = wall.top
                 if dy < 0:
-                    self.rect.top = wall.bottom
+                    self.collisionRect.top = wall.bottom
 
-        self.x = self.rect.x
-        self.y = self.rect.y
+        self.x = self.collisionRect.x
+        self.y = self.collisionRect.y
 
         # Sync the rect with the new coordinates - Meheraj
-        self.rect.topleft = (self.x, self.y)
+        self.collisionRect.topleft = (self.x, self.y)
+        self.drawRect.midbottom = self.collisionRect.midbottom
 
         if self.moving:
             self.frame_index += self.anim_speed
@@ -107,7 +112,7 @@ class Player(Damageable):
 
     def draw(self, screen, camera):
         frame = self.animations[self.direction][int(self.frame_index)]
-        draw_pos = camera.apply(self.rect)
+        draw_pos = camera.apply(self.drawRect)
 
         if self.is_invincible:
             # create a red tinted copy
@@ -119,11 +124,11 @@ class Player(Damageable):
 
 
     def get_rect(self):
-        return pygame.Rect(self.x, self.y, self.width, self.height)
+        return pygame.Rect(self.x, self.y, self.collisionWidth, self.collisionHeight)
     
     
     def shoot(self, target_world_pos):
-            start = pygame.Vector2(self.rect.center)
+            start = pygame.Vector2(self.collisionRect.center)
 
             direction = pygame.Vector2(target_world_pos) - start
             if direction.length_squared() == 0:

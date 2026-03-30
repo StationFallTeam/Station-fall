@@ -1,8 +1,8 @@
 """Dungeon rendering functions."""
 
 import pygame
-from classes import Room, Hallway, TileMap, Prefab
-from generation import aligned_wall_y
+from dungeongen.classes import Room, Hallway, TileMap, Prefab
+from dungeongen.generation import aligned_wall_y
 
 # Colors
 COLOR_BG = (8, 8, 8)
