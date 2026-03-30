@@ -2,6 +2,7 @@
 import pygame
 import asyncio
 import sys
+import math
 
 from .player import Player
 from .enemy import Enemy
@@ -24,8 +25,6 @@ GAME_OVER = "game_over"
 CREDITS = "Credits"
 INVENTORY = "inventory"
 
-<<<<<<< HEAD
-=======
 def draw_menu(win, screen_width, screen_height, truck_img, float_time):
 
     title_font = pygame.font.SysFont(None, 90)
@@ -110,7 +109,7 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
         ("Wil Nahra",            "| Developer | Sprite Creation |"),
         ("Simon Halaszi",        "| Developer |"),
         ("Loy Ngo",              "| Developer |"),
-        ("Meheraj Khatri",       "| Developer |"),
+        ("Mark",                 "| Developer |"),
         ("Rowan",                "| Developer |"),
         ("Sebastian Bentancourt","| Developer |"),
         ("Yusairah Haque",       "| Developer |"),
@@ -134,7 +133,6 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
     hint = hint_font.render("Press ESC to return", True, (160, 160, 160))
     win.blit(hint, hint.get_rect(center=(screen_width // 2, screen_height - 40)))
 
->>>>>>> b2e0947da51f3ddadba5509e46e64acdb12c81f2
 async def main(): 
     pygame.init()
     if sys.platform != "emscripten":
@@ -342,15 +340,10 @@ async def main():
                 draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins, floating_texts)
 
         elif state == INVENTORY:
-<<<<<<< HEAD
-            render_inventory_screen(win, player, enemies, bullets, world.walls,
-                                    camera, background, coins, inventory_ui)
-=======
             background.update_and_draw(win, (camera.camera.x, camera.camera.y))
-            draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins, floating_texts)
+            draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins)
             inventory_ui.draw(win, player.money)
 
->>>>>>> b2e0947da51f3ddadba5509e46e64acdb12c81f2
         elif state == GAME_OVER:
             render_game_over_screen(win, screen_width, screen_height, background, 
                                     menu_camera_x, menu_camera_y, gameOver_img, float_time)
