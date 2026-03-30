@@ -1,3 +1,5 @@
+import asyncio
+
 import pygame
 
 from dungeongen.classes import DungeonGen, HubGen
@@ -18,7 +20,7 @@ from dungeongen.config import (
     CAMERA_SPEED,
 )
 
-def run_pygame():
+async def main():
     pygame.init()
     pygame.display.set_caption("Dungeon Layout")
     screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
@@ -200,15 +202,10 @@ def run_pygame():
         screen.blit(text3, (10, 54))
 
         pygame.display.flip()
+        await asyncio.sleep(0)
         clock.tick(60)
 
     pygame.quit()
-
-
-def main():
-    """Entry point."""
-    run_pygame()
-
 
 if __name__ == "__main__":
     main()
