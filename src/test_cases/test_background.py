@@ -11,6 +11,7 @@ class TestBackground(unittest.TestCase):
     # Set up a test background for testing
     def setUp(self):
         # Pygame must be initialized for draw calls
+        pygame.init()
         pygame.display.set_mode((1, 1), pygame.HIDDEN)
         self.bg = SpaceBackground(800, 600)
 
