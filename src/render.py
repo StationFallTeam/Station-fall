@@ -58,7 +58,6 @@ def apply_brightness(win, brightness):
     overlay.fill((0, 0, 0))
     overlay.set_alpha(darkness)
 
-<<<<<<< HEAD
     win.blit(overlay, (0, 0))
 
 def draw_menu(win, screen_width, screen_height, truck_img, float_time):
@@ -145,7 +144,7 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
         ("Wil Nahra",            "| Developer | Sprite Creation |"),
         ("Simon Halaszi",        "| Developer |"),
         ("Loy Ngo",              "| Developer |"),
-        ("Mark",                 "| Developer |"),
+        ("Meheraj Khatri",       "| Developer |"),
         ("Rowan",                "| Developer |"),
         ("Sebastian Bentancourt","| Developer |"),
         ("Yusairah Haque",       "| Developer |"),
@@ -180,6 +179,3 @@ def render_inventory_screen(win, player, enemies, bullets, walls, camera, backgr
 def render_game_over_screen(win, screen_width, screen_height, background, menu_camera_x, menu_camera_y, gameOver_img, float_time):
     background.update_and_draw(win, (menu_camera_x, menu_camera_y))
     draw_game_over(win, screen_width, screen_height, gameOver_img, float_time)
-=======
-    win.blit(overlay, (0, 0))
->>>>>>> b2e0947da51f3ddadba5509e46e64acdb12c81f2
