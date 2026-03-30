@@ -37,19 +37,14 @@ To launch: ./run_web.sh
 
 We follow Test-Driven Development principles to collect evidence of the system's value Running Test Cases
 
-To run the automated test suite for the camera and background modules, navigate to the src directory and use unittest discover:
-
-
-#### Navigate to source directory
-
-```bash 
-cd src
-```
+To run the automated test suite for the camera and background modules, and the test suite for dungeongen
+run the following bash commands
 
 #### Run all tests in the test_cases folder
 
 ```bash
-python3 -m unittest discover test_cases
+python3 -m unittest discover src/test_cases
+python3 -m unittest discover dungeongen/test_cases
 ```
 
 

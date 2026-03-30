@@ -1,6 +1,6 @@
 import pygame
-from .damageable import Damageable
-from .projectile import Projectile
+from src.damageable import Damageable
+from src.projectile import Projectile
 
 class Player(Damageable):
     def __init__(self, x, y):
@@ -13,8 +13,8 @@ class Player(Damageable):
         self.drawHeight = 48
         self.speed = 5
 
-        self.collisionWidth = 32
-        self.collisionHeight = 32
+        self.width = 32
+        self.height = 32
 
         # Load spritesheet (root-relative for pygbag)
         self.sprite_sheet = pygame.image.load("sprites/player_sheet.png").convert_alpha()
@@ -34,7 +34,7 @@ class Player(Damageable):
         self.moving = False
         # Create a rect for the camera to track - Meheraj
         self.drawRect = pygame.Rect(self.x, self.y, self.drawWidth, self.drawHeight)
-        self.collisionRect = pygame.Rect(self.x, self.y, self.collisionWidth, self.collisionHeight)
+        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.money = 0
    
 
@@ -77,28 +77,28 @@ class Player(Damageable):
             self.direction = "down"
             self.moving = True
 
-        self.collisionRect.x += dx
+        self.rect.x += dx
         for wall in walls:
-            if self.collisionRect.colliderect(wall):
+            if self.rect.colliderect(wall):
                 if dx > 0:
-                    self.collisionRect.right = wall.left
+                    self.rect.right = wall.left
                 if dx < 0:
-                    self.collisionRect.left = wall.right
+                    self.rect.left = wall.right
 
-        self.collisionRect.y += dy
+        self.rect.y += dy
         for wall in walls:
-            if self.collisionRect.colliderect(wall):
+            if self.rect.colliderect(wall):
                 if dy > 0:
-                    self.collisionRect.bottom = wall.top
+                    self.rect.bottom = wall.top
                 if dy < 0:
-                    self.collisionRect.top = wall.bottom
+                    self.rect.top = wall.bottom
 
-        self.x = self.collisionRect.x
-        self.y = self.collisionRect.y
+        self.x = self.rect.x
+        self.y = self.rect.y
 
         # Sync the rect with the new coordinates - Meheraj
-        self.collisionRect.topleft = (self.x, self.y)
-        self.drawRect.midbottom = self.collisionRect.midbottom
+        self.rect.topleft = (self.x, self.y)
+        self.drawRect.midbottom = self.rect.midbottom
 
         if self.moving:
             self.frame_index += self.anim_speed
@@ -122,25 +122,12 @@ class Player(Damageable):
         else:
             screen.blit(frame, draw_pos)
 
-
-    @property
-    def rect(self):
-        return self.collisionRect
-
-    @property
-    def width(self):
-        return self.collisionWidth
-
-    @property
-    def height(self):
-        return self.collisionHeight
-
     def get_rect(self):
-        return pygame.Rect(self.x, self.y, self.collisionWidth, self.collisionHeight)
+        return pygame.Rect(self.x, self.y, self.width, self.height)
     
     
     def shoot(self, target_world_pos):
-            start = pygame.Vector2(self.collisionRect.center)
+            start = pygame.Vector2(self.rect.center)
 
             direction = pygame.Vector2(target_world_pos) - start
             if direction.length_squared() == 0:

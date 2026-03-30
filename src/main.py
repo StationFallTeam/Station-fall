@@ -5,15 +5,15 @@ import math
 import sys
 import math
 
-from .player import Player
-from .enemy import Enemy
-from .render import draw_objects, apply_brightness
-from .camera import Camera          # Added for camera - Meheraj
-from .background import SpaceBackground # Added for parallax background - Meheraj
-from .world import World
-from .coin import Coin
-from .inventory_ui import InventoryUI
-from .floating_texts import FloatingText  # Added for floating damage text - Meheraj
+from src.player import Player
+from src.enemy import Enemy
+from src.render import draw_objects, apply_brightness
+from src.camera import Camera          # Added for camera - Meheraj
+from src.background import SpaceBackground # Added for parallax background - Meheraj
+from src.world import World
+from src.coin import Coin
+from src.inventory_ui import InventoryUI
+from src.floating_texts import FloatingText  # Added for floating damage text - Meheraj
 
 # NOTE:
 # When debugging pygbag web crashes, temporarily wrap main() in a try/except
@@ -108,7 +108,7 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
 
     team = [
         ("Wil Nahra",            "| Developer | Sprite Creation |"),
-        ("Simon Halaszi",        "| Developer |"),
+        ("Simon Halaszi",        "| Developer | Dungeon Master |"),
         ("Loy Ngo",              "| Developer |"),
         ("Mark",                 "| Developer |"),
         ("Rowan",                "| Developer |"),
