@@ -12,6 +12,7 @@ class TestProjectile(unittest.TestCase):
     # Set up a test player for projectile testing
     def setUp(self):
         # Pygame must be initialized for player setup
+        pygame.init()
         pygame.display.set_mode((1, 1), pygame.HIDDEN)
 
         fake_sheet = pygame.Surface((48 * 4, 48 * 4), pygame.SRCALPHA)

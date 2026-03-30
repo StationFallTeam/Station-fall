@@ -1,6 +1,6 @@
 import pygame
-from src.damageable import Damageable
-from src.projectile import Projectile
+from .damageable import Damageable
+from .projectile import Projectile
 
 class Player(Damageable):
     def __init__(self, x, y):
@@ -122,6 +122,18 @@ class Player(Damageable):
         else:
             screen.blit(frame, draw_pos)
 
+
+    @property
+    def rect(self):
+        return self.collisionRect
+
+    @property
+    def width(self):
+        return self.collisionWidth
+
+    @property
+    def height(self):
+        return self.collisionHeight
 
     def get_rect(self):
         return pygame.Rect(self.x, self.y, self.collisionWidth, self.collisionHeight)
