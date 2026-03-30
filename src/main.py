@@ -233,7 +233,7 @@ async def main():
 
         elif state == INVENTORY:
             background.update_and_draw(win, (camera.camera.x, camera.camera.y))
-            draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins)
+            draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins, floating_texts)
             inventory_ui.draw(win, player.money)
 
         elif state == GAME_OVER:
