@@ -316,9 +316,12 @@ async def main():
 
                     for enemy in enemies[:]:
                         if bullet_rect.colliderect(enemy.rect):
+                            # Track enemy health before applying damage so we only show damage text
+                            before_health = getattr(enemy, "health", None)
                             enemy.take_damage(10)
-                            # Action Effect: Enemy hit text
-                            floating_texts.append(FloatingText(enemy.x, enemy.y - 20, "-10", color=(255, 255, 0)))
+                            # Action Effect: Enemy hit text (only if damage was actually applied)
+                            if before_health is not None and getattr(enemy, "health", before_health) < before_health:
+                                floating_texts.append(FloatingText(enemy.x, enemy.y - 20, "-10", color=(255, 255, 0)))
 
                             if bullet in bullets:
                                 bullets.remove(bullet)
