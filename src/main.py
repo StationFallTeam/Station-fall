@@ -186,176 +186,184 @@ async def main():
     state = MENU
     running = True
 
-    while running:
-        clock.tick(60)
-        float_time += 0.05
-        menu_camera_x -= 4
+    try:
+        while running:
+            clock.tick(60)
+            float_time += 0.05
+            menu_camera_x -= 4
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
 
-            elif event.type == pygame.KEYDOWN:
-                # Global controls
-                if event.key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
-                    music_volume = min(music_volume + VOLUME_STEP, 1.0)
-                    pygame.mixer.music.set_volume(music_volume)
-                    print(f"Volume increased to: {music_volume*100:.0f}%", flush=True)
+                elif event.type == pygame.KEYDOWN:
+                    # Global controls
+                    if event.key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
+                        music_volume = min(music_volume + VOLUME_STEP, 1.0)
+                        pygame.mixer.music.set_volume(music_volume)
+                        print(f"Volume increased to: {music_volume*100:.0f}%", flush=True)
 
-                elif event.key in (pygame.K_MINUS, pygame.K_KP_MINUS):
-                    music_volume = max(music_volume - VOLUME_STEP, 0.0)
-                    pygame.mixer.music.set_volume(music_volume)
-                    print(f"Volume decreased to: {music_volume*100:.0f}%", flush=True)
+                    elif event.key in (pygame.K_MINUS, pygame.K_KP_MINUS):
+                        music_volume = max(music_volume - VOLUME_STEP, 0.0)
+                        pygame.mixer.music.set_volume(music_volume)
+                        print(f"Volume decreased to: {music_volume*100:.0f}%", flush=True)
 
-                # Use 9 / 0 for web reliability
-                elif event.key == pygame.K_0:
-                    brightness = min(brightness + BRIGHTNESS_STEP, 1.0)
-                    print(f"Brightness increased to: {brightness*100:.0f}%", flush=True)
+                    # Use 9 / 0 for web reliability
+                    elif event.key == pygame.K_0:
+                        brightness = min(brightness + BRIGHTNESS_STEP, 1.0)
+                        print(f"Brightness increased to: {brightness*100:.0f}%", flush=True)
 
-                elif event.key == pygame.K_9:
-                    brightness = max(brightness - BRIGHTNESS_STEP, 0.2)
-                    print(f"Brightness decreased to: {brightness*100:.0f}%", flush=True)
+                    elif event.key == pygame.K_9:
+                        brightness = max(brightness - BRIGHTNESS_STEP, 0.2)
+                        print(f"Brightness decreased to: {brightness*100:.0f}%", flush=True)
 
-                # State-specific keyboard input
-                elif state == MENU:
-                    if event.key == pygame.K_RETURN:
-                        state = GAME
-                        if not music_started:
-                            pygame.mixer.music.play(-1)
-                            music_started = True
-                    elif event.key == pygame.K_ESCAPE:
-                        running = False
+                    # State-specific keyboard input
+                    elif state == MENU:
+                        if event.key == pygame.K_RETURN:
+                            state = GAME
+                            if not music_started:
+                                pygame.mixer.music.play(-1)
+                                music_started = True
+                        elif event.key == pygame.K_ESCAPE:
+                            running = False
 
-                elif state == GAME:
-                    if event.key == pygame.K_i:
-                        state = INVENTORY
-                    elif event.key == pygame.K_ESCAPE:
-                        state = MENU
+                    elif state == GAME:
+                        if event.key == pygame.K_i:
+                            state = INVENTORY
+                        elif event.key == pygame.K_ESCAPE:
+                            state = MENU
 
-                elif state == GAME_OVER:
-                    if event.key == pygame.K_RETURN:
-                        player.health = 100
-                        player.rect.topleft = (100, 100)
-                        bullets.clear()
-                        enemies.clear()
-                        enemies.append(Enemy(300, 300))
-                        floating_texts.clear()
-                        state = GAME
-                    elif event.key == pygame.K_ESCAPE:
-                        running = False
+                    elif state == GAME_OVER:
+                        if event.key == pygame.K_RETURN:
+                            player.health = 100
+                            player.rect.topleft = (100, 100)
+                            bullets.clear()
+                            enemies.clear()
+                            enemies.append(Enemy(300, 300))
+                            floating_texts.clear()
+                            state = GAME
+                        elif event.key == pygame.K_ESCAPE:
+                            running = False
 
-                elif state == CREDITS:
-                    if event.key == pygame.K_ESCAPE:
-                        state = MENU
+                    elif state == CREDITS:
+                        if event.key == pygame.K_ESCAPE:
+                            state = MENU
 
-                elif state == INVENTORY:
-                    if event.key == pygame.K_i:
-                        state = GAME
-                    elif event.key == pygame.K_ESCAPE:
-                        state = MENU
+                    elif state == INVENTORY:
+                        if event.key == pygame.K_i:
+                            state = GAME
+                        elif event.key == pygame.K_ESCAPE:
+                            state = MENU
 
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if state == MENU:
-                    if start_rect.collidepoint(event.pos):
-                        state = GAME
-                        if not music_started:
-                            pygame.mixer.music.play(-1)
-                            music_started = True
-                    elif credits_rect.collidepoint(event.pos):
-                        state = CREDITS
-                        if not music_started:
-                            pygame.mixer.music.play(-1)
-                            music_started = True
-                    elif quit_rect.collidepoint(event.pos):
-                        running = False
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    if state == MENU:
+                        if start_rect.collidepoint(event.pos):
+                            state = GAME
+                            if not music_started:
+                                pygame.mixer.music.play(-1)
+                                music_started = True
+                        elif credits_rect.collidepoint(event.pos):
+                            state = CREDITS
+                            if not music_started:
+                                pygame.mixer.music.play(-1)
+                                music_started = True
+                        elif quit_rect.collidepoint(event.pos):
+                            running = False
 
-                elif state == GAME:
-                    mouse_world = camera.screen_to_world(event.pos)
-                    bullet = player.shoot(mouse_world)
-                    if bullet:
-                        bullets.append(bullet)
+                    elif state == GAME:
+                        mouse_world = camera.screen_to_world(event.pos)
+                        bullet = player.shoot(mouse_world)
+                        if bullet:
+                            bullets.append(bullet)
 
-        # ---------- DRAW / UPDATE PHASE ----------
-        win.fill((0, 0, 0))
+            # ---------- DRAW / UPDATE PHASE ----------
+            win.fill((0, 0, 0))
 
-        if state == MENU:
-            background.update_and_draw(win, (menu_camera_x, menu_camera_y))
-            start_rect, quit_rect, credits_rect = draw_menu(
-                win, screen_width, screen_height, truck_img, float_time
-            )
+            if state == MENU:
+                background.update_and_draw(win, (menu_camera_x, menu_camera_y))
+                start_rect, quit_rect, credits_rect = draw_menu(
+                    win, screen_width, screen_height, truck_img, float_time
+                )
 
-        elif state == GAME:
-            keys = pygame.key.get_pressed()
-            player.update(keys, world.walls)
-            camera.update(player)
+            elif state == GAME:
+                keys = pygame.key.get_pressed()
+                player.update(keys, world.walls)
+                camera.update(player)
 
-            # Update floating texts (fading/moving)
-            floating_texts = [ft for ft in floating_texts if ft.update()]
+                # Update floating texts (fading/moving)
+                floating_texts = [ft for ft in floating_texts if ft.update()]
 
-            if player.health <= 0 or keys[pygame.K_k]:
-                state = GAME_OVER
-            else:
-                for enemy in enemies:
-                    enemy.update(player.rect)
-                    if enemy.rect.colliderect(player.rect):
-                        if not player.is_invincible:
-                            player.take_damage(10)
-                            # Action Effect: Player hit text
-                            floating_texts.append(FloatingText(player.x, player.y - 20, "Player has been Hit!!! -10", color=(255, 0, 0)))
+                if player.health <= 0 or keys[pygame.K_k]:
+                    state = GAME_OVER
+                else:
+                    for enemy in enemies:
+                        enemy.update(player.rect)
+                        if enemy.rect.colliderect(player.rect):
+                            if not player.is_invincible:
+                                player.take_damage(10)
+                                # Action Effect: Player hit text
+                                floating_texts.append(FloatingText(player.x, player.y - 20, "Player has been Hit!!! -10", color=(255, 0, 0)))
 
-                for bullet in bullets[:]:
-                    bullet.update()
+                    for bullet in bullets[:]:
+                        bullet.update()
 
-                    bullet_rect = pygame.Rect(
-                        int(bullet.pos.x - bullet.radius),
-                        int(bullet.pos.y - bullet.radius),
-                        bullet.radius * 2,
-                        bullet.radius * 2
-                    )
+                        bullet_rect = pygame.Rect(
+                            int(bullet.pos.x - bullet.radius),
+                            int(bullet.pos.y - bullet.radius),
+                            bullet.radius * 2,
+                            bullet.radius * 2
+                        )
 
-                    for enemy in enemies[:]:
-                        if bullet_rect.colliderect(enemy.rect):
-                            # Track enemy health before applying damage so we only show damage text
-                            before_health = getattr(enemy, "health", None)
-                            enemy.take_damage(10)
-                            # Action Effect: Enemy hit text (only if damage was actually applied)
-                            if before_health is not None and getattr(enemy, "health", before_health) < before_health:
-                                floating_texts.append(FloatingText(enemy.x, enemy.y - 20, "-10", color=(255, 255, 0)))
+                        for enemy in enemies[:]:
+                            if bullet_rect.colliderect(enemy.rect):
+                                # Track enemy health before applying damage so we only show damage text
+                                before_health = getattr(enemy, "health", None)
+                                enemy.take_damage(10)
+                                # Action Effect: Enemy hit text (only if damage was actually applied)
+                                if before_health is not None and getattr(enemy, "health", before_health) < before_health:
+                                    floating_texts.append(FloatingText(enemy.x, enemy.y - 20, "-10", color=(255, 255, 0)))
 
-                            if bullet in bullets:
-                                bullets.remove(bullet)
+                                if bullet in bullets:
+                                    bullets.remove(bullet)
 
-                            if enemy.is_dead:
-                                coins.append(Coin(enemy.rect.centerx, enemy.rect.centery, value=3))
-                                enemies.remove(enemy)
+                                if enemy.is_dead:
+                                    coins.append(Coin(enemy.rect.centerx, enemy.rect.centery, value=3))
+                                    enemies.remove(enemy)
 
-                            break
+                                break
 
-                for coin in coins[:]:
-                    coin.update()
-                    if player.rect.colliderect(coin.rect):
-                        player.money += coin.value
-                        coins.remove(coin)
+                    for coin in coins[:]:
+                        coin.update()
+                        if player.rect.colliderect(coin.rect):
+                            player.money += coin.value
+                            coins.remove(coin)
 
+                    draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins, floating_texts)
+
+            elif state == INVENTORY:
+                background.update_and_draw(win, (camera.camera.x, camera.camera.y))
                 draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins, floating_texts)
+                inventory_ui.draw(win, player.money)
 
-        elif state == INVENTORY:
-            background.update_and_draw(win, (camera.camera.x, camera.camera.y))
-            draw_objects(win, player, enemies, bullets, world.walls, camera, background, coins, floating_texts)
-            inventory_ui.draw(win, player.money)
+            elif state == GAME_OVER:
+                background.update_and_draw(win, (menu_camera_x, menu_camera_y))
+                draw_game_over(win, screen_width, screen_height, gameOver_img, float_time)
 
-        elif state == GAME_OVER:
-            background.update_and_draw(win, (menu_camera_x, menu_camera_y))
-            draw_game_over(win, screen_width, screen_height, gameOver_img, float_time)
+            elif state == CREDITS:
+                draw_credits(win, screen_width, screen_height, background, float_time, menu_camera_x, menu_camera_y)
 
-        elif state == CREDITS:
-            draw_credits(win, screen_width, screen_height, background, float_time, menu_camera_x, menu_camera_y)
+            apply_brightness(win, brightness)
+            pygame.display.flip()
+            await asyncio.sleep(0)
 
-        apply_brightness(win, brightness)
-        pygame.display.flip()
-        await asyncio.sleep(0)
+    except asyncio.CancelledError:
+        # Expected on Ctrl+C when the event loop cancels the running coroutine.
+        pass
+    finally:
+        pygame.quit()
 
-    pygame.quit()
-
-
-asyncio.run(main())
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass
