@@ -12,7 +12,7 @@ from .background import SpaceBackground # Added for parallax background - Mehera
 from .world import World
 from .coin import Coin
 from .inventory_ui import InventoryUI
-from .floating_text import FloatingText  # Added for floating damage text - Meheraj
+from .floating_texts import FloatingText  # Added for floating damage text - Meheraj
 
 # NOTE:
 # When debugging pygbag web crashes, temporarily wrap main() in a try/except
