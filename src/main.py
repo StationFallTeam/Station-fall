@@ -109,7 +109,7 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
         ("Wil Nahra",            "| Developer | Sprite Creation |"),
         ("Simon Halaszi",        "| Developer |"),
         ("Loy Ngo",              "| Developer |"),
-        ("Mark",                 "| Developer |"),
+        ("Meheraj Khatri",       "| Developer |"),
         ("Rowan",                "| Developer |"),
         ("Sebastian Bentancourt","| Developer |"),
         ("Yusairah Haque",       "| Developer |"),
