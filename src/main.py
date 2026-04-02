@@ -7,7 +7,7 @@ import math
 
 from src.player import Player
 from src.enemy import Enemy
-from src.render import draw_objects, apply_brightness
+from src.render import draw_objects, apply_brightness, draw_menu, draw_game_over, draw_credits  # Updated to include new render functions - Meheraj
 from src.camera import Camera          # Added for camera - Meheraj
 from src.background import SpaceBackground # Added for parallax background - Meheraj
 from src.world import World
