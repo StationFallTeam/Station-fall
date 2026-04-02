@@ -1,5 +1,7 @@
 import pygame
 from src.ui import draw_health_bar, draw_money
+from src.camera import Camera
+import math
 
 def draw_objects(win, player, enemies, bullets, walls, camera, background, coins, floating_texts):
     # 1. Draw the parallax background first using camera position
