@@ -1,7 +1,5 @@
-"""Dungeon rendering functions."""
-
 import pygame
-from dungeongen.classes import Room, Hallway, TileMap, Prefab
+from dungeongen.classes import BaseRoom, CombatRoom, Hallway, TileMap, Prefab
 from dungeongen.generation import aligned_wall_y
 
 # Colors
@@ -22,7 +20,7 @@ def draw_grid(
     show_grid: bool, 
     screen_w: int,
     screen_h: int,
-    rooms: list[Room] | None = None, 
+    rooms: list[BaseRoom] | None = None, 
     hallways: list[Hallway] | None = None,
     prefabs: list[Prefab] | None = None, 
     wall_prefabs: list[Prefab] | None = None,
@@ -242,6 +240,47 @@ def draw_grid(
                                     sprite_surf = sprites['obstacles'][obs_id]
                                     scaled_sprite = pygame.transform.scale(sprite_surf, (tile_size, tile_size))
                                     surface.blit(scaled_sprite, (screen_x, screen_y))
+
+        # Render door sprites for locked rooms
+        if hallways and rooms:
+            for hallway in hallways:
+                if hallway.prefab_id is None:
+                    continue
+
+                if hallway.direction == "upways" and hallway_prefabs_upways:
+                    prefabs_list = hallway_prefabs_upways
+                elif hallway.direction == "sideways" and hallway_prefabs_sideways:
+                    prefabs_list = hallway_prefabs_sideways
+                else:
+                    continue
+
+                if hallway.prefab_id >= len(prefabs_list):
+                    continue
+
+                hallway_prefab = prefabs_list[hallway.prefab_id]
+                
+                # Check if any combat room is locked and has doors in this hallway
+                for room in rooms:
+                    # Only combat rooms have locked state and door positions
+                    if isinstance(room, CombatRoom) and room.locked and room.door_positions:
+                        for door_data in room.door_positions:
+                            world_x, world_y, hallway_idx, local_x, local_y, original_value = door_data
+                            
+                            # Check if this door belongs to the current hallway
+                            if hallway_idx == hallways.index(hallway):
+                                # Render door sprite from doors attribute
+                                door_sprite_id = None
+                                if hasattr(hallway_prefab, 'doors') and hallway_prefab.doors:
+                                    if local_y < len(hallway_prefab.doors) and local_x < len(hallway_prefab.doors[local_y]):
+                                        door_sprite_id = hallway_prefab.doors[local_y][local_x]
+                                
+                                if door_sprite_id and door_sprite_id != '.' and door_sprite_id in sprites.get('obstacles', {}):
+                                    if start_x <= world_x <= end_x and start_y <= world_y <= end_y:
+                                        screen_x = world_x * tile_size - cam_x
+                                        screen_y = world_y * tile_size - cam_y
+                                        sprite_surf = sprites['obstacles'][door_sprite_id]
+                                        scaled_sprite = pygame.transform.scale(sprite_surf, (tile_size, tile_size))
+                                        surface.blit(scaled_sprite, (screen_x, screen_y))
 
     # Render grid if requested
     if show_grid:

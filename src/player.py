@@ -9,10 +9,10 @@ class Player(Damageable):
         self.x = x
         self.y = y
 
-        self.drawWidth = 48
-        self.drawHeight = 48
         self.speed = 5
 
+        self.drawWidth = 48
+        self.drawHeight = 48
         self.width = 32
         self.height = 32
 
@@ -54,7 +54,8 @@ class Player(Damageable):
                 )
                 self.animations[direction].append(frame)
 
-    def update(self, keys, walls):
+    def update(self, keys, walls=None):
+        """Handle player movement and animation. Collision handled externally by collision.py"""
         self.moving = False
 
         dx = 0
@@ -77,29 +78,17 @@ class Player(Damageable):
             self.direction = "down"
             self.moving = True
 
-        self.rect.x += dx
-        for wall in walls:
-            if self.rect.colliderect(wall):
-                if dx > 0:
-                    self.rect.right = wall.left
-                if dx < 0:
-                    self.rect.left = wall.right
+        # Store movement deltas for collision system
+        self._last_dx = dx
+        self._last_dy = dy
 
-        self.rect.y += dy
-        for wall in walls:
-            if self.rect.colliderect(wall):
-                if dy > 0:
-                    self.rect.bottom = wall.top
-                if dy < 0:
-                    self.rect.top = wall.bottom
-
-        self.x = self.rect.x
-        self.y = self.rect.y
-
-        # Sync the rect with the new coordinates - Meheraj
+        # Apply movement - collision.py will handle collision resolution
+        self.x += dx
+        self.y += dy
         self.rect.topleft = (self.x, self.y)
         self.drawRect.midbottom = self.rect.midbottom
 
+        # Handle animations
         if self.moving:
             self.frame_index += self.anim_speed
             if self.frame_index >= len(self.animations[self.direction]):
@@ -109,18 +98,19 @@ class Player(Damageable):
 
         super().update()
 
-
     def draw(self, screen, camera):
         frame = self.animations[self.direction][int(self.frame_index)]
         draw_pos = camera.apply(self.drawRect)
 
+        """
         if self.is_invincible:
             # create a red tinted copy
             flash = frame.copy()
             flash.fill((225, 0, 0, 120), special_flags = pygame.BLEND_RGBA_ADD)
             screen.blit(flash, draw_pos)
         else:
-            screen.blit(frame, draw_pos)
+        """
+        screen.blit(frame, draw_pos)
 
     def get_rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)

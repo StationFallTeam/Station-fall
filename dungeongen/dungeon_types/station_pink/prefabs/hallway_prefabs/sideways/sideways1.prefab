@@ -12,3 +12,13 @@
 flr1l, flr1, flr1, flr1, flr1, flr1r
 flr1l, flr1, flr1, flr1, flr1, flr1r
 flr1l, flr1, flr1, flr1, flr1, flr1r
+
+[DOOR_COLLISION]
+bckr, ., ., ., ., bckr
+bckr, ., ., ., ., bckr
+bckr, ., ., ., ., bckr
+
+[DOOR_OBSTACLE]
+bckr, ., ., ., ., bckr
+bckr, ., ., ., ., bckr
+bckr, ., ., ., ., bckr

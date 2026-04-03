@@ -1,10 +1,19 @@
-"""Data classes and facade API for dungeon generation."""
-
 import random
 import time
 import os
 
 import pygame
+
+# Context object for passing dungeon state to rooms for combat mechanics 
+class DungeonContext:
+    def __init__(self, tile_size=40):
+        self.enemies = []
+        self.collision_map = {}
+        self.tile_size = tile_size
+        self.rooms = []
+        self.hallways = []
+        self.dungeon_gen = None
+
 
 # Rectangle class for generation
 class Rect:
@@ -16,24 +25,196 @@ class Rect:
         self.right = self.x + self.w - 1
         self.bottom = self.y + self.h - 1
         self.center = (self.x + self.w // 2, self.y + self.h // 2)
+    
+    @property
+    def width(self):
+        return self.w
+    
+    @property 
+    def height(self):
+        return self.h
 
 # Prefab class for generation
 class Prefab:
-    def __init__(self, collision, obstacle, base, name=None):
+    def __init__(self, collision, obstacle, base, name=None, doors=None, enemy=None, trigger=None):
         self.collision = collision
         self.obstacle = obstacle
         self.base = base
         self.name = name
+        self.doors = doors or []
+        self.enemy = enemy or []
+        self.trigger = trigger or []
 
-# Room class for generation
-class Room:
-    def __init__(self, rect, prefab_id=None, is_base_room=False):
+# Base Room Class
+class BaseRoom:
+    def __init__(self, rect, prefab_id=None):
         self.rect = rect
         self.prefab_id = prefab_id
-        self.is_base_room = is_base_room
         self.wall_prefab_id = None
         self.doors = []
         self.center = rect.center
+        
+        # Create trigger rect - one tile smaller on all sides, centered
+        margin = 1
+        self.triggerRect = Rect(
+            rect.x + margin,
+            rect.y + margin,
+            max(1, rect.w - 2 * margin),
+            max(1, rect.h - 2 * margin)
+        )
+
+    @property 
+    def is_base_room(self):
+        return isinstance(self, HubRoom)
+
+# Hub Rooms
+class HubRoom(BaseRoom):
+    def __init__(self, rect, prefab_id=None):
+        super().__init__(rect, prefab_id)
+        
+        # Trigger areas parsed from prefab
+        self.trigger_areas = {}  # Dictionary of {trigger_name: [pygame.Rect, ...]}
+
+# Combat Rooms
+class CombatRoom(BaseRoom):
+    def __init__(self, rect, prefab_id=None):
+        super().__init__(rect, prefab_id)
+        
+        # Combat and entry tracking
+        self.visited = False
+        self.locked = False
+        self.enemies_spawned = []
+        self.spawn_timer = 0
+        self.unlock_timer = 0
+        
+        # Spawn warning visual effects
+        self.spawn_warnings = []  # List of (tile_x, tile_y, flash_timer) tuples
+        
+        # Door positions for locking room - will be populated when doors are placed
+        self.door_positions = []  # List of (world_x, world_y, hallway_index, local_x, local_y, original_value) tuples
+        
+        # Enemy spawn data parsed from prefab
+        self.enemy_spawn_data = []
+
+    def on_enter(self, dungeon_context):
+        if self.visited:
+            return
+        
+        self.visited = True
+        self.locked = True
+        self.spawn_timer = 90  # 1.5 seconds at 60fps for visual effect
+        
+        # Setup spawn warning visual effects
+        self.spawn_warnings = []
+        for enemy_type, local_x, local_y in self.enemy_spawn_data:
+            world_tile_x = self.rect.x + local_x
+            world_tile_y = self.rect.y + local_y
+            self.spawn_warnings.append([world_tile_x, world_tile_y, 90])  # 90 frames = 1.5 seconds
+        
+        # Place doors to lock room
+        self.place_doors(dungeon_context)
+
+    def place_doors(self, dungeon_context):
+        from dungeongen.door_placement_functions import place_doors_for_room
+        place_doors_for_room(self, dungeon_context)
+
+    def unplace_doors(self, dungeon_context):
+        from dungeongen.door_placement_functions import remove_doors_for_room
+        remove_doors_for_room(self, dungeon_context)
+
+    def update(self, dungeon_context):
+        if not self.visited:
+            return
+            
+        # Update spawn warning effects
+        for warning in self.spawn_warnings[:]:
+            warning[2] -= 1  # Decrease flash timer
+            if warning[2] <= 0:
+                self.spawn_warnings.remove(warning)
+            
+        # Handle spawn delay
+        if self.locked and self.spawn_timer > 0:
+            self.spawn_timer -= 1
+            if self.spawn_timer == 0:
+                self.spawn_enemies(dungeon_context)
+                
+        # Check if all enemies defeated
+        if self.locked and self.enemies_spawned:
+            alive_enemies = [e for e in self.enemies_spawned if e.health > 0]
+            self.enemies_spawned = alive_enemies
+            
+            if not alive_enemies and self.unlock_timer <= 0:
+                self.unlock_timer = 60  # 1 second delay
+                
+        # Handle unlock delay
+        if self.unlock_timer > 0:
+            self.unlock_timer -= 1
+            if self.unlock_timer == 0:
+                self.unplace_doors(dungeon_context)
+
+    def _create_enemy_by_type(self, enemy_type, world_x, world_y):
+        from src.enemy import Enemy
+        
+        # For now, all enemy types create the same Enemy class
+        # This can be extended later to handle different enemy types
+        if enemy_type in ["enemy"]:
+            return Enemy(world_x, world_y)
+        
+        # Return None for unknown enemy types
+        print(f"Warning: Unknown enemy type '{enemy_type}', skipping spawn")
+        return None
+
+    def spawn_enemies(self, dungeon_context):
+        if not self.enemy_spawn_data:
+            return
+            
+        # Clear spawn warnings when actually spawning
+        self.spawn_warnings.clear()
+        
+        # Spawn enemies from parsed prefab data
+        enemies = dungeon_context.enemies
+        tile_size = dungeon_context.tile_size
+        
+        for enemy_type, local_x, local_y in self.enemy_spawn_data:
+            # Convert local room coordinates to world coordinates
+            world_x = (self.rect.x + local_x) * tile_size
+            world_y = (self.rect.y + local_y) * tile_size
+            
+            # Create enemy at world coordinates
+            enemy = self._create_enemy_by_type(enemy_type, world_x, world_y)
+            if enemy:
+                enemies.append(enemy)
+                self.enemies_spawned.append(enemy)
+
+    def draw_spawn_warnings(self, surface, camera, tile_size):
+        for warning in self.spawn_warnings:
+            tile_x, tile_y, flash_timer = warning
+      
+            # Calculate opacity based on countdown (starts at 0, goes to 255)
+            max_timer = 90  # Should match the initial timer value in on_enter
+            opacity = int(((max_timer - flash_timer) / max_timer) * 255)
+            opacity = max(0, min(255, opacity))  # Clamp to 0-255
+            
+            # Calculate screen position (center of tile)
+            world_x = (tile_x * tile_size) + (tile_size // 2)
+            world_y = (tile_y * tile_size) + (tile_size // 2)
+            screen_pos = camera.apply(pygame.Rect(world_x, world_y, 1, 1)).center
+            
+            # Draw circle with increasing opacity
+            circle_radius = tile_size // 3
+            circle_color = (255, 0, 0, opacity)
+            
+            # Create a surface for the circle with per-pixel alpha
+            circle_surface = pygame.Surface((circle_radius * 2, circle_radius * 2), pygame.SRCALPHA)
+            pygame.draw.circle(circle_surface, circle_color, (circle_radius, circle_radius), circle_radius)
+            
+            # Blit the circle surface to the main surface
+            circle_rect = circle_surface.get_rect(center=screen_pos)
+            surface.blit(circle_surface, circle_rect)
+
+# Convenience aliases for backwards compatibility 
+Room = BaseRoom  # For existing code that expects Room class
+
 
 # Hallway class for generation
 class Hallway:
@@ -104,6 +285,11 @@ def _build_sprite_aware_collision_rects(
 
     for (tile_x, tile_y), value in collision_map.items():
         if value == ".":
+            continue
+
+        # Force simple collision for door tiles (marked with "#")
+        if value == "#":
+            walls.append(pygame.Rect(tile_x * tile_size, tile_y * tile_size, tile_size, tile_size))
             continue
 
         obstacle_id = obstacle_on_collision.get((tile_x, tile_y))
@@ -312,9 +498,63 @@ class DungeonGen:
         )
 
         self.generated = True
-        self.centerCamera(SCREEN_W, SCREEN_H)
+        self.center_camera(SCREEN_W, SCREEN_H)
 
-    def loadAllAssets(self):
+    def load_complete(self, tile_size):
+        # Complete loading and setup for gameplay
+        if not self.loaded:
+            self.load_all_assets()
+            
+        self.generate_dungeon_random()
+        
+        # Handle all collision and trigger setup
+        from src.collision import clear_temporary_walls, clear_triggers, update_collision_walls
+        from dungeongen.loading import parse_all_prefab_data
+        
+        clear_temporary_walls()
+        clear_triggers()
+        
+        # Parse and setup triggers/enemies
+        parse_all_prefab_data(self, tile_size)
+        
+        # Get collision walls and update collision system
+        walls = self.get_collision_rects(tile_size=tile_size)
+        update_collision_walls(walls)
+        
+        # Get spawn position
+        spawn = self._get_spawn_position(tile_size)
+        
+        # Create and setup dungeon context
+        dungeon_context = self._create_dungeon_context(tile_size)
+        
+        return spawn, dungeon_context
+    
+    def _get_spawn_position(self, tile_size):
+        base_room = next((r for r in self.rooms if r.is_base_room), None)
+        if base_room is None:
+            return (0, 0)
+        
+        center_x, center_y = base_room.center
+        spawn_x = center_x * tile_size
+        spawn_y = (center_y + 1) * tile_size  # Move down 1 tile from center
+        return (spawn_x, spawn_y)
+    
+    def _create_dungeon_context(self, tile_size):
+        dungeon_context = DungeonContext(tile_size)
+        dungeon_context.enemies = []
+        dungeon_context.collision_map = self.collision_map
+        dungeon_context.rooms = self.rooms
+        dungeon_context.hallways = self.hallways
+        dungeon_context.dungeon_gen = self
+        return dungeon_context
+    
+    def get_room_counts(self):        
+        total_rooms = sum(1 for room in self.rooms if not room.is_base_room)
+        completed_rooms = sum(1 for room in self.rooms 
+                             if not room.is_base_room and room.visited and not room.locked)
+        return total_rooms, completed_rooms
+
+    def load_all_assets(self):
         from dungeongen.loading import (
             find_dungeon_types,
             find_presets,
@@ -354,9 +594,9 @@ class DungeonGen:
 
         return load_preset(preset_name, self.preset_directory)
 
-    def generateDungeonOfType(self, dungeon_type, seed=None):
+    def generate_dungeon_of_type(self, dungeon_type, seed=None):
         if not self.loaded:
-            self.loadAllAssets()
+            self.load_all_assets()
 
         if dungeon_type not in self.assets_by_type:
             print("Unknown dungeon type:", dungeon_type)
@@ -375,9 +615,9 @@ class DungeonGen:
         self._apply_preset(self._load_preset_values(self.preset_name))
         self._generate_current_selection(seed)
 
-    def generateDungeonOfPreset(self, preset_name, seed=None):
+    def generate_dungeon_of_preset(self, preset_name, seed=None):
         if not self.loaded:
-            self.loadAllAssets()
+            self.load_all_assets()
 
         if not self.available_dungeon_types:
             print("No valid dungeon types found.")
@@ -397,9 +637,9 @@ class DungeonGen:
         self._apply_preset(self._load_preset_values(self.preset_name))
         self._generate_current_selection(seed)
 
-    def generateDungeonSpecific(self, dungeon_type, preset_name, seed=None):
+    def generate_dungeon_specific(self, dungeon_type, preset_name, seed=None):
         if not self.loaded:
-            self.loadAllAssets()
+            self.load_all_assets()
 
         if dungeon_type not in self.assets_by_type:
             print("Unknown dungeon type:", dungeon_type)
@@ -418,9 +658,9 @@ class DungeonGen:
         self._apply_preset(self._load_preset_values(self.preset_name))
         self._generate_current_selection(seed)
 
-    def generateDungeonRandom(self, seed=None):
+    def generate_dungeon_random(self, seed=None):
         if not self.loaded:
-            self.loadAllAssets()
+            self.load_all_assets()
 
         if not self.available_dungeon_types:
             print("No valid dungeon types found.")
@@ -440,7 +680,7 @@ class DungeonGen:
         self._apply_preset(self._load_preset_values(self.preset_name))
         self._generate_current_selection(seed)
 
-    def centerCamera(self, screen_w, screen_h, tile_size=None):
+    def center_camera(self, screen_w, screen_h, tile_size=None):
         if not self.generated:
             return
 
@@ -543,7 +783,7 @@ class DungeonGen:
                 )
                 pygame.draw.rect(target_surface, (255, 0, 0, 128), rect)
 
-    def getCollisionRects(self, tile_size=None):
+    def get_collision_rects(self, tile_size=None):
         if tile_size is None:
             active_tile_size = self.tile_size
         else:
@@ -609,7 +849,7 @@ class HubGen:
                     sprites[layer][sprite_id] = sprite
         return sprites
 
-    def loadHubAssets(self):
+    def load_hub_assets(self):
         from dungeongen.loading import load_prefab
 
         resolved = self._resolve_hub_path()
@@ -645,8 +885,8 @@ class HubGen:
         self.sprites = self._load_sprites(resolved)
         self.loaded = True
 
-    def loadAllAssets(self):
-        self.loadHubAssets()
+    def load_all_assets(self):
+        self.load_hub_assets()
 
     def _build_collision_map(self, room, room_prefab):
         collision_map = {}
@@ -689,9 +929,9 @@ class HubGen:
 
         return collision_map
 
-    def formRoom(self, room_prefab_index=0, wall_prefab_index=0):
+    def form_room(self, room_prefab_index=0, wall_prefab_index=0):
         if not self.loaded:
-            self.loadHubAssets()
+            self.load_hub_assets()
 
         if not self.room_prefabs:
             print("No room prefabs found for hub.")
@@ -704,8 +944,9 @@ class HubGen:
         room_h = len(room_prefab.base)
         room_w = len(room_prefab.base[0]) if room_h > 0 else 1
 
-        room_rect = Rect(-room_w // 2, -room_h // 2, room_w, room_h)
-        room = Room(room_rect, prefab_id=room_prefab_index, is_base_room=False)
+        # Use positive coordinates instead of negative center positioning
+        room_rect = Rect(0, 0, room_w, room_h)
+        room = HubRoom(room_rect, prefab_id=room_prefab_index)
 
         if self.wall_prefabs:
             if wall_prefab_index < 0 or wall_prefab_index >= len(self.wall_prefabs):
@@ -723,11 +964,45 @@ class HubGen:
 
         self.generated = True
         from dungeongen.config import SCREEN_W, SCREEN_H
+        # Center camera on the room center for positive coordinates
         self.cam_x = room.center[0] * self.tile_size - SCREEN_W // 2
         self.cam_y = room.center[1] * self.tile_size - SCREEN_H // 2
 
-    def generateHubRoom(self, room_prefab_index=0, wall_prefab_index=0):
-        self.formRoom(room_prefab_index, wall_prefab_index)
+    def load_complete(self, tile_size):
+        # Complete loading and setup for gameplay
+        if not self.loaded:
+            self.load_all_assets()
+        
+        self.generate_hub_room()
+        
+        # Handle all collision and trigger setup
+        from src.collision import clear_temporary_walls, update_collision_walls
+        from dungeongen.loading import parse_triggers_from_prefab
+        
+        clear_temporary_walls()
+        
+        # Parse triggers from room prefabs (all hub rooms are base rooms)
+        for room in self.rooms:
+            if room.prefab_id is not None:
+                if room.prefab_id < len(self.room_prefabs):
+                    prefab = self.room_prefabs[room.prefab_id]
+                    parse_triggers_from_prefab(room, prefab, tile_size)
+        
+        # Get collision walls and update collision system
+        walls = self.get_collision_rects(tile_size=tile_size)
+        update_collision_walls(walls)
+        
+        # Get spawn position
+        if self.rooms:
+            cx, cy = self.rooms[0].center  
+            spawn = (cx * tile_size, cy * tile_size)
+        else:
+            spawn = (0, 0)
+            
+        return spawn
+
+    def generate_hub_room(self, room_prefab_index=0, wall_prefab_index=0):
+        self.form_room(room_prefab_index, wall_prefab_index)
 
     def draw(self, surface=None, tile_size=None, cam_x=None, cam_y=None, show_sprites=True, show_collision_map=False, show_grid=False):
         from dungeongen.rendering import draw_grid
@@ -775,10 +1050,10 @@ class HubGen:
             target_surface.get_height(),
             self.rooms,
             self.hallways,
-            self.room_prefabs,
-            self.wall_prefabs,
-            None,
-            None,
+            None,  # prefabs (for non-base rooms)
+            None,  # wall_prefabs (for non-base rooms)
+            self.room_prefabs,  # main_room_prefabs (for base rooms)
+            self.wall_prefabs,  # main_room_wall_prefabs (for base rooms)
             None,
             None,
             None,
@@ -809,7 +1084,7 @@ class HubGen:
                 )
                 pygame.draw.rect(target_surface, (255, 0, 0, 128), rect)
 
-    def getCollisionRects(self, tile_size=None):
+    def get_collision_rects(self, tile_size=None):
         if tile_size is None:
             active_tile_size = self.tile_size
         else:

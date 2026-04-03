@@ -2,7 +2,6 @@ import asyncio
 
 import pygame
 
-from dungeongen.classes import DungeonGen, HubGen
 from dungeongen.loading import (
     get_available_dungeon_types,
     get_available_presets,
@@ -42,7 +41,7 @@ async def main():
     current_preset = available_presets[preset_index] if available_presets else "long.txt"
 
     dungeon = create_dungeon_generator()
-    dungeon.loadAllAssets()
+    dungeon.load_all_assets()
 
     def print_loaded_assets():
         print(f"Loaded dungeon type: {current_dungeon_type}")
@@ -54,7 +53,7 @@ async def main():
         print(f"  Sideways hallway prefabs: {len(dungeon.hallway_prefabs_sideways)}")
         print(f"  Sideways hallway wall prefabs: {len(dungeon.hallway_wall_prefabs_sideways)}")
 
-    dungeon.generateDungeonSpecific(current_dungeon_type, current_preset)
+    dungeon.generate_dungeon_specific(current_dungeon_type, current_preset)
     print_loaded_assets()
     cam_x, cam_y = dungeon.cam_x, dungeon.cam_y
 
@@ -72,22 +71,22 @@ async def main():
                     running = False
                 elif event.key == pygame.K_r:
                     if active_mode == "hub":
-                        hub.generateHubRoom()
+                        hub.generate_hub_room()
                         active_generator = hub
                         cam_x, cam_y = hub.cam_x, hub.cam_y
                     else:
-                        dungeon.generateDungeonSpecific(current_dungeon_type, current_preset)
+                        dungeon.generate_dungeon_specific(current_dungeon_type, current_preset)
                         active_generator = dungeon
                         cam_x, cam_y = dungeon.cam_x, dungeon.cam_y
                 elif event.key == pygame.K_p:
                     dungeon.params['ALLOW_HALLWAY_THROUGH_ROOMS'] = not dungeon.params['ALLOW_HALLWAY_THROUGH_ROOMS']
-                    dungeon.generateDungeonSpecific(current_dungeon_type, current_preset)
+                    dungeon.generate_dungeon_specific(current_dungeon_type, current_preset)
                     active_generator = dungeon
                     active_mode = "dungeon"
                     cam_x, cam_y = dungeon.cam_x, dungeon.cam_y
                 elif event.key == pygame.K_v:
                     dungeon.params['GENERATE_VERTICAL_FIRST'] = not dungeon.params['GENERATE_VERTICAL_FIRST']
-                    dungeon.generateDungeonSpecific(current_dungeon_type, current_preset)
+                    dungeon.generate_dungeon_specific(current_dungeon_type, current_preset)
                     active_generator = dungeon
                     active_mode = "dungeon"
                     cam_x, cam_y = dungeon.cam_x, dungeon.cam_y
@@ -95,7 +94,7 @@ async def main():
                     if available_presets:
                         preset_index = (preset_index + 1) % len(available_presets)
                         current_preset = available_presets[preset_index]
-                        dungeon.generateDungeonSpecific(current_dungeon_type, current_preset)
+                        dungeon.generate_dungeon_specific(current_dungeon_type, current_preset)
                         active_generator = dungeon
                         active_mode = "dungeon"
                         cam_x, cam_y = dungeon.cam_x, dungeon.cam_y
@@ -103,13 +102,13 @@ async def main():
                     if available_dungeon_types:
                         dungeon_type_index = (dungeon_type_index + 1) % len(available_dungeon_types)
                         current_dungeon_type = available_dungeon_types[dungeon_type_index]
-                        dungeon.generateDungeonSpecific(current_dungeon_type, current_preset)
+                        dungeon.generate_dungeon_specific(current_dungeon_type, current_preset)
                         print_loaded_assets()
                         active_generator = dungeon
                         active_mode = "dungeon"
                         cam_x, cam_y = dungeon.cam_x, dungeon.cam_y
                 elif event.key == pygame.K_h:
-                    hub.generateHubRoom()
+                    hub.generate_hub_room()
                     if hub.generated:
                         active_generator = hub
                         active_mode = "hub"
@@ -208,4 +207,4 @@ async def main():
     pygame.quit()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
