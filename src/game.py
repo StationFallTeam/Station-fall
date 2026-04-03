@@ -107,7 +107,7 @@ async def game(win, initial_brightness=1.0, initial_music_volume=0.5):
                         return ("quit", brightness, music_volume)
                 
                 # Normal game input (only when not dead)
-                elif not isPlayerDead:
+                elif not isPlayerDead and event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         if is_in_trigger(player, "quit"):
                             return ("quit", brightness, music_volume)
@@ -141,14 +141,16 @@ async def game(win, initial_brightness=1.0, initial_music_volume=0.5):
                             completed_room_count = 0        
                     elif event.key == pygame.K_i:
                         # Toggle inventory
-                        inventory_state = not inventory_state       
-                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    if state == "dungeon" and not isPlayerDead:
-                        # Shooting in dungeons (only when alive)
-                        mouse_world = camera.screen_to_world(event.pos)
-                        bullet = player.shoot(mouse_world)
-                        if bullet:
-                            bullets.append(bullet)
+                        inventory_state = not inventory_state
+            
+            # Handle mouse events separately           
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if state == "dungeon" and not isPlayerDead:
+                    # Shooting in dungeons (only when alive)
+                    mouse_world = camera.screen_to_world(event.pos)
+                    bullet = player.shoot(mouse_world)
+                    if bullet:
+                        bullets.append(bullet)
 
         # Only update game logic when player is alive
         if not isPlayerDead:
