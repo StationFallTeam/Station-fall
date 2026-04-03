@@ -10,7 +10,7 @@ sfbbl, sfbbr, ., ., ., ., ., ., tplt
 ., ., ., ., ., ., ., plt, bplt
 
 [OBSTACLE]
-., ., ., ., scmpb, ., ., ., .
+., ., ., ., scmpb, ., trckbl, trckbm, trckbr
 ., ., ., brghl, brghm, brghr, ., ., .
 bbl, bbr, ., ., ., ., ., lcab, rcab
 brghl, brghr, ., ., ., ., ., ., .
