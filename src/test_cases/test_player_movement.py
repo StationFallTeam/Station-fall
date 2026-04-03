@@ -35,7 +35,6 @@ class TestPlayerMovement(unittest.TestCase):
 
     # Test that the player moves right when no wall blocks movement
     def test_player_moves_right_without_wall(self):
-        """Requirement: Player should move right if no wall is in the way."""
         start_x = self.player.rect.x
         keys = FakeKeys({pygame.K_d})
 
@@ -46,7 +45,6 @@ class TestPlayerMovement(unittest.TestCase):
 
     # Test that the collision system stops player when hitting a wall
     def test_player_stops_when_hitting_wall_via_collision_system(self):
-        """Requirement: Player should stop at the wall when collision system resolves collision."""
         # Position player and create wall to the right
         self.player.x = 100
         self.player.y = 100
@@ -68,7 +66,6 @@ class TestPlayerMovement(unittest.TestCase):
 
     # Test trigger detection in the new collision system
     def test_player_trigger_detection(self):
-        """Requirement: Collision system should detect when player is in trigger areas."""
         # Position player
         self.player.x = 100
         self.player.y = 100
@@ -90,7 +87,6 @@ class TestPlayerMovement(unittest.TestCase):
 
     # Test that the collision system stops player when hitting a wall above
     def test_player_stops_when_hitting_top_wall(self):
-        """Requirement: Player should stop at the wall when moving upward via collision system."""
         # Position player and create wall above
         self.player.x = 100
         self.player.y = 100
@@ -109,7 +105,3 @@ class TestPlayerMovement(unittest.TestCase):
 
         # Player should be stopped at the wall
         self.assertGreaterEqual(self.player.rect.top, wall.bottom)
-
-
-if __name__ == "__main__":
-    unittest.main()

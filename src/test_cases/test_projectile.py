@@ -26,7 +26,6 @@ class TestProjectile(unittest.TestCase):
 
     # Test that player.shoot returns a Projectile object for a valid target
     def test_player_shoot_returns_projectile(self):
-        """Requirement: Shooting at a valid target should return a Projectile."""
         target = (300, 300)
         bullet = self.player.shoot(target)
 
@@ -35,7 +34,6 @@ class TestProjectile(unittest.TestCase):
 
     # Test that player.shoot returns None when target is the player's center
     def test_player_shoot_returns_none_if_target_is_player_center(self):
-        """Requirement: Shooting at the player's exact center should return None."""
         target = self.player.rect.center
         bullet = self.player.shoot(target)
 
@@ -43,7 +41,6 @@ class TestProjectile(unittest.TestCase):
 
     # Test that a projectile moves after update is called
     def test_projectile_moves_after_update(self):
-        """Requirement: Projectile position should change after update."""
         bullet = Projectile((100, 100), (10, 0), radius=6, color=(225, 50, 50), lifetime_ms=1200)
         start_x = bullet.pos.x
 
@@ -53,7 +50,6 @@ class TestProjectile(unittest.TestCase):
 
     # Test that a projectile expires after its lifetime passes
     def test_projectile_expires_after_lifetime(self):
-        """Requirement: Projectile should be dead after its lifetime expires."""
         bullet = Projectile((100, 100), (10, 0), radius=6, color=(225, 50, 50), lifetime_ms=1)
 
         pygame.time.delay(5)
@@ -62,7 +58,6 @@ class TestProjectile(unittest.TestCase):
 
     # Test that projectiles are removed when colliding with walls via collision system
     def test_projectile_wall_collision_via_collision_system(self):
-        """Requirement: Projectiles should be removed when hitting walls through collision system."""
         # Initialize player movement deltas (required by collision system)
         self.player._last_dx = 0
         self.player._last_dy = 0
@@ -80,7 +75,3 @@ class TestProjectile(unittest.TestCase):
         
         # Projectile should be removed from list due to wall collision
         self.assertEqual(len(bullets), 0)
-
-
-if __name__ == "__main__":
-    unittest.main()

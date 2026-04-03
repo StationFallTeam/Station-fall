@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import pygame
 import sys
 import os
@@ -8,7 +8,6 @@ from src.collision import CollisionSystem, collision_system, update_collision_wa
 
 
 class MockPlayer:
-    """Mock player for testing collision system."""
     def __init__(self, x, y, width=32, height=32):
         self.x = x
         self.y = y
@@ -21,12 +20,10 @@ class MockPlayer:
         self.is_invincible = False
     
     def take_damage(self, damage):
-        """Simulate player taking damage."""
         self.health -= damage
 
 
 class MockEnemy:
-    """Mock enemy for testing collision system."""
     def __init__(self, x, y, width=24, height=24):
         self.x = x
         self.y = y
@@ -34,12 +31,10 @@ class MockEnemy:
         self.health = 50
         
     def take_damage(self, damage):
-        """Simulate enemy taking damage."""
         self.health -= damage
 
 
 class MockBullet:
-    """Mock bullet for testing collision system."""
     def __init__(self, x, y, damage=25, width=4, height=4):
         self.x = x
         self.y = y
@@ -53,7 +48,6 @@ class MockBullet:
 class TestCollisionSystem(unittest.TestCase):
 
     def setUp(self):
-        """Set up test environment with pygame initialization."""
         pygame.init()
         pygame.display.set_mode((1, 1), pygame.HIDDEN)
         
@@ -67,14 +61,12 @@ class TestCollisionSystem(unittest.TestCase):
         self.collision_system = CollisionSystem()
         
     def tearDown(self):
-        """Clean up after each test."""
         self.collision_system.walls.clear()
         self.collision_system.temporary_walls.clear()
         self.collision_system.triggers.clear()
 
     # Test basic wall management
     def test_update_walls(self):
-        """Test updating the wall list."""
         walls = [pygame.Rect(0, 0, 50, 50), pygame.Rect(100, 100, 30, 30)]
         self.collision_system.update_walls(walls)
         
@@ -82,7 +74,6 @@ class TestCollisionSystem(unittest.TestCase):
         self.assertEqual(self.collision_system.walls, walls)
 
     def test_add_temporary_walls(self):
-        """Test adding temporary walls."""
         temp_walls = [pygame.Rect(200, 200, 20, 20)]
         self.collision_system.add_temporary_walls(temp_walls)
         
@@ -90,7 +81,6 @@ class TestCollisionSystem(unittest.TestCase):
         self.assertIn(temp_walls[0], self.collision_system.temporary_walls)
 
     def test_remove_temporary_walls(self):
-        """Test removing specific temporary walls."""
         wall1 = pygame.Rect(200, 200, 20, 20)
         wall2 = pygame.Rect(250, 250, 20, 20)
         self.collision_system.add_temporary_walls([wall1, wall2])
@@ -102,7 +92,6 @@ class TestCollisionSystem(unittest.TestCase):
         self.assertIn(wall2, self.collision_system.temporary_walls)
 
     def test_clear_temporary_walls(self):
-        """Test clearing all temporary walls."""
         temp_walls = [pygame.Rect(200, 200, 20, 20), pygame.Rect(250, 250, 20, 20)]
         self.collision_system.add_temporary_walls(temp_walls)
         
@@ -111,7 +100,6 @@ class TestCollisionSystem(unittest.TestCase):
         self.assertEqual(len(self.collision_system.temporary_walls), 0)
 
     def test_get_all_walls(self):
-        """Test getting combined static and temporary walls."""
         static_walls = [pygame.Rect(0, 0, 50, 50)]
         temp_walls = [pygame.Rect(200, 200, 20, 20)]
         
@@ -126,7 +114,6 @@ class TestCollisionSystem(unittest.TestCase):
 
     # Test trigger system
     def test_add_triggers(self):
-        """Test adding trigger areas."""
         triggers = {
             "test_trigger": [pygame.Rect(100, 100, 50, 50)]
         }
@@ -136,7 +123,6 @@ class TestCollisionSystem(unittest.TestCase):
         self.assertEqual(len(self.collision_system.triggers["test_trigger"]), 1)
 
     def test_clear_triggers(self):
-        """Test clearing all trigger areas."""
         triggers = {
             "trigger1": [pygame.Rect(100, 100, 50, 50)],
             "trigger2": [pygame.Rect(200, 200, 30, 30)]
@@ -148,7 +134,6 @@ class TestCollisionSystem(unittest.TestCase):
         self.assertEqual(len(self.collision_system.triggers), 0)
 
     def test_is_in_trigger_true(self):
-        """Test trigger detection when player is inside trigger."""
         player = MockPlayer(100, 100)
         trigger_rect = pygame.Rect(95, 95, 50, 50)  # Overlaps with player
         self.collision_system.add_triggers({"test_trigger": [trigger_rect]})
@@ -158,7 +143,6 @@ class TestCollisionSystem(unittest.TestCase):
         self.assertTrue(result)
 
     def test_is_in_trigger_false(self):
-        """Test trigger detection when player is outside trigger."""
         player = MockPlayer(100, 100)
         trigger_rect = pygame.Rect(200, 200, 50, 50)  # Away from player
         self.collision_system.add_triggers({"test_trigger": [trigger_rect]})
@@ -168,7 +152,6 @@ class TestCollisionSystem(unittest.TestCase):
         self.assertFalse(result)
 
     def test_is_in_trigger_nonexistent(self):
-        """Test trigger detection for non-existent trigger."""
         player = MockPlayer(100, 100)
         
         result = self.collision_system.is_in_trigger(player, "nonexistent_trigger")
@@ -177,7 +160,6 @@ class TestCollisionSystem(unittest.TestCase):
 
     # Test player wall collision resolution
     def test_player_wall_collision_x_axis(self):
-        """Test player collision resolution on X-axis."""
         player = MockPlayer(100, 100)
         player._last_dx = 10  # Moving right
         player._last_dy = 0
@@ -195,7 +177,6 @@ class TestCollisionSystem(unittest.TestCase):
         self.assertEqual(player.rect.x, 100)
 
     def test_player_wall_collision_y_axis(self):
-        """Test player collision resolution on Y-axis."""
         player = MockPlayer(100, 100)
         player._last_dx = 0
         player._last_dy = -10  # Moving up
@@ -213,7 +194,6 @@ class TestCollisionSystem(unittest.TestCase):
         self.assertEqual(player.rect.y, 100)
 
     def test_player_no_collision(self):
-        """Test player collision when no walls are hit."""
         player = MockPlayer(100, 100)
         player._last_dx = 10
         player._last_dy = 5
@@ -233,7 +213,6 @@ class TestCollisionSystem(unittest.TestCase):
 
     # Test enemy collisions
     def test_enemy_wall_collision_horizontal(self):
-        """Test enemy collision resolution with wall horizontally."""
         enemy = MockEnemy(100, 100)
         wall = pygame.Rect(120, 95, 50, 50)  # Wall to the right, overlapping
         
@@ -243,7 +222,6 @@ class TestCollisionSystem(unittest.TestCase):
         self.assertEqual(enemy.rect.right, wall.left)
 
     def test_enemy_wall_collision_vertical(self):
-        """Test enemy collision resolution with wall vertically."""
         enemy = MockEnemy(100, 100)
         wall = pygame.Rect(95, 120, 50, 50)  # Wall below, overlapping
         
@@ -253,7 +231,6 @@ class TestCollisionSystem(unittest.TestCase):
         self.assertEqual(enemy.rect.bottom, wall.top)
 
     def test_enemy_enemy_collision(self):
-        """Test collision resolution between two enemies."""
         enemy1 = MockEnemy(100, 100)
         enemy2 = MockEnemy(105, 105)  # Overlapping position
         
@@ -277,7 +254,6 @@ class TestCollisionSystem(unittest.TestCase):
     # Test entity collisions
     @patch('src.floating_texts.FloatingText')
     def test_player_enemy_collision(self, mock_floating_text):
-        """Test collision between player and enemy."""
         player = MockPlayer(100, 100)
         enemy = MockEnemy(100, 100)  # Same position
         floating_texts = []
@@ -292,7 +268,6 @@ class TestCollisionSystem(unittest.TestCase):
 
     @patch('src.floating_texts.FloatingText')
     def test_player_enemy_collision_invincible(self, mock_floating_text):
-        """Test that invincible player doesn't take damage."""
         player = MockPlayer(100, 100)
         player.is_invincible = True
         enemy = MockEnemy(100, 100)
@@ -308,7 +283,6 @@ class TestCollisionSystem(unittest.TestCase):
 
     @patch('src.floating_texts.FloatingText')
     def test_bullet_enemy_collision(self, mock_floating_text):
-        """Test bullet hitting enemy."""
         bullet = MockBullet(100, 100, damage=25)
         enemy = MockEnemy(100, 100)
         floating_texts = []
@@ -324,7 +298,6 @@ class TestCollisionSystem(unittest.TestCase):
 
     @patch('src.coin.Coin')
     def test_enemy_death(self, mock_coin):
-        """Test enemy death and coin spawn."""
         enemy = MockEnemy(100, 100)
         enemies = [enemy]
         floating_texts = []
@@ -343,7 +316,6 @@ class TestCollisionSystem(unittest.TestCase):
     @patch('src.floating_texts.FloatingText')
     @patch('src.coin.Coin')
     def test_handle_all_collisions(self, mock_coin, mock_floating_text):
-        """Test the main collision handling method."""
         player = MockPlayer(100, 100)
         enemy = MockEnemy(200, 200)
         bullet = MockBullet(205, 205)  # Inside enemy rect (200-224, 200-224)
@@ -366,10 +338,8 @@ class TestCollisionSystem(unittest.TestCase):
 
 
 class TestGlobalCollisionFunctions(unittest.TestCase):
-    """Test the global collision system functions."""
 
     def setUp(self):
-        """Reset global collision system for each test."""
         pygame.init()
         pygame.display.set_mode((1, 1), pygame.HIDDEN)
         
@@ -379,35 +349,30 @@ class TestGlobalCollisionFunctions(unittest.TestCase):
         collision_system.triggers.clear()
 
     def test_update_collision_walls(self):
-        """Test updating global collision walls."""
         walls = [pygame.Rect(0, 0, 50, 50)]
         update_collision_walls(walls)
         
         self.assertEqual(collision_system.walls, walls)
 
     def test_clear_temporary_walls_global(self):
-        """Test clearing global temporary walls."""
         collision_system.temporary_walls = [pygame.Rect(100, 100, 20, 20)]
         clear_temporary_walls()
         
         self.assertEqual(len(collision_system.temporary_walls), 0)
 
     def test_add_triggers_global(self):
-        """Test adding triggers to global system."""
         triggers = {"test": [pygame.Rect(50, 50, 30, 30)]}
         add_triggers(triggers)
         
         self.assertIn("test", collision_system.triggers)
 
     def test_clear_triggers_global(self):
-        """Test clearing global triggers."""
         collision_system.triggers = {"test": [pygame.Rect(50, 50, 30, 30)]}
         clear_triggers()
         
         self.assertEqual(len(collision_system.triggers), 0)
 
     def test_is_in_trigger_global(self):
-        """Test global trigger detection."""
         player = MockPlayer(100, 100)
         trigger_rect = pygame.Rect(95, 95, 50, 50)
         collision_system.triggers = {"test_trigger": [trigger_rect]}
@@ -418,7 +383,6 @@ class TestGlobalCollisionFunctions(unittest.TestCase):
 
     @patch('src.collision.collision_system.handle_all_collisions')
     def test_handle_all_collisions_global(self, mock_handle):
-        """Test global collision handling function."""
         player = MockPlayer(100, 100)
         enemies = []
         bullets = []
@@ -426,7 +390,3 @@ class TestGlobalCollisionFunctions(unittest.TestCase):
         handle_all_collisions(player, enemies, bullets)
         
         mock_handle.assert_called_once_with(player, enemies, bullets, None, None)
-
-
-if __name__ == "__main__":
-    unittest.main()
