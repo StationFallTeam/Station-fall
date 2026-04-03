@@ -122,7 +122,7 @@ async def main():
 
     # Load menu images
     truck_img = pygame.image.load("sprites/truck.png").convert_alpha()
-    truck_img = pygame.transform.smoothscale(truck_img, (400, 250))
+    truck_img = pygame.transform.scale(truck_img, (150, 150))
     float_time = 0
     menu_camera_x = 0
     menu_camera_y = 0
