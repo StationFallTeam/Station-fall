@@ -1,6 +1,39 @@
 import pygame
+import math
 from src.ui import draw_health_bar, draw_money
 from dungeongen.classes import CombatRoom
+
+# Pause menu - Wil
+def draw_pause_menu(win, screen_width, screen_height):
+    overlay = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 160))
+    win.blit(overlay, (0, 0))
+
+    title_font = pygame.font.SysFont(None, 72)
+    btn_font = pygame.font.SysFont(None, 48)
+
+    title = title_font.render("PAUSED", True, (255, 255, 255))
+    win.blit(title, title.get_rect(center=(screen_width // 2, screen_height // 2 - 140)))
+
+    btn_w, btn_h = 260, 60
+    mx, my = pygame.mouse.get_pos()
+
+    def make_btn(label, cy):
+        rect = pygame.Rect(0, 0, btn_w, btn_h)
+        rect.center = (screen_width // 2, cy)
+        hover = rect.collidepoint(mx, my)
+        color = (220, 220, 220) if hover else (170, 170, 170)
+        pygame.draw.rect(win, color, rect, border_radius=12)
+        pygame.draw.rect(win, (40, 40, 40), rect, 3, border_radius=12)
+        lbl = btn_font.render(label, True, (0, 0, 0))
+        win.blit(lbl, lbl.get_rect(center=rect.center))
+        return rect
+
+    resume_rect = make_btn("Resume",   screen_height // 2 - 30)
+    menu_rect   = make_btn("Main Menu", screen_height // 2 + 60)
+    quit_rect   = make_btn("Quit",      screen_height // 2 + 150)
+
+    return resume_rect, menu_rect, quit_rect
 
 def draw_objects(win, player, enemies, bullets, camera, background, coins, floating_texts, dungeon, tile_size):
     # 1. Draw the parallax background first using camera position
@@ -137,7 +170,7 @@ def draw_game_over(win, screen_width, screen_height, truck_img, float_time):
     # Floating truck (top of screen)
     float_offset = math.sin(float_time) * 15
     truck_rect = truck_img.get_rect()
-    truck_rect.midtop = (screen_width // 2, 200 + float_offset)
+    truck_rect.midtop = (screen_width // 2, 200 + int(float_offset))
     win.blit(truck_img, truck_rect)
 
 # Credits screen - Wil

@@ -4,7 +4,7 @@ import pygame
 from src.background import SpaceBackground
 from src.camera import Camera
 from src.player import Player
-from src.render import draw_objects
+from src.render import draw_objects, draw_pause_menu
 from src.collision import handle_all_collisions, is_in_trigger
 from src.inventory_ui import InventoryUI  
 
@@ -18,6 +18,7 @@ from dungeongen.loading import (
 async def game(win):
     screen_width = 920
     screen_height = 920
+
     pygame.display.set_caption("Station Fall")
 
     clock = pygame.time.Clock()
@@ -34,6 +35,7 @@ async def game(win):
     
     # Game state
     inventory_state = False  # For inventory overlay
+    paused = False # for pause menu - Wil
     
     hub_type = "hub"
     tile_size = 40  # 4 * 10 scaling factor
@@ -61,12 +63,15 @@ async def game(win):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return "quit"
-
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    if is_in_trigger(player, "quit"):
+                    if paused:
+                        paused = False          # resume
+                    elif is_in_trigger(player, "quit"):
                         return "quit"
-
+                    else:
+                        paused = not paused     # open pause menu
+                        
                 elif event.key == pygame.K_RETURN:
                     if state == "hub":
                         # Check if player is in start trigger
@@ -118,7 +123,14 @@ async def game(win):
                     inventory_state = not inventory_state
                         
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if state == "dungeon":
+                if paused:
+                    if resume_rect.collidepoint(event.pos):
+                        paused = False
+                    elif menu_rect.collidepoint(event.pos):
+                        return "menu"
+                    elif quit_rect.collidepoint(event.pos):
+                        return "quit"
+                elif state == "dungeon":
                     # Shooting in dungeons
                     mouse_world = camera.screen_to_world(event.pos)
                     bullet = player.shoot(mouse_world)
@@ -181,7 +193,7 @@ async def game(win):
         
         # Check if player died
         if player.health <= 0:
-            return  "playerDied" # Return to menu when player dies
+            return  "dead" # Return to menu when player dies
                     
         # Update coins
         for coin in coins[:]:
@@ -232,6 +244,12 @@ async def game(win):
         if inventory_state:
             inventory_ui.draw(win, player.money)
 
+                # Draw pause menu on top of everything, initialise rects every frame
+        if paused:
+            resume_rect, menu_rect, quit_rect = draw_pause_menu(win, screen_width, screen_height)
+        else:
+            resume_rect = menu_rect = quit_rect = pygame.Rect(0, 0, 0, 0)
+            
         pygame.display.flip()
         await asyncio.sleep(0)
 
