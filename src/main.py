@@ -3,7 +3,7 @@ import pygame
 import asyncio
 import math
 import sys
-
+from src.render import draw_game_over, draw_credits, draw_menu
 from src.background import SpaceBackground 
 from src.game import game as dungeon_game
 
@@ -15,97 +15,34 @@ from src.game import game as dungeon_game
 MENU = "menu"
 CREDITS = "Credits"
 
-def draw_menu(win, screen_width, screen_height, truck_img, float_time):
+async def run_game(win, screen_width, screen_height, background, truck_img): # checks the status of the character
+    result = await dungeon_game(win)
+    if result != "dead":
+        return
+    
+    clock = pygame.time.Clock()
+    float_time = 0
+    menu_cam_x = 0
 
-    title_font = pygame.font.SysFont(None, 90)
-    small_font = pygame.font.SysFont(None, 32)
-    btn_font = pygame.font.SysFont(None, 48)
+    while True:
+        clock.tick(60)
+        float_time += 0.05
+        menu_cam_x -= 2
+    
 
-    # Title
-    title = title_font.render("STATION FALL", True, (255, 255, 255))
-    win.blit(title, title.get_rect(center=(screen_width // 2, screen_height // 2 - 180)))
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return
+            elif event.type == pygame.KEYDOWN:
+                if event.key in (pygame.K_RETURN, pygame.K_ESCAPE):
+                    return
 
-    hint = small_font.render("Press ENTER to start", True, (200, 200, 200))
-    win.blit(hint, hint.get_rect(center=(screen_width // 2, screen_height // 2 - 120)))
+        win.fill((0, 0, 0))
+        background.update_and_draw(win, (menu_cam_x, 0))
+        draw_game_over(win, screen_width, screen_height, truck_img, float_time) # calls game over from render
+        pygame.display.flip()
+        await asyncio.sleep(0)
 
-    #ship
-    float_offset = math.sin(float_time) * 15
-    truck_rect = truck_img.get_rect()
-    truck_rect.center = (screen_width // 2, screen_height // 2 + float_offset)
-    win.blit(truck_img, truck_rect)
-
-    # Buttons
-    btn_w, btn_h = 260, 60
-    start_rect = pygame.Rect(0, 0, btn_w, btn_h)
-    start_rect.center = (screen_width // 2, screen_height // 2 +120)
-
-    credits_rect = pygame.Rect(0, 0, btn_w, btn_h)
-    credits_rect.center = (screen_width // 2, screen_height // 2 + 210)
-
-    quit_rect = pygame.Rect(0, 0, btn_w, btn_h)
-    quit_rect.center = (screen_width // 2, screen_height // 2 + 300)
-
-    mx, my = pygame.mouse.get_pos()
-
-    def draw_button(rect, text):
-        hover = rect.collidepoint(mx, my)
-        color = (220, 220, 220) if hover else (170, 170, 170)
-        pygame.draw.rect(win, color, rect, border_radius=12)
-        pygame.draw.rect(win, (40, 40, 40), rect, 3, border_radius=12)
-
-        label = btn_font.render(text, True, (0, 0, 0))
-        win.blit(label, label.get_rect(center=rect.center))
-
-    draw_button(start_rect, "Start")
-    draw_button(credits_rect, "Credits")
-    draw_button(quit_rect, "Quit")
-
-    return start_rect, quit_rect, credits_rect
-
-
-# Credits screen - Wil
-def draw_credits(win, screen_width, screen_height, background, float_time, menu_camera_x, menu_camera_y):
-    background.update_and_draw(win, (menu_camera_x, menu_camera_y))
-
-    title_font = pygame.font.SysFont(None, 72)
-    name_font = pygame.font.SysFont(None, 42)
-    role_font = pygame.font.SysFont(None, 30)
-    hint_font = pygame.font.SysFont(None, 28)
-
-    # Title
-    title = title_font.render("CREDITS", True, (255, 255, 255))
-    win.blit(title, title.get_rect(center=(screen_width // 2, 80)))
-
-    # Divider line
-    pygame.draw.line(win, (100, 100, 255), (screen_width // 2 - 200, 120), (screen_width // 2 + 200, 120), 2)
-
-    team = [
-        ("Wil Nahra",            "| Developer | Sprite Creation |"),
-        ("Simon Halaszi",        "| Developer | Dungeon Master |"),
-        ("Loy Ngo",              "| Developer |"),
-        ("Mark",                 "| Developer |"),
-        ("Rowan",                "| Developer |"),
-        ("Sebastian Bentancourt","| Developer |"),
-        ("Yusairah Haque",       "| Developer |"),
-        ("Zachary Evans",        "| Developer |"),
-    ]
-
-    start_y = 170
-    spacing = 90
-
-    for i, (name, role) in enumerate(team):
-        y = start_y + i * spacing
-        float_offset = math.sin(float_time + i * 0.4) * 4
-
-        name_surf = name_font.render(name, True, (220, 220, 255))
-        role_surf = role_font.render(role, True, (140, 140, 200))
-
-        win.blit(name_surf, name_surf.get_rect(center=(screen_width // 2, y + float_offset)))
-        win.blit(role_surf, role_surf.get_rect(center=(screen_width // 2, y + 32 + float_offset)))
-
-    # ESC hint
-    hint = hint_font.render("Press ESC to return", True, (160, 160, 160))
-    win.blit(hint, hint.get_rect(center=(screen_width // 2, screen_height - 40)))
 
 async def main(): 
     pygame.init()
@@ -182,7 +119,7 @@ async def main():
                             if not music_started:
                                 pygame.mixer.music.play(-1)
                                 music_started = True
-                            await dungeon_game(win)
+                            await run_game(win, screen_width, screen_height, background, truck_img)
                         elif event.key == pygame.K_ESCAPE:
                             running = False
 
@@ -196,7 +133,8 @@ async def main():
                             if not music_started:
                                 pygame.mixer.music.play(-1)
                                 music_started = True
-                            await dungeon_game(win)
+                            await run_game(win, screen_width, screen_height, background, truck_img)
+
                             # After returning from dungeon, stay in menu
                         elif credits_rect.collidepoint(event.pos):
                             state = CREDITS
