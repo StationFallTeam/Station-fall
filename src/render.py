@@ -1,3 +1,5 @@
+import math
+
 import pygame
 from src.ui import draw_health_bar, draw_money
 from dungeongen.classes import CombatRoom
@@ -129,7 +131,7 @@ def draw_game_over(win, screen_width, screen_height, truck_img, float_time):
     small_font = pygame.font.SysFont(None, 32)
 
     text = font.render("GAME OVER", True, (255, 0, 0))
-    hint = small_font.render("Press ENTER to restart or ESC to quit", True, (255, 255, 255))
+    hint = small_font.render("ESC to go back to main menu", True, (255, 255, 255))
 
     win.blit(text, text.get_rect(center=(screen_width//2, screen_height//2 - 50)))
     win.blit(hint, hint.get_rect(center=(screen_width//2, screen_height//2 + 50)))

@@ -135,7 +135,8 @@ async def main():
     music_volume = 0.5
     pygame.mixer.music.set_volume(music_volume)
     VOLUME_STEP = 0.1
-    music_started = False
+    pygame.mixer.music.play(-1)
+    music_started = True
 
     # Brightness control
     brightness = 1.0
@@ -179,10 +180,12 @@ async def main():
                     # State-specific keyboard input
                     elif state == MENU:
                         if event.key == pygame.K_RETURN:
-                            if not music_started:
-                                pygame.mixer.music.play(-1)
-                                music_started = True
-                            await dungeon_game(win)
+                            result = await dungeon_game(win, brightness, music_volume)
+                            if isinstance(result, tuple) and len(result) == 3:
+                                game_result, brightness, music_volume = result
+                                pygame.mixer.music.set_volume(music_volume)
+                            elif isinstance(result, str):
+                                game_result = result
                         elif event.key == pygame.K_ESCAPE:
                             running = False
 
@@ -193,11 +196,12 @@ async def main():
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     if state == MENU:
                         if start_rect.collidepoint(event.pos):
-                            if not music_started:
-                                pygame.mixer.music.play(-1)
-                                music_started = True
-                            await dungeon_game(win)
-                            # After returning from dungeon, stay in menu
+                            result = await dungeon_game(win, brightness, music_volume)
+                            if isinstance(result, tuple) and len(result) == 3:
+                                game_result, brightness, music_volume = result
+                                pygame.mixer.music.set_volume(music_volume)
+                            elif isinstance(result, str):
+                                game_result = result
                         elif credits_rect.collidepoint(event.pos):
                             state = CREDITS
                             if not music_started:

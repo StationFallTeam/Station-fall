@@ -823,12 +823,19 @@ class HubGen:
         self.cam_y = 0
 
     def _resolve_hub_path(self):
+        # First check if it's already an absolute path that exists
         if os.path.isdir(self.hub_path):
             return self.hub_path
 
-        alt_path = os.path.join("dungeon_types", self.hub_path)
-        if os.path.isdir(alt_path):
-            return alt_path
+        # Use package-relative path resolution like in loading.py
+        from pathlib import Path
+        dungeongen_root = Path(__file__).parent
+        dungeon_types_dir = dungeongen_root / "dungeon_types"
+        
+        # Try package-relative path
+        abs_path = str(dungeon_types_dir / self.hub_path)
+        if os.path.isdir(abs_path):
+            return abs_path
 
         return None
 

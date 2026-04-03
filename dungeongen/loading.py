@@ -321,7 +321,9 @@ def find_dungeon_types(base_path: str = None):
     return types
 
 
-def load_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
+def load_prefabs(dungeon_type: str, base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
     prefabs = []
     prefabs_path = os.path.join(base_path, dungeon_type, 'prefabs', 'room_prefabs')
     
@@ -338,7 +340,9 @@ def load_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
     return prefabs
 
 
-def load_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
+def load_wall_prefabs(dungeon_type: str, base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
     prefabs = []
     prefabs_path = os.path.join(base_path, dungeon_type, 'prefabs', 'wall_prefabs')
     
@@ -355,7 +359,10 @@ def load_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
     return prefabs
 
 
-def load_main_room_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
+def load_main_room_prefabs(dungeon_type: str, base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
+        
     prefabs = []
     candidate_dirs = [
         os.path.join(base_path, dungeon_type, 'prefabs', 'base_room_prefabs'),
@@ -378,7 +385,10 @@ def load_main_room_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
     return prefabs
 
 
-def load_main_room_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
+def load_main_room_wall_prefabs(dungeon_type: str, base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
+        
     prefabs = []
     candidate_dirs = [
         os.path.join(base_path, dungeon_type, 'prefabs', 'base_room_wall_prefabs'),
@@ -401,7 +411,10 @@ def load_main_room_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_typ
     return prefabs
 
 
-def load_hallway_prefabs(dungeon_type: str, direction: str, base_path: str = "dungeon_types"):
+def load_hallway_prefabs(dungeon_type: str, direction: str, base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
+        
     prefabs = []
     prefabs_path = os.path.join(base_path, dungeon_type, 'prefabs', 'hallway_prefabs', direction)
     
@@ -418,14 +431,19 @@ def load_hallway_prefabs(dungeon_type: str, direction: str, base_path: str = "du
     return prefabs
 
 
-def load_all_hallway_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
+def load_all_hallway_prefabs(dungeon_type: str, base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
     return {
         'upways': load_hallway_prefabs(dungeon_type, 'upways', base_path),
         'sideways': load_hallway_prefabs(dungeon_type, 'sideways', base_path),
     }
 
 
-def load_hallway_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
+def load_hallway_wall_prefabs(dungeon_type: str, base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
+        
     prefabs = []
     prefabs_path = os.path.join(base_path, dungeon_type, 'prefabs', 'hallway_wall_prefabs', 'sideways')
     
@@ -442,7 +460,10 @@ def load_hallway_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types
     return prefabs
 
 
-def load_all_hallway_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
+def load_all_hallway_wall_prefabs(dungeon_type: str, base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
+        
     return {
         'sideways': load_hallway_wall_prefabs(dungeon_type, base_path),
     }
@@ -456,7 +477,11 @@ def load_sprite(sprite_path: str):
         return None
 
 
-def load_sprites_for_dungeon_type(dungeon_type: str, base_path: str = "dungeon_types"):
+def load_sprites_for_dungeon_type(dungeon_type: str, base_path: str = None):
+    # Use package-relative path if no base_path provided  
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
+    
     sprites = {'obstacles': {}, 'bases': {}, 'walls': {}}
     
     for layer in sprites.keys():
