@@ -16,10 +16,8 @@ from dungeongen.loading import (
 
 
 async def game(win):
-    # pygame.init() is called by main.py, so we don't need it here
     screen_width = 920
     screen_height = 920
-    # win is passed from main.py - don't recreate the display
     pygame.display.set_caption("Station Fall")
 
     clock = pygame.time.Clock()
@@ -37,19 +35,15 @@ async def game(win):
     # Game state
     inventory_state = False  # For inventory overlay
     
-    # --- Initialize both generators (unified interface like dungeongen/main.py) ---
     hub_type = "hub"
     tile_size = 40  # 4 * 10 scaling factor
     
-    # Create both generators once
+    # Create both generators
     hub_gen = create_hub_generator(hub_type)
     dungeon_gen = create_dungeon_generator()
     
-    # Start in hub
     state = "hub"
     active_gen = hub_gen
-    
-    # Initialize hub - ONE line does everything!
     spawn = hub_gen.load_complete(tile_size)
     
     player = Player(spawn[0], spawn[1])
@@ -58,7 +52,7 @@ async def game(win):
     completed_room_count = 0
     dungeon_context = DungeonContext(tile_size)
     
-    last_player_tile = None  # Track player position for room entry detection
+    last_player_tile = None
     
     running = True
     while running:
@@ -66,22 +60,22 @@ async def game(win):
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return  # Return to main menu - main.py will handle actual quit
+                return "quit"
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     if is_in_trigger(player, "quit"):
-                        return  # Return to menu 
+                        return "quit"
 
                 elif event.key == pygame.K_RETURN:
                     if state == "hub":
                         # Check if player is in start trigger
                         if is_in_trigger(player, "start"):
-                            # ENTER: jump into a random dungeon (only if in start trigger)
+                            # Transitiong to dungeon
                             state = "dungeon"
                             active_gen = dungeon_gen
                             
-                            # Load dungeon - ONE line does everything!
+                            # Load dungeon
                             spawn, dungeon_context = dungeon_gen.load_complete(tile_size)
                                 
                             # Preserve player money and respawn
@@ -102,7 +96,7 @@ async def game(win):
                         state = "hub"
                         active_gen = hub_gen
                             
-                        # Load hub - ONE line does everything!
+                        # Load hub
                         spawn = hub_gen.load_complete(tile_size)
                             
                         # Preserve player money and respawn
@@ -120,7 +114,7 @@ async def game(win):
                         completed_room_count = 0
                         
                 elif event.key == pygame.K_i:
-                    # Toggle inventory (in dungeons only)
+                    # Toggle inventory
                     inventory_state = not inventory_state
                         
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -134,15 +128,14 @@ async def game(win):
         # Update phase
         keys = pygame.key.get_pressed()
         
-        # Player movement (still uses old collision for now - could be optimized)
-        # Update player movement (no collision - collision.py handles it)
+        # Player movement
         player.update(keys)
         camera.update(player)
         
         # Update floating texts
         floating_texts = [ft for ft in floating_texts if ft.update()]
         
-        # Room-based combat system (dungeons only)
+        # Room-based combat system
         if state == "dungeon" and active_gen.rooms:
             # Check if player entered a new room
             player_tile_x = int(player.x // tile_size)
@@ -183,13 +176,12 @@ async def game(win):
                 bullets.remove(bullet)
         
         # Handle all collisions using the collision system 
-        # Note: In hub, enemies list is empty but collision still works for walls
         enemies_list = dungeon_context.enemies if state == "dungeon" else []
         handle_all_collisions(player, enemies_list, bullets, floating_texts, coins)
         
         # Check if player died
         if player.health <= 0:
-            return  # Return to menu when player dies
+            return  "playerDied" # Return to menu when player dies
                     
         # Update coins
         for coin in coins[:]:
@@ -198,7 +190,6 @@ async def game(win):
                 player.money += coin.value
                 coins.remove(coin)
 
-        # Draw phase
         win.fill((0, 0, 0))
         
         # Use the integrated render pipeline
@@ -208,7 +199,7 @@ async def game(win):
             coins, floating_texts, dungeon=active_gen, tile_size=tile_size
         )
         
-        # Draw room progress HUD in dungeons
+        # Some text tips
         if state == "dungeon":
             progress_text = f"Rooms: {completed_room_count}/{room_count}"
             if completed_room_count == room_count:
@@ -220,7 +211,6 @@ async def game(win):
                 leave_surface = font.render(leave_text, True, (255, 255, 0))
                 win.blit(leave_surface, (20, 100))
         elif state == "hub":         
-            # Show trigger-specific instructions  
             if is_in_trigger(player, "start"):
                 start_text = "Press ENTER to start dungeon"
                 start_surface = font.render(start_text, True, (0, 255, 0))
