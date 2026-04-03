@@ -15,8 +15,14 @@ from src.game import game as dungeon_game
 MENU = "menu"
 CREDITS = "Credits"
 
-async def run_game(win, screen_width, screen_height, background, truck_img): # checks the status of the character
-    result = await dungeon_game(win)
+async def run_game(win, screen_width, screen_height, background, truck_img, settings): # checks the status of the character
+    result = await dungeon_game(win, settings)
+    
+    if isinstance(result, tuple):
+        status, returned_settings = result
+        settings.update(returned_settings)
+        result = status
+    
     if result != "dead":
         return
     
@@ -39,7 +45,16 @@ async def run_game(win, screen_width, screen_height, background, truck_img): # c
 
         win.fill((0, 0, 0))
         background.update_and_draw(win, (menu_cam_x, 0))
-        draw_game_over(win, screen_width, screen_height, truck_img, float_time) # calls game over from render
+        draw_game_over(win, screen_width, screen_height, truck_img, float_time)
+        
+        # Apply brightness filter
+        brightness = settings.get('brightness', 1.0)
+        if brightness < 1.0:
+            dark_surface = pygame.Surface((screen_width, screen_height))
+            dark_surface.set_alpha(int((1.0 - brightness) * 255))
+            dark_surface.fill((0, 0, 0))
+            win.blit(dark_surface, (0, 0))
+        
         pygame.display.flip()
         await asyncio.sleep(0)
 
@@ -72,11 +87,19 @@ async def main():
     music_volume = 0.5
     pygame.mixer.music.set_volume(music_volume)
     VOLUME_STEP = 0.1
-    music_started = False
+    
+    # Start music immediately
+    pygame.mixer.music.play(-1)
 
     # Brightness control
     brightness = 1.0
     BRIGHTNESS_STEP = 0.1
+    
+    # Settings dictionary to pass to and from the game
+    current_settings = {
+        'music_volume': music_volume,
+        'brightness': brightness
+    }
 
     # Start Menu System
     state = MENU
@@ -96,30 +119,35 @@ async def main():
                     # Global controls
                     if event.key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
                         music_volume = min(music_volume + VOLUME_STEP, 1.0)
+                        current_settings['music_volume'] = music_volume
                         pygame.mixer.music.set_volume(music_volume)
                         print(f"Volume increased to: {music_volume*100:.0f}%", flush=True)
 
                     elif event.key in (pygame.K_MINUS, pygame.K_KP_MINUS):
                         music_volume = max(music_volume - VOLUME_STEP, 0.0)
+                        current_settings['music_volume'] = music_volume
                         pygame.mixer.music.set_volume(music_volume)
                         print(f"Volume decreased to: {music_volume*100:.0f}%", flush=True)
 
                     # Use 9 / 0 for web reliability
                     elif event.key == pygame.K_0:
                         brightness = min(brightness + BRIGHTNESS_STEP, 1.0)
+                        current_settings['brightness'] = brightness
                         print(f"Brightness increased to: {brightness*100:.0f}%", flush=True)
 
                     elif event.key == pygame.K_9:
                         brightness = max(brightness - BRIGHTNESS_STEP, 0.2)
+                        current_settings['brightness'] = brightness
                         print(f"Brightness decreased to: {brightness*100:.0f}%", flush=True)
 
                     # State-specific keyboard input
                     elif state == MENU:
                         if event.key == pygame.K_RETURN:
-                            if not music_started:
-                                pygame.mixer.music.play(-1)
-                                music_started = True
-                            await run_game(win, screen_width, screen_height, background, truck_img)
+                            await run_game(win, screen_width, screen_height, background, truck_img, current_settings)
+                            # Update local variables from potentially modified settings
+                            music_volume = current_settings.get('music_volume', music_volume)
+                            brightness = current_settings.get('brightness', brightness)
+                            pygame.mixer.music.set_volume(music_volume)
                         elif event.key == pygame.K_ESCAPE:
                             running = False
 
@@ -130,17 +158,15 @@ async def main():
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     if state == MENU:
                         if start_rect.collidepoint(event.pos):
-                            if not music_started:
-                                pygame.mixer.music.play(-1)
-                                music_started = True
-                            await run_game(win, screen_width, screen_height, background, truck_img)
+                            await run_game(win, screen_width, screen_height, background, truck_img, current_settings)
+                            # Update local variables from potentially modified settings
+                            music_volume = current_settings.get('music_volume', music_volume)
+                            brightness = current_settings.get('brightness', brightness)
+                            pygame.mixer.music.set_volume(music_volume)
 
                             # After returning from dungeon, stay in menu
                         elif credits_rect.collidepoint(event.pos):
                             state = CREDITS
-                            if not music_started:
-                                pygame.mixer.music.play(-1)
-                                music_started = True
                         elif quit_rect.collidepoint(event.pos):
                             running = False
 
