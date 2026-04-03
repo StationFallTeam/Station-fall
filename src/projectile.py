@@ -1,15 +1,27 @@
 import pygame 
 
 class Projectile:
-    def __init__(self, pos, velocity, radius=6, color=(225,50,50), lifetime_ms=1200):
+    def __init__(self, pos, velocity, radius=6, color=(225,50,50), lifetime_ms=1200, damage=15):
         self.pos = pygame.Vector2(pos)
         self.vel = pygame.Vector2(velocity)
         self.radius = radius
         self.color = color 
         self.spawn_time = pygame.time.get_ticks()
         self.lifetime_ms = lifetime_ms
+        self.damage = damage
     def update(self): 
         self.pos += self.vel
+        
+    def get_rect(self):
+        """Get collision rectangle for this projectile.""" 
+        # Use smaller collision rect than visual radius for more precise collision
+        collision_radius = max(1, self.radius // 2)  # Half the visual radius
+        return pygame.Rect(
+            int(self.pos.x - collision_radius),
+            int(self.pos.y - collision_radius), 
+            collision_radius * 2,
+            collision_radius * 2
+        )
         
     def is_dead(self):
         return (pygame.time.get_ticks() - self.spawn_time) > self.lifetime_ms

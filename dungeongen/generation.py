@@ -1,9 +1,6 @@
 import random
-from dungeongen.classes import Rect, Room, Hallway, TileMap, Prefab
+from dungeongen.classes import Rect, BaseRoom, HubRoom, CombatRoom, Hallway, TileMap, Prefab
 from dungeongen.config import MIN_BRANCH_CHANCE, MAX_BRANCHING_DEPTH
-
-# Will print results of generation
-DEBUG_VALIDATE_OVERLAPS = True
 
 # Carve a rectangle
 def carve_rect(tiles: TileMap, rect: Rect, tile: str = "."):
@@ -39,14 +36,17 @@ def door_positions(room: Rect):
     left_cx = room.x + half_center
     right_cx = room.x + half_w + half_center
     cy = room.y + (room.h - 1)
-    return {
-        "top_left": (left_cx, room.y),
-        "top_right": (right_cx, room.y),
-        "bottom_left": (left_cx, room.bottom),
-        "bottom_right": (right_cx, room.bottom),
-        "left": (room.x, cy),
-        "right": (room.right, cy),
-    }
+    
+    positions = [
+        (left_cx, room.y),      # top_left
+        (right_cx, room.y),     # top_right
+        (left_cx, room.bottom), # bottom_left
+        (right_cx, room.bottom), # bottom_right
+        (room.x, cy),           # left
+        (room.right, cy),       # right
+    ]
+    
+    return positions
 
 
 def clamp_chance(value: float):
@@ -58,13 +58,15 @@ def clamp_chance(value: float):
 
 
 def chance_at_depth(start: float, decay: float, depth: int):
-    return clamp_chance(start - (decay * depth))
+    return clamp_chance(start * ((1 - decay) ** depth))
 
 
 def room_overlaps(tiles: TileMap, rect: Rect):
     for y in range(rect.y, rect.y + rect.h):
         for x in range(rect.x, rect.x + rect.w):
-            if tiles.get((x, y)) == ".":
+            tile = tiles.get((x, y))
+            # Check for any non-empty tile that represents room/wall content
+            if tile is not None and tile != "." and tile != "":
                 return True
     return False
 
@@ -181,12 +183,12 @@ def _choose_room_prefab_for_doors(room, room_prefabs):
 def _range_overlap(a0: int, a1: int, b0: int, b1: int):
     start = max(a0, b0)
     end = min(a1, b1)
-    if start > end:
+    if start >= end:  # No overlap or just touching (zero-length overlap)
         return None
     return (start, end)
 
 
-def _add_missing_room_edge_doors_from_hallways(rooms: list[Room], hallways: list[Hallway]):
+def _add_missing_room_edge_doors_from_hallways(rooms: list[BaseRoom], hallways: list[Hallway]):
     # Ensure room doors stay in sync with carved hallway-room contacts, including penetration mode.
     for hallway in hallways:
         hall_rect = hallway.rect
@@ -227,7 +229,7 @@ def _add_missing_room_edge_doors_from_hallways(rooms: list[Room], hallways: list
 
 
 def build_collision_map(
-    rooms: list[Room],
+    rooms: list[BaseRoom],
     hallways: list[Hallway],
     room_prefabs: list[Prefab] | None,
     main_room_prefabs: list[Prefab] | None,
@@ -313,18 +315,29 @@ def build_collision_map(
 
 
 def check_collision(collision_map: dict[tuple[int, int], str], x: int, y: int):
-    tile_value = collision_map.get((x, y), '#')  # Default to solid if not in map
+    tile_value = collision_map.get((x, y), '.')  # Default to walkable if not in map
     return tile_value != '.'
 
 
 def check_rect_collision(
     collision_map: dict[tuple[int, int], str],
-    x: float,
-    y: float,
-    width: int,
-    height: int,
+    rect_or_x: Rect | float,
+    y: float = None,
+    width: int = None,
+    height: int = None,
     tile_size: int = 1,
 ):
+    # Handle both Rect object and separate coordinate arguments
+    if isinstance(rect_or_x, Rect):
+        x = rect_or_x.x
+        y = rect_or_x.y
+        width = rect_or_x.w
+        height = rect_or_x.h
+    else:
+        x = rect_or_x
+        if y is None or width is None or height is None:
+            raise ValueError("When passing coordinates, y, width, and height are required")
+    
     # Convert pixel coordinates to tile coordinates
     tile_x1 = int(x // tile_size)
     tile_y1 = int(y // tile_size)
@@ -385,7 +398,7 @@ def generate_layout(
 
     base_w, base_h = base_room_size
     tiles: TileMap = {}
-    rooms: list[Room] = []
+    rooms: list[BaseRoom] = []
     hallways: list[Hallway] = []
     
     base_room = Rect(-base_w // 2, -base_h // 2, base_w, base_h)
@@ -393,7 +406,7 @@ def generate_layout(
     base_room_prefab_id = None
     if main_room_prefabs:
         base_room_prefab_id = random.randint(0, len(main_room_prefabs) - 1)
-    base_room_obj = Room(base_room, prefab_id=base_room_prefab_id, is_base_room=True)
+    base_room_obj = HubRoom(base_room, prefab_id=base_room_prefab_id)
     if main_room_wall_prefabs:
         base_room_prefab = None
         if base_room_prefab_id is not None and 0 <= base_room_prefab_id < len(main_room_prefabs):
@@ -402,15 +415,19 @@ def generate_layout(
     rooms.append(base_room_obj)
 
     room_w, room_h = room_size
-    doors = door_positions(base_room)
+    doors = door_positions(base_room)  # This returns a list now
     half_room_center = (room_w - 1) // 2
     right_room_center = room_w // 2
-    doors["top_left"] = (base_room.x + half_room_center, base_room.y)
-    doors["top_right"] = (base_room.right - right_room_center, base_room.y)
-    doors["bottom_left"] = (base_room.x + half_room_center, base_room.bottom)
-    doors["bottom_right"] = (base_room.right - right_room_center, base_room.bottom)
-    doors["left"] = (base_room.x, base_room.center[1])
-    doors["right"] = (base_room.right, base_room.center[1])
+    # Use specific coordinates instead of door dict
+    door_top_left = (base_room.x + half_room_center, base_room.y)
+    door_top_right = (base_room.right - right_room_center, base_room.y)
+    door_bottom_left = (base_room.x + half_room_center, base_room.bottom)
+    door_bottom_right = (base_room.right - right_room_center, base_room.bottom)
+    door_left = (base_room.x, base_room.center[1])
+    door_right = (base_room.right, base_room.center[1])
+    
+    available_doors = [door_top_left, door_top_right, door_bottom_left, 
+                      door_bottom_right, door_left, door_right]
 
     # Placement helpers
     def edge_point(room_rect: Rect, direction: str):
@@ -453,7 +470,7 @@ def generate_layout(
             return "right"
         return "left"
 
-    def add_door(room: Room, door: tuple[int, int]):
+    def add_door(room: BaseRoom, door: tuple[int, int]):
         if not _is_point_on_room_edge(room.rect, door):
             return
         if door not in room.doors:
@@ -462,7 +479,7 @@ def generate_layout(
     def branch_chain(
         direction: str,
         start: tuple[int, int],
-        source_room: Room,
+        source_room: BaseRoom,
         side_dir: str | None = None,
         force: bool = False,
         start_chance_override: float | None = None,
@@ -532,7 +549,7 @@ def generate_layout(
                 else:
                     # No prefabs loaded - use None as fallback
                     prefab_id = None
-                new_room = Room(room_rect, prefab_id)
+                new_room = CombatRoom(room_rect, prefab_id)
                 
                 if wall_prefabs:
                     room_floor_prefab = None
@@ -540,41 +557,55 @@ def generate_layout(
                         room_floor_prefab = prefabs[prefab_id]
                     new_room.wall_prefab_id = _choose_matching_wall_index(room_floor_prefab, wall_prefabs)
                 
-                entry_door = edge_point(room_rect, opposite_direction(direction))
-                add_door(new_room, entry_door)
-                rooms.append(new_room)
-                current_room = new_room
+                # Check for overlaps with existing rooms before adding
+                room_overlaps_existing = False
+                for existing_room in rooms:
+                    if (room_rect.x == existing_room.rect.x and 
+                        room_rect.y == existing_room.rect.y and
+                        room_rect.w == existing_room.rect.w and 
+                        room_rect.h == existing_room.rect.h):
+                        room_overlaps_existing = True
+                        break
+                
+                if not room_overlaps_existing:
+                    entry_door = edge_point(room_rect, opposite_direction(direction))
+                    add_door(new_room, entry_door)
+                    rooms.append(new_room)
+                    current_room = new_room
 
-                if direction in ("up", "down") and side_dir:
-                    side_start = clamp_chance(branch_from_top_bottom_start_chance)
-                    side_door = edge_point(room_rect, side_dir)
-                    branch_chain(
-                        side_dir,
-                        side_door,
-                        current_room,
-                        start_chance_override=side_start,
-                        decay_override=branch_from_top_bottom_decay,
-                        side_dir=None,
-                        allow_side_branches=False,
-                    )
-                elif direction in ("left", "right") and allow_side_branches:
-                    side_start = clamp_chance(branch_from_side_start_chance)
-                    up_door = edge_point(room_rect, "up")
-                    down_door = edge_point(room_rect, "down")
-                    branch_chain(
-                        "up",
-                        up_door,
-                        current_room,
-                        start_chance_override=side_start,
-                        decay_override=branch_from_side_decay,
-                    )
-                    branch_chain(
-                        "down",
-                        down_door,
-                        current_room,
-                        start_chance_override=side_start,
-                        decay_override=branch_from_side_decay,
-                    )
+                    if direction in ("up", "down") and side_dir:
+                        side_start = clamp_chance(branch_from_top_bottom_start_chance)
+                        side_door = edge_point(room_rect, side_dir)
+                        branch_chain(
+                            side_dir,
+                            side_door,
+                            current_room,
+                            start_chance_override=side_start,
+                            decay_override=branch_from_top_bottom_decay,
+                            side_dir=None,
+                            allow_side_branches=False,
+                        )
+                    elif direction in ("left", "right") and allow_side_branches:
+                        side_start = clamp_chance(branch_from_side_start_chance)
+                        up_door = edge_point(room_rect, "up")
+                        down_door = edge_point(room_rect, "down")
+                        branch_chain(
+                            "up",
+                            up_door,
+                            current_room,
+                            start_chance_override=side_start,
+                            decay_override=branch_from_side_decay,
+                        )
+                        branch_chain(
+                            "down",
+                            down_door,
+                            current_room,
+                            start_chance_override=side_start,
+                            decay_override=branch_from_side_decay,
+                        )
+                else:
+                    # Skip duplicate room, end this branch
+                    break
 
             sx, sy = edge_point(room_rect, direction)
             force = False
@@ -583,35 +614,20 @@ def generate_layout(
     # Generate branches in order based on toggle
     if generate_vertical_first:
         # Generate vertical branches first, then horizontal
-        branch_chain("up", doors["top_left"], base_room_obj, side_dir="left")
-        branch_chain("up", doors["top_right"], base_room_obj, side_dir="right")
-        branch_chain("down", doors["bottom_left"], base_room_obj, side_dir="left")
-        branch_chain("down", doors["bottom_right"], base_room_obj, side_dir="right")
-        branch_chain("left", doors["left"], base_room_obj)
-        branch_chain("right", doors["right"], base_room_obj)
+        branch_chain("up", door_top_left, base_room_obj, side_dir="left")
+        branch_chain("up", door_top_right, base_room_obj, side_dir="right")
+        branch_chain("down", door_bottom_left, base_room_obj, side_dir="left")
+        branch_chain("down", door_bottom_right, base_room_obj, side_dir="right")
+        branch_chain("left", door_left, base_room_obj)
+        branch_chain("right", door_right, base_room_obj)
     else:
         # Generate horizontal branches first, then vertical (default)
-        branch_chain("left", doors["left"], base_room_obj)
-        branch_chain("right", doors["right"], base_room_obj)
-        branch_chain("up", doors["top_left"], base_room_obj, side_dir="left")
-        branch_chain("up", doors["top_right"], base_room_obj, side_dir="right")
-        branch_chain("down", doors["bottom_left"], base_room_obj, side_dir="left")
-        branch_chain("down", doors["bottom_right"], base_room_obj, side_dir="right")
-
-    if DEBUG_VALIDATE_OVERLAPS:
-        for i, room_a in enumerate(rooms):
-            for room_b in rooms[i + 1 :]:
-                if not (
-                    room_a.rect.right < room_b.rect.x
-                    or room_b.rect.right < room_a.rect.x
-                    or room_a.rect.bottom < room_b.rect.y
-                    or room_b.rect.bottom < room_a.rect.y
-                ):
-                    print(
-                        "Overlap warning:",
-                        f"A=({room_a.rect.x},{room_a.rect.y},{room_a.rect.w},{room_a.rect.h})",
-                        f"B=({room_b.rect.x},{room_b.rect.y},{room_b.rect.w},{room_b.rect.h})",
-                    )
+        branch_chain("left", door_left, base_room_obj)
+        branch_chain("right", door_right, base_room_obj)
+        branch_chain("up", door_top_left, base_room_obj, side_dir="left")
+        branch_chain("up", door_top_right, base_room_obj, side_dir="right")
+        branch_chain("down", door_bottom_left, base_room_obj, side_dir="left")
+        branch_chain("down", door_bottom_right, base_room_obj, side_dir="right")
 
     _add_missing_room_edge_doors_from_hallways(rooms, hallways)
 

@@ -6,6 +6,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from src.player import Player
 from src.projectile import Projectile
+from src.collision import CollisionSystem
 
 class TestProjectile(unittest.TestCase):
 
@@ -21,6 +22,7 @@ class TestProjectile(unittest.TestCase):
         patcher.start()
 
         self.player = Player(100, 100)
+        self.collision_system = CollisionSystem()
 
     # Test that player.shoot returns a Projectile object for a valid target
     def test_player_shoot_returns_projectile(self):
@@ -57,6 +59,27 @@ class TestProjectile(unittest.TestCase):
         pygame.time.delay(5)
 
         self.assertTrue(bullet.is_dead())
+
+    # Test that projectiles are removed when colliding with walls via collision system
+    def test_projectile_wall_collision_via_collision_system(self):
+        """Requirement: Projectiles should be removed when hitting walls through collision system."""
+        # Initialize player movement deltas (required by collision system)
+        self.player._last_dx = 0
+        self.player._last_dy = 0
+        
+        # Create a projectile moving right
+        bullet = Projectile((100, 100), (10, 0), radius=6, color=(225, 50, 50), lifetime_ms=1200)
+        bullets = [bullet]
+        
+        # Create a wall that overlaps with the projectile's current position
+        wall = pygame.Rect(95, 95, 40, 40)  # Overlaps with projectile at (100,100)
+        self.collision_system.update_walls([wall])
+        
+        # Let collision system handle the collision (should detect overlap)
+        self.collision_system.handle_all_collisions(self.player, [], bullets)
+        
+        # Projectile should be removed from list due to wall collision
+        self.assertEqual(len(bullets), 0)
 
 
 if __name__ == "__main__":

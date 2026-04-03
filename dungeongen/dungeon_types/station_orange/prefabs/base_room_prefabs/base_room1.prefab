@@ -17,8 +17,8 @@ plt, ., ., ., ., ., ., bbl, bbr, ., scmpb, ., ., scmpb, ., bbl, bbr, ., ., ., .,
 ., ., ., ., ., ., ., btl, btr, ., bgrtl, bgrtm, bgrtm, bgrtr, ., btl, btr, ., ., ., ., ., ., .
 ., ., ., ., ., ., ., bbl, bbr, ., bgrml, bgrm, bgrm, bgrmr, ., bbl, bbr, ., ., ., ., ., ., .
 ., ., ., ., ., ., ., rghl, rghr, ., bgrbl, bgrbm, bgrbm, bgrbr, ., rghl, rghr, ., ., ., ., ., ., .
-., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., .
-., ., ., ., ., ., ., btl, btr, ., ., ., ., ., ., btl, btr, ., ., ., ., ., ., .
+rgvt, ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., rgvt
+rgvb, ., ., ., ., ., ., btl, btr, ., ., ., ., ., ., btl, btr, ., ., ., ., ., ., rgvb
 plt, ., ., ., ., ., ., bbl, bbr, ., ., ., ., ., ., bbl, bbr, ., ., ., ., ., ., plt
 
 [BASE]
@@ -31,3 +31,14 @@ flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, fl
 flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
 flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
 flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+
+[TRIGGER]
+., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., leave, leave
+., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., leave, leave
+., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., ., .

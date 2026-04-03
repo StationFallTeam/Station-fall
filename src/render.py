@@ -1,13 +1,30 @@
 import pygame
 from src.ui import draw_health_bar, draw_money
+from dungeongen.classes import CombatRoom
 
-def draw_objects(win, player, enemies, bullets, walls, camera, background, coins, floating_texts):
+def draw_objects(win, player, enemies, bullets, camera, background, coins, floating_texts, dungeon, tile_size):
     # 1. Draw the parallax background first using camera position
     background.update_and_draw(win, (camera.camera.x, camera.camera.y))
 
-    # 2. Draw walls
-    for wall in walls:
-        pygame.draw.rect(win, (180, 160, 70), camera.apply(wall))
+    # 2. Draw dungeon or walls
+    if dungeon and dungeon.draw:
+        # Use dungeon rendering pipeline instead of manual walls
+        # Use provided tile_size or fall back to dungeon's tile_size
+        render_tile_size = tile_size or dungeon.tile_size
+        dungeon.draw(
+            surface=win,
+            tile_size=render_tile_size,
+            cam_x=-camera.camera.x,
+            cam_y=-camera.camera.y,
+            show_grid=False,
+            show_sprites=True,
+        )
+    
+    if dungeon and dungeon.rooms and tile_size:
+        # Let each combat room draw its own spawn warnings
+        for room in dungeon.rooms:
+            if isinstance(room, CombatRoom):
+                room.draw_spawn_warnings(win, camera, tile_size)
 
     # 3. Draw entities relative to camera
     for coin in coins:
