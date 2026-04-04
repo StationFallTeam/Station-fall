@@ -263,4 +263,5 @@ class TestCoin(unittest.TestCase):
         coin.draw(screen, camera)
         self.assertEqual((coin.pos.x, coin.pos.y), original_pos)
 
-        
+if __name__ == "__main__":
+    unittest.main()
