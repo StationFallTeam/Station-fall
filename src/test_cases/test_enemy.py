@@ -7,11 +7,10 @@ from unittest.mock import MagicMock, patch, PropertyMock
 import pygame
 from enemy import Enemy
 
-
 def make_enemy(x=100, y=100):
-    """Helper to create an Enemy with mocked sprite loading."""
     with patch("enemy.pygame.image.load") as mock_load:
-        mock_surface = pygame.Surface((192, 192), pygame.SRCALPHA)
+        mock_surface = MagicMock()
+        mock_surface.convert_alpha.return_value = pygame.Surface((192, 192), pygame.SRCALPHA)
         mock_load.return_value = mock_surface
         return Enemy(x, y)
 
@@ -102,7 +101,8 @@ class TestEnemyUpdate(unittest.TestCase):
     def test_rect_follows_position(self):
         player_rect = self._make_player_rect(200, 100)
         self.enemy.update(player_rect)
-        self.assertEqual(self.enemy.rect.topleft, (int(self.enemy.x), int(self.enemy.y)))
+        self.assertEqual(self.enemy.rect.left, round(self.enemy.x))
+        self.assertEqual(self.enemy.rect.top, round(self.enemy.y))
 
     def test_draw_rect_midbottom_matches_rect(self):
         player_rect = self._make_player_rect(200, 200)
@@ -187,14 +187,21 @@ class TestEnemyDraw(unittest.TestCase):
         self.camera.apply.assert_called_once_with(self.enemy.drawRect)
 
     def test_draw_uses_correct_direction_frame(self):
+        blitted = []
+
+        class TrackingScreen(pygame.Surface):
+            def blit(self, source, dest, *args, **kwargs):
+                blitted.append(source)
+                return super().blit(source, dest, *args, **kwargs)
+
+        screen = TrackingScreen((800, 600))
         self.enemy.direction = "left"
         self.enemy.frame_index = 1.0
-        mock_frame = MagicMock()
-        self.enemy.animations["left"][1] = mock_frame
-        with patch.object(self.screen, "blit") as mock_blit:
-            self.enemy.draw(self.screen, self.camera)
-            blitted_frame = mock_blit.call_args[0][0]
-            self.assertEqual(blitted_frame, mock_frame)
+        sentinel = pygame.Surface((48, 48), pygame.SRCALPHA)
+        self.enemy.animations["left"][1] = sentinel
+
+        self.enemy.draw(screen, self.camera)
+        self.assertEqual(blitted[0], sentinel)
 
 
 if __name__ == "__main__":
