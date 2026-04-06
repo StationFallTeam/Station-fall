@@ -1,5 +1,9 @@
 import asyncio
+import traceback
 from src.main import main
 
-asyncio.run(main())
-
+try:
+    asyncio.run(main())
+except Exception:
+    traceback.print_exc()
+    raise

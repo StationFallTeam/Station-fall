@@ -1,5 +1,6 @@
 import pygame
 from src.damageable import Damageable
+from src.assets import resolve_asset_path
 
 class Enemy:
     def __init__(self, x, y):
@@ -14,7 +15,7 @@ class Enemy:
         self.speed = 1.5
 
         # Load sprite sheet
-        self.sprite_sheet = pygame.image.load("sprites/enemy_human_sheet.png").convert_alpha()
+        self.sprite_sheet = pygame.image.load(resolve_asset_path("sprites/enemy_human_sheet.png")).convert_alpha()
 
         self.animations = {
             "down": [],
