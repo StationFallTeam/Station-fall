@@ -11,6 +11,8 @@ from src.game import game as dungeon_game
 # When debugging pygbag web crashes, temporarily wrap main() in a try/except
 # with traceback.print_exc() to surface errors in the browser console.
 
+#raise RuntimeError("TEST: main.py is definitely being executed")
+
 # Start Menu - Loy
 MENU = "menu"
 CREDITS = "Credits"
@@ -110,6 +112,7 @@ async def main():
             clock.tick(60)
             float_time += 0.05
             menu_camera_x -= 4
+            print("WEB LOOP REACHED", flush=True)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -169,6 +172,7 @@ async def main():
                             state = CREDITS
                         elif quit_rect.collidepoint(event.pos):
                             running = False
+
 
             # ---------- DRAW / UPDATE PHASE ----------
             win.fill((0, 0, 0))
