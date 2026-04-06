@@ -1,6 +1,7 @@
 import pygame
 from src.damageable import Damageable
 from src.projectile import Projectile
+from src.assets import resolve_asset_path
 
 class Player(Damageable):
     def __init__(self, x, y):
@@ -17,7 +18,7 @@ class Player(Damageable):
         self.height = 32
 
         # Load spritesheet (root-relative for pygbag)
-        self.sprite_sheet = pygame.image.load("sprites/player_sheet.png").convert_alpha()
+        self.sprite_sheet = pygame.image.load(resolve_asset_path("sprites/player_sheet.png")).convert_alpha()
 
         self.animations = {
             "down": [],

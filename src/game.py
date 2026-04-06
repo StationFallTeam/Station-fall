@@ -1,5 +1,6 @@
 import asyncio
 import pygame
+import traceback
 
 from src.background import SpaceBackground
 from src.camera import Camera
@@ -14,68 +15,125 @@ from dungeongen.loading import (
     create_hub_generator,
     create_dungeon_generator
 )
+from src.assets import resolve_asset_path
 
 
 async def game(win, settings=None):
-    # Settings from main menu
-    if settings is None:
-        settings = {'music_volume': 0.5, 'brightness': 1.0}
-    
-    music_volume = settings.get('music_volume', 0.5)
-    brightness = settings.get('brightness', 1.0)
-    
-    # Volume and brightness step constants
-    VOLUME_STEP = 0.1
-    BRIGHTNESS_STEP = 0.1
-    screen_width = 920
-    screen_height = 920
+    try:
+        # Settings from main menu
+        if settings is None:
+            settings = {'music_volume': 0.5, 'brightness': 1.0}
 
-    pygame.display.set_caption("Station Fall")
+        music_volume = settings.get('music_volume', 0.5)
+        brightness = settings.get('brightness', 1.0)
 
-    clock = pygame.time.Clock()
-    game_font = pygame.font.SysFont("Pixellari.ttf", 25)
+        # Volume and brightness step constants
+        VOLUME_STEP = 0.1
+        BRIGHTNESS_STEP = 0.1
+        screen_width = 920
+        screen_height = 920
 
-    background = SpaceBackground(screen_width, screen_height)
-    camera = Camera(screen_width, screen_height)
-    
-    # Game objects
-    bullets = []
-    coins = []
-    floating_texts = []
-    inventory_ui = InventoryUI(screen_width, screen_height)
-    
-    # Game state
-    inventory_state = False  # For inventory overlay
-    paused = False # for pause menu - Wil
-    
-    hub_type = "hub"
-    tile_size = 40  # 4 * 10 scaling factor
-    
-    # Create both generators
-    hub_gen = create_hub_generator(hub_type)
-    dungeon_gen = create_dungeon_generator()
-    
-    state = "hub"
-    active_gen = hub_gen
-    spawn = hub_gen.load_complete(tile_size)
-    
-    player = Player(spawn[0], spawn[1])
-    
-    room_count = 0
-    completed_room_count = 0
-    dungeon_context = DungeonContext(tile_size)
-    
-    last_player_tile = None
-    
-    running = True
-    while running:
-        clock.tick(60)
+        pygame.display.set_caption("Station Fall")
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                return "quit"
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
+        clock = pygame.time.Clock()
+        game_font = pygame.font.SysFont(None, 25)
+        #game_font = pygame.font.SysFont("Pixellari.ttf", 25)
+
+        background = SpaceBackground(screen_width, screen_height)
+        camera = Camera(screen_width, screen_height)
+
+        # Game objects
+        bullets = []
+        coins = []
+        floating_texts = []
+        inventory_ui = InventoryUI(screen_width, screen_height)
+
+        # Game state
+        inventory_state = False  # For inventory overlay
+        paused = False # for pause menu - Wil
+
+        hub_type = "hub"
+        tile_size = 40  # 4 * 10 scaling factor
+
+        # Create both generators
+        hub_gen = create_hub_generator(hub_type)
+        dungeon_gen = create_dungeon_generator()
+
+        state = "hub"
+        active_gen = hub_gen
+        spawn = hub_gen.load_complete(tile_size)
+
+        player = Player(spawn[0], spawn[1])
+
+        room_count = 0
+        completed_room_count = 0
+        dungeon_context = DungeonContext(tile_size)
+
+        last_player_tile = None
+
+        running = True
+        while running:
+            clock.tick(60)
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return "quit"
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        if paused:
+                            paused = False
+                        elif is_in_trigger(player, "quit"):
+                            # Return current settings when quitting
+                            current_settings = {'music_volume': music_volume, 'brightness': brightness}
+                            return "quit", current_settings
+                        else:
+                            paused = not paused 
+
+                    # Settings controls
+                    elif event.key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
+                        music_volume = min(music_volume + VOLUME_STEP, 1.0)
+                        pygame.mixer.music.set_volume(music_volume)              
+                    elif event.key in (pygame.K_MINUS, pygame.K_KP_MINUS):
+                        music_volume = max(music_volume - VOLUME_STEP, 0.0)
+                        pygame.mixer.music.set_volume(music_volume)               
+                    elif event.key == pygame.K_0:
+                        brightness = min(brightness + BRIGHTNESS_STEP, 1.0)        
+                    elif event.key == pygame.K_9:
+                        brightness = max(brightness - BRIGHTNESS_STEP, 0.2)
+
+                    elif event.key == pygame.K_RETURN:
+                        if state == "hub" and is_in_trigger(player, "start"):
+                            # Transitiong to dungeon
+                            state = "dungeon"
+                            active_gen = dungeon_gen
+                            spawn, dungeon_context = dungeon_gen.load_complete(tile_size)
+                            current_money = player.money
+                            player = Player(spawn[0], spawn[1])
+                            player.money = current_money
+                            bullets.clear()
+                            floating_texts.clear()
+                            last_player_tile = None
+                            room_count, completed_room_count = dungeon_gen.get_room_counts()
+                    elif event.key == pygame.K_r and completed_room_count == room_count:
+                        if state == "dungeon" and is_in_trigger(player, "leave"):
+                            #Back to hub
+                            state = "hub"
+                            active_gen = hub_gen
+                            spawn = hub_gen.load_complete(tile_size)
+                            current_money = player.money
+                            player = Player(spawn[0], spawn[1])
+                            player.money = current_money
+                            dungeon_context = DungeonContext(tile_size)
+                            bullets.clear()
+                            floating_texts.clear()
+                            last_player_tile = None
+                            room_count = 0
+                            completed_room_count = 0
+                    elif event.key == pygame.K_i:
+                        # Toggle inventory
+                        inventory_state = not inventory_state
+
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     if paused:
                         paused = False
                     elif is_in_trigger(player, "quit"):
@@ -295,3 +353,6 @@ async def game(win, settings=None):
         pygame.display.flip()
         await asyncio.sleep(0)
 
+    except Exception:
+        traceback.print_exc()
+        raise
