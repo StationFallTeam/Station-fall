@@ -110,7 +110,27 @@ class CollisionSystem:
                         self._handle_enemy_death(enemy, enemies, floating_texts, coins)
                     
                     break  # Bullet can only hit one enemy
-    
+
+        # Enemy bullets vs player collision
+        for bullet in bullets[:]:
+            # Only process bullets fired by enemies
+            if not hasattr(bullet, '_shooter') or bullet._shooter not in enemies:
+                continue
+            
+            bullet_rect = bullet.get_rect()
+            if bullet_rect.colliderect(player_rect):
+                if not player.is_invincible:
+                    damage = bullet.damage
+                    player.take_damage(damage)
+                    
+                    from src.floating_texts import FloatingText
+                    floating_texts.append(
+                        FloatingText(player.x, player.y - 20, f"-{damage}", color=(255, 0, 0))
+                    )
+                
+                if bullet in bullets:
+                    bullets.remove(bullet)
+                    
     def _resolve_player_wall_collision_proper(self, player, walls):
         dx = player._last_dx
         dy = player._last_dy
