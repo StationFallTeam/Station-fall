@@ -13,7 +13,8 @@ _DUNGEON_PRESETS_DIR = _DUNGEONGEN_ROOT / "dungeon_gen_presets"
 # YOU ALSO NEED TO ALTER _create_enemy_by_type IN COMBATROOM CLASS
 def parse_enemy_type_from_cell(cell):
     enemy_map = {
-        'nrmE': 'enemy',  # Normal enemy
+        'nrmE': 'enemy',       # Normal enemy
+        'rngE': 'rangedEnemy', # Ranged enemy
         # Add more enemy types as needed
     }
     return enemy_map.get(cell)

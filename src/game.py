@@ -6,7 +6,8 @@ from src.camera import Camera
 from src.player import Player
 from src.render import draw_objects, draw_pause_menu
 from src.collision import handle_all_collisions, is_in_trigger
-from src.inventory_ui import InventoryUI  
+from src.inventory_ui import InventoryUI 
+from src.ranged_enemy import RangedEnemy 
 
 from dungeongen.classes import DungeonContext, CombatRoom
 from dungeongen.loading import (
@@ -143,6 +144,7 @@ async def game(win, settings=None):
                     mouse_world = camera.screen_to_world(event.pos)
                     bullet = player.shoot(mouse_world)
                     if bullet:
+                        bullet._from_player = True   # tag so enemy projectiles don't confuse themselves
                         bullets.append(bullet)
 
         # Update phase
@@ -186,14 +188,37 @@ async def game(win, settings=None):
                 room_count, completed_room_count = active_gen.get_room_counts()
                     
                 # Update enemies  
+                # Update enemies  
                 for enemy in dungeon_context.enemies[:]:
                     enemy.update(player.rect)
+                    # Collect any projectiles fired by ranged enemies this frame
+                    if hasattr(enemy, 'pop_projectiles'):
+                        bullets.extend(enemy.pop_projectiles())
             
+            # Update bullets
             # Update bullets
             for bullet in bullets[:]:
                 bullet.update()
-                # Remove bullets that are expired
-                if bullet.is_dead():
+                removed = False #resets for each bullet
+                # Check if enemy projectile hits the player
+                if hasattr(bullet, 'damage') and not hasattr(bullet, '_from_player'):
+                    if bullet.get_rect().colliderect(player.rect):
+                        player.take_damage(bullet.damage)
+                        bullets.remove(bullet)
+                        removed = True
+                        continue
+                    if not removed:
+                        for enemy in dungeon_context.enemies[:]:
+                            shooter = getattr(bullet, '_shooter', None)
+                            if enemy is shooter:
+                                continue   # skip the enemy that fired the bullet
+                            if bullet.get_rect().colliderect(enemy.get_rect()):
+                                enemy.take_damage(bullet.damage)
+                                bullets.remove(bullet)
+                                removed = True
+                                break
+                #Remove bullets that are expired
+                if  not removed and bullet.is_dead():
                     bullets.remove(bullet)
             
             # Handle all collisions using the collision system 
