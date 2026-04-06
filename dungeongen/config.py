@@ -10,8 +10,8 @@ HALL_THICKNESS = 3   # Width/thickness of hallways in tiles
 WALL_HEIGHT = 2      # Height of wall prefabs in tiles
 
 # Rendering settings
-SCREEN_W = 1700
-SCREEN_H = 900
+SCREEN_W = 920
+SCREEN_H = 920
 TILE_SIZE_START = 4
 TILE_SIZE_MIN = 1
 TILE_SIZE_MAX = 40

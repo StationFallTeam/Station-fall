@@ -1,13 +1,15 @@
-import sys
+import asyncio
+
 import pygame
 
-from classes import DungeonGen, HubGen
-from loading import (
-    find_dungeon_types,
-    find_presets,
+from dungeongen.loading import (
+    get_available_dungeon_types,
+    get_available_presets,
+    create_hub_generator,
+    create_dungeon_generator,
 )
-from rendering import COLOR_BG, COLOR_TEXT, COLOR_FURTHEST, COLOR_DOOR_DOT
-from config import (
+from dungeongen.rendering import COLOR_BG, COLOR_TEXT, COLOR_FURTHEST, COLOR_DOOR_DOT
+from dungeongen.config import (
     ROOM_SIZE,
     SCREEN_W,
     SCREEN_H,
@@ -17,8 +19,7 @@ from config import (
     CAMERA_SPEED,
 )
 
-
-def run_pygame():
+async def main():
     pygame.init()
     pygame.display.set_caption("Dungeon Layout")
     screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
@@ -31,16 +32,16 @@ def run_pygame():
     show_sprites = True
 
     # Load dungeon types and presets
-    available_dungeon_types = find_dungeon_types()
+    available_dungeon_types = get_available_dungeon_types()
     dungeon_type_index = 0
     current_dungeon_type = available_dungeon_types[dungeon_type_index] if available_dungeon_types else "station"
 
-    available_presets = find_presets()
+    available_presets = get_available_presets()
     preset_index = 0
     current_preset = available_presets[preset_index] if available_presets else "long.txt"
 
-    dungeon = DungeonGen(dungeon_type=current_dungeon_type, preset_name=current_preset)
-    dungeon.loadAllAssets()
+    dungeon = create_dungeon_generator()
+    dungeon.load_all_assets()
 
     def print_loaded_assets():
         print(f"Loaded dungeon type: {current_dungeon_type}")
@@ -52,11 +53,11 @@ def run_pygame():
         print(f"  Sideways hallway prefabs: {len(dungeon.hallway_prefabs_sideways)}")
         print(f"  Sideways hallway wall prefabs: {len(dungeon.hallway_wall_prefabs_sideways)}")
 
-    dungeon.generateDungeonSpecific(current_dungeon_type, current_preset)
+    dungeon.generate_dungeon_specific(current_dungeon_type, current_preset)
     print_loaded_assets()
     cam_x, cam_y = dungeon.cam_x, dungeon.cam_y
 
-    hub = HubGen("hub")
+    hub = create_hub_generator("hub")
     active_generator = dungeon
     active_mode = "dungeon"
 
@@ -70,22 +71,22 @@ def run_pygame():
                     running = False
                 elif event.key == pygame.K_r:
                     if active_mode == "hub":
-                        hub.generateHubRoom()
+                        hub.generate_hub_room()
                         active_generator = hub
                         cam_x, cam_y = hub.cam_x, hub.cam_y
                     else:
-                        dungeon.generateDungeonSpecific(current_dungeon_type, current_preset)
+                        dungeon.generate_dungeon_specific(current_dungeon_type, current_preset)
                         active_generator = dungeon
                         cam_x, cam_y = dungeon.cam_x, dungeon.cam_y
                 elif event.key == pygame.K_p:
                     dungeon.params['ALLOW_HALLWAY_THROUGH_ROOMS'] = not dungeon.params['ALLOW_HALLWAY_THROUGH_ROOMS']
-                    dungeon.generateDungeonSpecific(current_dungeon_type, current_preset)
+                    dungeon.generate_dungeon_specific(current_dungeon_type, current_preset)
                     active_generator = dungeon
                     active_mode = "dungeon"
                     cam_x, cam_y = dungeon.cam_x, dungeon.cam_y
                 elif event.key == pygame.K_v:
                     dungeon.params['GENERATE_VERTICAL_FIRST'] = not dungeon.params['GENERATE_VERTICAL_FIRST']
-                    dungeon.generateDungeonSpecific(current_dungeon_type, current_preset)
+                    dungeon.generate_dungeon_specific(current_dungeon_type, current_preset)
                     active_generator = dungeon
                     active_mode = "dungeon"
                     cam_x, cam_y = dungeon.cam_x, dungeon.cam_y
@@ -93,7 +94,7 @@ def run_pygame():
                     if available_presets:
                         preset_index = (preset_index + 1) % len(available_presets)
                         current_preset = available_presets[preset_index]
-                        dungeon.generateDungeonSpecific(current_dungeon_type, current_preset)
+                        dungeon.generate_dungeon_specific(current_dungeon_type, current_preset)
                         active_generator = dungeon
                         active_mode = "dungeon"
                         cam_x, cam_y = dungeon.cam_x, dungeon.cam_y
@@ -101,13 +102,13 @@ def run_pygame():
                     if available_dungeon_types:
                         dungeon_type_index = (dungeon_type_index + 1) % len(available_dungeon_types)
                         current_dungeon_type = available_dungeon_types[dungeon_type_index]
-                        dungeon.generateDungeonSpecific(current_dungeon_type, current_preset)
+                        dungeon.generate_dungeon_specific(current_dungeon_type, current_preset)
                         print_loaded_assets()
                         active_generator = dungeon
                         active_mode = "dungeon"
                         cam_x, cam_y = dungeon.cam_x, dungeon.cam_y
                 elif event.key == pygame.K_h:
-                    hub.generateHubRoom()
+                    hub.generate_hub_room()
                     if hub.generated:
                         active_generator = hub
                         active_mode = "hub"
@@ -200,16 +201,10 @@ def run_pygame():
         screen.blit(text3, (10, 54))
 
         pygame.display.flip()
+        await asyncio.sleep(0)
         clock.tick(60)
 
     pygame.quit()
-    sys.exit(0)
-
-
-def main():
-    """Entry point."""
-    run_pygame()
-
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

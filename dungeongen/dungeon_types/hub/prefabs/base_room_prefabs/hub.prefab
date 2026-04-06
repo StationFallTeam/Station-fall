@@ -10,7 +10,7 @@ sfbbl, sfbbr, ., ., ., ., ., ., tplt
 ., ., ., ., ., ., ., plt, bplt
 
 [OBSTACLE]
-., ., ., ., scmpb, ., ., ., .
+., ., ., ., scmpb, ., trckbl, trckbm, trckbr
 ., ., ., brghl, brghm, brghr, ., ., .
 bbl, bbr, ., ., ., ., ., lcab, rcab
 brghl, brghr, ., ., ., ., ., ., .
@@ -30,3 +30,14 @@ flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
 flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
 flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
 flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+
+[TRIGGER]
+., ., ., ., ., ., ., ., .
+., ., ., start, start, start, ., ., .
+., ., ., ., ., ., ., ., .
+info, info, ., ., ., ., ., stash, stash
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., shop, .
+., ., ., ., ., ., ., shop, .
+., ., ., ., ., ., ., ., .
+quit, quit, ., ., ., ., ., ., .

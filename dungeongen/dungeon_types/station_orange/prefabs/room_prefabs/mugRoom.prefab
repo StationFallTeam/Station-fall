@@ -31,3 +31,14 @@ flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
 flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
 flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
 flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1, flr1
+
+[ENEMY]
+., ., ., ., ., ., ., ., .
+nrmE, ., ., ., ., ., ., ., nrmE
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., ., .
+., ., ., ., ., ., ., nrmE, .

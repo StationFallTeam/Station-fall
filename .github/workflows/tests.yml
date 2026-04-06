@@ -23,5 +23,5 @@ jobs:
 
     - name: Run tests
       run: |
-        cd src
-        python -m unittest discover -s test_cases
+        python3 -m unittest discover src/test_cases
+        python3 -m unittest discover dungeongen/test_cases

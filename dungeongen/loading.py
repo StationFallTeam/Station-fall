@@ -1,10 +1,91 @@
 import os
 import pygame
-from classes import Prefab
-from config import BASE_ROOM_SIZE, ROOM_SIZE, HALL_LENGTH, HALL_THICKNESS, WALL_HEIGHT
+from pathlib import Path
+from dungeongen.classes import Prefab
+from dungeongen.config import ROOM_SIZE, HALL_LENGTH, HALL_THICKNESS, WALL_HEIGHT
+
+# Internal path resolution - external code doesn't need to know these paths
+_DUNGEONGEN_ROOT = Path(__file__).parent
+_DUNGEON_TYPES_DIR = _DUNGEONGEN_ROOT / "dungeon_types"  
+_DUNGEON_PRESETS_DIR = _DUNGEONGEN_ROOT / "dungeon_gen_presets"
+
+# HERE IS WHERE YOU CAN ADD MORE ENEMY TYPES TO SPAWNING
+# YOU ALSO NEED TO ALTER _create_enemy_by_type IN COMBATROOM CLASS
+def parse_enemy_type_from_cell(cell):
+    enemy_map = {
+        'nrmE': 'enemy',  # Normal enemy
+        # Add more enemy types as needed
+    }
+    return enemy_map.get(cell)
+
+
+def parse_enemy_data_from_prefab(room, prefab):
+    if not prefab:
+        return
+        
+    room.enemy_spawn_data.clear()
+    
+    # Parse the ENEMY layer if it exists
+    if prefab.enemy:
+        for local_y, row in enumerate(prefab.enemy):
+            for local_x, cell in enumerate(row):
+                enemy_type = parse_enemy_type_from_cell(cell)
+                if enemy_type:
+                    room.enemy_spawn_data.append((enemy_type, local_x, local_y))
+
+
+def parse_triggers_from_prefab(room, prefab, tile_size):
+    if not prefab or not prefab.trigger:
+        return
+        
+    room.trigger_areas.clear()
+    
+    # Parse trigger layer to find named trigger areas
+    for local_y, row in enumerate(prefab.trigger):
+        for local_x, cell in enumerate(row):
+            if cell and cell != ".":
+                trigger_name = cell.strip()
+                if trigger_name:
+                    # Convert local coordinates to world coordinates
+                    world_x = (room.rect.x + local_x) * tile_size
+                    world_y = (room.rect.y + local_y) * tile_size
+                    trigger_rect = pygame.Rect(world_x, world_y, tile_size, tile_size)
+                    
+                    # Group trigger tiles by name
+                    if trigger_name not in room.trigger_areas:
+                        room.trigger_areas[trigger_name] = []
+                    room.trigger_areas[trigger_name].append(trigger_rect)
+    
+    # Add triggers to collision system
+    if room.trigger_areas:
+        from src.collision import add_triggers
+        add_triggers(room.trigger_areas)
+
+
+def parse_all_prefab_data(dungeon_gen, tile_size):
+    if not dungeon_gen.generated:
+        return
+        
+    # Parse enemy data from room prefabs (for non-base rooms)
+    for room in dungeon_gen.rooms:
+        if not room.is_base_room and room.prefab_id is not None:
+            if room.prefab_id < len(dungeon_gen.prefabs):
+                prefab = dungeon_gen.prefabs[room.prefab_id]
+                parse_enemy_data_from_prefab(room, prefab)
+    
+    # Parse triggers from room prefabs (for base rooms)  
+    for room in dungeon_gen.rooms:
+        if room.is_base_room and room.prefab_id is not None:
+            if room.prefab_id < len(dungeon_gen.main_room_prefabs):
+                prefab = dungeon_gen.main_room_prefabs[room.prefab_id]
+                parse_triggers_from_prefab(room, prefab, tile_size)
 
 
 def _normalize_tile_token(token):
+    if token is None:
+        return ""
+    if token == "":
+        return ""
     token = token.strip()
     if token == "" or token == ".":
         return "."
@@ -15,7 +96,14 @@ def _normalize_tile_token(token):
 
 
 def _parse_prefab_row(line):
-    return [_normalize_tile_token(part) for part in line.split(",")]
+    if not line.strip():
+        return []
+    if ',' in line:
+        # CSV format - split on commas
+        return [_normalize_tile_token(part) for part in line.split(",")]
+    else:
+        # Character format - split each character
+        return [_normalize_tile_token(char) for char in line.strip()]
 
 
 def _rectangularize(rows):
@@ -60,18 +148,14 @@ def load_prefab(filepath: str):
         if is_wall_prefab:
             # Wall prefabs MUST use [WALL]
             if 'BASE' in sections:
-                print(f"Syntax error in {filepath}: Wall prefabs must use [WALL], not [BASE]")
                 return None
             if 'WALL' not in sections:
-                print(f"Syntax error in {filepath}: Wall prefabs must have [WALL] section")
                 return None
         else:
             # Room prefabs MUST use [BASE]
             if 'WALL' in sections:
-                print(f"Syntax error in {filepath}: Room prefabs must use [BASE], not [WALL]")
                 return None
             if 'BASE' not in sections:
-                print(f"Syntax error in {filepath}: Room prefabs must have [BASE] section")
                 return None
         
         # Normalize grids to consistent row width.
@@ -94,6 +178,21 @@ def load_prefab(filepath: str):
         if 'OBSTACLE' not in sections or len(sections['OBSTACLE']) == 0:
             sections['OBSTACLE'] = [["."] * width for _ in range(size)]
         
+        # Handle door layers - prefer DOORS, fallback to DOOR_COLLISION  
+        door_layer = None
+        if 'DOORS' in sections and sections['DOORS']:
+            door_layer = sections['DOORS']
+        elif 'DOOR_COLLISION' in sections and sections['DOOR_COLLISION']:
+            door_layer = sections['DOOR_COLLISION']
+        else:
+            door_layer = [["."] * width for _ in range(size)]
+            
+        if 'ENEMY' not in sections or len(sections['ENEMY']) == 0:
+            sections['ENEMY'] = [["."] * width for _ in range(size)]
+        
+        if 'TRIGGER' not in sections or len(sections['TRIGGER']) == 0:
+            sections['TRIGGER'] = [["."] * width for _ in range(size)]
+        
         # Map to BASE for the Prefab class
         if 'WALL' in sections and 'BASE' not in sections:
             sections['BASE'] = sections['WALL']
@@ -103,13 +202,17 @@ def load_prefab(filepath: str):
             sections['OBSTACLE'],
             sections['BASE'],
             prefab_name,
+            doors=door_layer,
+            enemy=sections.get('ENEMY'),
+            trigger=sections.get('TRIGGER'),
         )
     except Exception as e:
-        print(f"Failed to load prefab {filepath}: {e}")
         return None
 
 
-def validate_dungeon_type(dungeon_type: str, base_path: str = "dungeon_types"):
+def validate_dungeon_type(dungeon_type: str, base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
     type_path = os.path.join(base_path, dungeon_type)
     
     # Check required prefab directories
@@ -159,7 +262,6 @@ def validate_dungeon_type(dungeon_type: str, base_path: str = "dungeon_types"):
                     height = len(prefab.base)
                     width = len(prefab.base[0]) if prefab.base else 0
                     if expected_size is not None and (width, height) != expected_size:
-                        print(f"Invalid dimensions in {filepath}: expected {expected_size}, got ({width}, {height})")
                         return False
                     
                     # All layers must have same dimensions
@@ -168,11 +270,9 @@ def validate_dungeon_type(dungeon_type: str, base_path: str = "dungeon_types"):
                         layer_width = len(layer[0]) if layer else 0
                         if expected_size is not None:
                             if (layer_width, layer_height) != expected_size:
-                                print(f"Mismatched layer dimensions in {filepath}")
                                 return False
                         else:
                             if (layer_width, layer_height) != (width, height):
-                                print(f"Mismatched layer dimensions in {filepath}")
                                 return False
                     
                     # Collect non-empty tile characters only from rendered layers.
@@ -200,13 +300,14 @@ def validate_dungeon_type(dungeon_type: str, base_path: str = "dungeon_types"):
     # Check that all used tiles have corresponding sprites
     for tile in used_tiles:
         if tile not in available_sprites:
-            print(f"Missing sprite for tile '{tile}' in dungeon type '{dungeon_type}'")
             return False
     
     return True
 
 
-def find_dungeon_types(base_path: str = "dungeon_types"):
+def find_dungeon_types(base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
     types = []
     try:
         if os.path.isdir(base_path):
@@ -220,7 +321,9 @@ def find_dungeon_types(base_path: str = "dungeon_types"):
     return types
 
 
-def load_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
+def load_prefabs(dungeon_type: str, base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
     prefabs = []
     prefabs_path = os.path.join(base_path, dungeon_type, 'prefabs', 'room_prefabs')
     
@@ -237,7 +340,9 @@ def load_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
     return prefabs
 
 
-def load_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
+def load_wall_prefabs(dungeon_type: str, base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
     prefabs = []
     prefabs_path = os.path.join(base_path, dungeon_type, 'prefabs', 'wall_prefabs')
     
@@ -254,7 +359,10 @@ def load_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
     return prefabs
 
 
-def load_main_room_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
+def load_main_room_prefabs(dungeon_type: str, base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
+        
     prefabs = []
     candidate_dirs = [
         os.path.join(base_path, dungeon_type, 'prefabs', 'base_room_prefabs'),
@@ -277,7 +385,10 @@ def load_main_room_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
     return prefabs
 
 
-def load_main_room_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
+def load_main_room_wall_prefabs(dungeon_type: str, base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
+        
     prefabs = []
     candidate_dirs = [
         os.path.join(base_path, dungeon_type, 'prefabs', 'base_room_wall_prefabs'),
@@ -300,7 +411,10 @@ def load_main_room_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_typ
     return prefabs
 
 
-def load_hallway_prefabs(dungeon_type: str, direction: str, base_path: str = "dungeon_types"):
+def load_hallway_prefabs(dungeon_type: str, direction: str, base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
+        
     prefabs = []
     prefabs_path = os.path.join(base_path, dungeon_type, 'prefabs', 'hallway_prefabs', direction)
     
@@ -317,14 +431,19 @@ def load_hallway_prefabs(dungeon_type: str, direction: str, base_path: str = "du
     return prefabs
 
 
-def load_all_hallway_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
+def load_all_hallway_prefabs(dungeon_type: str, base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
     return {
         'upways': load_hallway_prefabs(dungeon_type, 'upways', base_path),
         'sideways': load_hallway_prefabs(dungeon_type, 'sideways', base_path),
     }
 
 
-def load_hallway_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
+def load_hallway_wall_prefabs(dungeon_type: str, base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
+        
     prefabs = []
     prefabs_path = os.path.join(base_path, dungeon_type, 'prefabs', 'hallway_wall_prefabs', 'sideways')
     
@@ -341,7 +460,10 @@ def load_hallway_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types
     return prefabs
 
 
-def load_all_hallway_wall_prefabs(dungeon_type: str, base_path: str = "dungeon_types"):
+def load_all_hallway_wall_prefabs(dungeon_type: str, base_path: str = None):
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
+        
     return {
         'sideways': load_hallway_wall_prefabs(dungeon_type, base_path),
     }
@@ -352,11 +474,14 @@ def load_sprite(sprite_path: str):
     try:
         return pygame.image.load(sprite_path)
     except Exception as e:
-        print(f"Failed to load sprite {sprite_path}: {e}")
         return None
 
 
-def load_sprites_for_dungeon_type(dungeon_type: str, base_path: str = "dungeon_types"):
+def load_sprites_for_dungeon_type(dungeon_type: str, base_path: str = None):
+    # Use package-relative path if no base_path provided  
+    if base_path is None:
+        base_path = str(_DUNGEON_TYPES_DIR)
+    
     sprites = {'obstacles': {}, 'bases': {}, 'walls': {}}
     
     for layer in sprites.keys():
@@ -401,11 +526,13 @@ def load_preset(filename: str, directory: str = "dungeon_gen_presets"):
                             # Keep as string if conversion fails
                             preset[key] = value
     except FileNotFoundError:
-        print(f"Preset file '{filename}' not found in {directory}")
+        pass
     return preset
 
 
-def find_presets(directory: str = "dungeon_gen_presets"):
+def find_presets(directory: str = None):
+    if directory is None:
+        directory = str(_DUNGEON_PRESETS_DIR)
     presets = []
     try:
         for file in sorted(os.listdir(directory)):
@@ -414,3 +541,43 @@ def find_presets(directory: str = "dungeon_gen_presets"):
     except OSError:
         pass
     return presets
+
+def get_available_dungeon_types():
+    return find_dungeon_types(str(_DUNGEON_TYPES_DIR))
+
+
+def get_available_presets():
+    return find_presets(str(_DUNGEON_PRESETS_DIR))
+
+
+def create_hub_generator(dungeon_type: str):
+    from dungeongen.classes import HubGen
+    hub_path = str(_DUNGEON_TYPES_DIR / dungeon_type)
+    return HubGen(hub_path=hub_path)
+
+
+def create_dungeon_generator():
+    from dungeongen.classes import DungeonGen
+    return DungeonGen(
+        base_path=str(_DUNGEON_TYPES_DIR), 
+        preset_directory=str(_DUNGEON_PRESETS_DIR)
+    )
+
+
+def get_first_available_dungeon_type():
+    types = get_available_dungeon_types()
+    return types[0] if types else None
+
+
+def create_hub_complete(hub_type: str, tile_size: int):
+    # Create a complete hub with all assets loaded and prefab data parsed.
+    hub = create_hub_generator(hub_type)
+    walls, spawn = hub.load_complete(tile_size)
+    return hub, walls, spawn
+
+
+def create_dungeon_complete(tile_size: int):
+    # Create a complete dungeon with all assets loaded and prefab data parsed.
+    dungeon = create_dungeon_generator()
+    walls, spawn, dungeon_context = dungeon.load_complete(tile_size)
+    return dungeon, walls, spawn, dungeon_context

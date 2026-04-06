@@ -1,6 +1,6 @@
 import pygame
-from .damageable import Damageable
-from .projectile import Projectile
+from src.damageable import Damageable
+from src.projectile import Projectile
 
 class Player(Damageable):
     def __init__(self, x, y):
@@ -9,9 +9,12 @@ class Player(Damageable):
         self.x = x
         self.y = y
 
-        self.width = 48
-        self.height = 48
         self.speed = 5
+
+        self.drawWidth = 48
+        self.drawHeight = 48
+        self.width = 32
+        self.height = 32
 
         # Load spritesheet (root-relative for pygbag)
         self.sprite_sheet = pygame.image.load("sprites/player_sheet.png").convert_alpha()
@@ -30,13 +33,14 @@ class Player(Damageable):
         self.anim_speed = 0.15
         self.moving = False
         # Create a rect for the camera to track - Meheraj
+        self.drawRect = pygame.Rect(self.x, self.y, self.drawWidth, self.drawHeight)
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.money = 0
    
 
     def _get_frame(self, x, y):
-        frame = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
-        frame.blit(self.sprite_sheet, (0, 0), (x, y, self.width, self.height))
+        frame = pygame.Surface((self.drawWidth, self.drawHeight), pygame.SRCALPHA)
+        frame.blit(self.sprite_sheet, (0, 0), (x, y, self.drawWidth, self.drawHeight))
         return frame.copy()  # REQUIRED for pygbag
 
     def _load_animations(self):
@@ -45,12 +49,13 @@ class Player(Damageable):
         for row, direction in enumerate(directions):
             for col in range(4):
                 frame = self._get_frame(
-                    col * self.width,
-                    row * self.height
+                    col * self.drawWidth,
+                    row * self.drawHeight
                 )
                 self.animations[direction].append(frame)
 
-    def update(self, keys, walls):
+    def update(self, keys, walls=None):
+        """Handle player movement and animation. Collision handled externally by collision.py"""
         self.moving = False
 
         dx = 0
@@ -73,28 +78,17 @@ class Player(Damageable):
             self.direction = "down"
             self.moving = True
 
-        self.rect.x += dx
-        for wall in walls:
-            if self.rect.colliderect(wall):
-                if dx > 0:
-                    self.rect.right = wall.left
-                if dx < 0:
-                    self.rect.left = wall.right
+        # Store movement deltas for collision system
+        self._last_dx = dx
+        self._last_dy = dy
 
-        self.rect.y += dy
-        for wall in walls:
-            if self.rect.colliderect(wall):
-                if dy > 0:
-                    self.rect.bottom = wall.top
-                if dy < 0:
-                    self.rect.top = wall.bottom
-
-        self.x = self.rect.x
-        self.y = self.rect.y
-
-        # Sync the rect with the new coordinates - Meheraj
+        # Apply movement - collision.py will handle collision resolution
+        self.x += dx
+        self.y += dy
         self.rect.topleft = (self.x, self.y)
+        self.drawRect.midbottom = self.rect.midbottom
 
+        # Handle animations
         if self.moving:
             self.frame_index += self.anim_speed
             if self.frame_index >= len(self.animations[self.direction]):
@@ -104,19 +98,19 @@ class Player(Damageable):
 
         super().update()
 
-
     def draw(self, screen, camera):
         frame = self.animations[self.direction][int(self.frame_index)]
-        draw_pos = camera.apply(self.rect)
+        draw_pos = camera.apply(self.drawRect)
 
+        """
         if self.is_invincible:
             # create a red tinted copy
             flash = frame.copy()
             flash.fill((225, 0, 0, 120), special_flags = pygame.BLEND_RGBA_ADD)
             screen.blit(flash, draw_pos)
         else:
-            screen.blit(frame, draw_pos)
-
+        """
+        screen.blit(frame, draw_pos)
 
     def get_rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)

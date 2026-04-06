@@ -8,16 +8,14 @@ class Camera:
         self.height = height
 
     def apply(self, entity):
-        """Translates an entity's world rect to a screen rect."""
         if isinstance(entity, pygame.Rect):
             return entity.move(self.camera.topleft)
         return entity.rect.move(self.camera.topleft)
 
     def update(self, target):
-        """Centers the camera on the target (the player)."""
         # Camera right above the player, with a slight offset to show more of the world ahead
-        x = -target.rect.centerx + self.width // 2
-        y = -target.rect.centery + self.height // 2
+        x = -target.drawRect.centerx + self.width // 2
+        y = -target.drawRect.centery + self.height // 2
 
         # Smooth camera movement (Lerp) - 0.1 makes it 'lag' slightly for a professional feel
         self.camera.x += (x - self.camera.x) * 0.1

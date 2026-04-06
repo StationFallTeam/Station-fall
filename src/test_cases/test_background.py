@@ -1,16 +1,17 @@
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 import unittest
 import pygame
-from background import SpaceBackground
+from src.background import SpaceBackground
 
 class TestBackground(unittest.TestCase):
 
     # Set up a test background for testing
     def setUp(self):
         # Pygame must be initialized for draw calls
+        pygame.init()
         pygame.display.set_mode((1, 1), pygame.HIDDEN)
         self.bg = SpaceBackground(800, 600)
 
