@@ -36,7 +36,9 @@ class Player(Damageable):
         # Create a rect for the camera to track - Meheraj
         self.drawRect = pygame.Rect(self.x, self.y, self.drawWidth, self.drawHeight)
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
-        self.money = 0
+        self.money = 0 # broke boy
+
+        self.damage = 10  # starting damage
    
 
     def _get_frame(self, x, y):
