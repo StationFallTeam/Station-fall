@@ -4,7 +4,7 @@ import pygame
 from src.background import SpaceBackground
 from src.camera import Camera
 from src.player import Player
-from src.render import draw_objects, draw_pause_menu
+from src.render import draw_objects, draw_pause_menu, draw_shop
 from src.collision import handle_all_collisions, is_in_trigger
 from src.inventory_ui import InventoryUI  
 
@@ -13,8 +13,6 @@ from dungeongen.loading import (
     create_hub_generator,
     create_dungeon_generator
 )
-
-
 async def game(win, settings=None):
     # Settings from main menu
     if settings is None:
@@ -46,7 +44,14 @@ async def game(win, settings=None):
     # Game state
     inventory_state = False  # For inventory overlay
     paused = False # for pause menu - Wil
-    
+
+    shop = False # for the shop
+    shop_items = [
+        {"name": "Healing Kit", "price": 10, "image": pygame.image.load("sprites/shop/HealingKit.png")},
+        {"name": "Blaster Upgrade", "price": 25, "image": pygame.image.load("sprites/shop/BlasterUpgrade.png")},
+        {"name": "Space Suit Upgrade", "price": 15, "image": pygame.image.load("sprites/shop/SpaceSuitUpgrade.png")},
+    ]
+
     hub_type = "hub"
     tile_size = 40  # 4 * 10 scaling factor
     
@@ -69,18 +74,21 @@ async def game(win, settings=None):
     running = True
     while running:
         clock.tick(60)
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return "quit"
+            # KEY HANDLER
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    if paused:
+                if event.key == pygame.K_ESCAPE: # ESCAPE LOGIC
+                    if shop:
+                        shop = False
+                    elif paused:
                         paused = False
                     elif is_in_trigger(player, "quit"):
                         # Return current settings when quitting
                         current_settings = {'music_volume': music_volume, 'brightness': brightness}
-                        return "quit", current_settings
+                        pygame.quit()
+                        sys.exit()
                     else:
                         paused = not paused 
                 
@@ -127,8 +135,26 @@ async def game(win, settings=None):
                 elif event.key == pygame.K_i:
                     # Toggle inventory
                     inventory_state = not inventory_state
-                        
+                elif event.key == pygame.K_e: # Shop
+                    if is_in_trigger(player, "shop"):
+                        shop = not shop
+
+            # MOUSE HANDLER
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if shop:
+                    for idx, rect in enumerate(item_rects):
+                            item = shop_items[idx]
+                            if rect.collidepoint(event.pos):
+                                if player.money >= item['price']:
+                                    player.money -= item['price']
+                                    # Apply item effects
+                                    if item['name'] == "Instant Healing Kit":
+                                        player.health = min(player.max_health, player.health + 20)
+                                    elif item['name'] == "Blaster Upgrade":
+                                        player.damage += 5
+                                    elif item['name'] == "Space Suit Upgrade":
+                                        player.max_health += 10
+                                        player.health = min(player.health, player.max_health)       
                 if paused:
                     if resume_rect.collidepoint(event.pos):
                         paused = False
@@ -146,7 +172,7 @@ async def game(win, settings=None):
                         bullets.append(bullet)
 
         # Update phase
-        if not paused:
+        if not paused and not shop:
             keys = pygame.key.get_pressed()
             
             # Player movement
@@ -250,7 +276,7 @@ async def game(win, settings=None):
                 quit_surface = game_font.render(quit_text, True, (255, 255, 0))
                 win.blit(quit_surface, (20, 80))
             elif is_in_trigger(player, "shop"):
-                quit_text = "Press [PLACEHOLDER] to browse the shop"
+                quit_text = "Press E to browse the shop"
                 quit_surface = game_font.render(quit_text, True, (255, 255, 0))
                 win.blit(quit_surface, (20, 80))
         
@@ -264,12 +290,18 @@ async def game(win, settings=None):
         else:
             resume_rect = menu_rect = quit_rect = pygame.Rect(0, 0, 0, 0)
 
+        # Drawing the shop
+        if shop:
+            item_rects = draw_shop(win, screen_width, screen_height, player.money, shop_items)
+        else:
+            item_rects = []
+                    
         # Apply brightness filter
         if brightness < 1.0:
             dark_surface = pygame.Surface((screen_width, screen_height))
             dark_surface.set_alpha(int((1.0 - brightness) * 255))
             dark_surface.fill((0, 0, 0))
             win.blit(dark_surface, (0, 0))
-            
+
         pygame.display.flip()
         await asyncio.sleep(0)
