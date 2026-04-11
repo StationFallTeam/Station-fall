@@ -8,7 +8,7 @@ from dungeongen.loading import (
     create_hub_generator,
     create_dungeon_generator,
 )
-from dungeongen.rendering import COLOR_BG, COLOR_TEXT, COLOR_FURTHEST, COLOR_DOOR_DOT
+from dungeongen.rendering import COLOR_BG, COLOR_TEXT, COLOR_FURTHEST, COLOR_DOOR_DOT, draw_minimap
 from dungeongen.config import (
     ROOM_SIZE,
     SCREEN_W,
@@ -145,8 +145,19 @@ async def main():
             show_sprites=show_sprites,
             show_collision_map=show_collision,
             show_grid=show_grid,
+              )
+        
+        
+        camera_center_x = cam_x + SCREEN_W / 2
+        camera_center_y = cam_y + SCREEN_H / 2
+        
+        draw_minimap(
+            screen,
+            active_generator.tiles,
+            camera_center_x,
+            camera_center_y,
+            tile_size,
         )
-
         rooms = active_generator.rooms
         hallways = active_generator.hallways
         seed = getattr(active_generator, "seed", None)
