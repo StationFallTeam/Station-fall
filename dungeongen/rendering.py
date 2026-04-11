@@ -296,3 +296,93 @@ def draw_grid(
                     tile_size,
                 )
                 pygame.draw.rect(surface, COLOR_GRID, rect, 1)
+
+
+def draw_minimap(
+    surface: pygame.Surface,
+    tiles: TileMap,
+    focus_x: float,
+    focus_y: float,
+    tile_size: int,
+    spawn_x: float | None = None,
+    spawn_y: float | None = None,
+    minimap_width: int = 180,
+    minimap_height: int = 180,
+    padding: int = 12,
+    view_radius_tiles: int = 12,
+):
+    if not tiles:
+        return
+
+    panel_x = surface.get_width() - minimap_width - padding
+    panel_y = padding
+
+    panel_rect = pygame.Rect(panel_x, panel_y, minimap_width, minimap_height)
+    pygame.draw.rect(surface, (18, 18, 24), panel_rect, border_radius=8)
+    pygame.draw.rect(surface, (220, 220, 220), panel_rect, 2, border_radius=8)
+
+    inner_padding = 10
+    draw_left = panel_x + inner_padding
+    draw_top = panel_y + inner_padding
+    draw_width = minimap_width - inner_padding * 2
+    draw_height = minimap_height - inner_padding * 2
+
+    # Center minimap around player
+    focus_tile_x = focus_x / tile_size
+    focus_tile_y = focus_y / tile_size
+
+    min_view_x = focus_tile_x - view_radius_tiles
+    max_view_x = focus_tile_x + view_radius_tiles
+    min_view_y = focus_tile_y - view_radius_tiles
+    max_view_y = focus_tile_y + view_radius_tiles
+
+    view_tile_width = max_view_x - min_view_x
+    view_tile_height = max_view_y - min_view_y
+
+    scale_x = draw_width / view_tile_width
+    scale_y = draw_height / view_tile_height
+    scale = min(scale_x, scale_y)
+
+    tile_pixel_size = max(3, int(scale))
+
+    # Draw only nearby dungeon tiles
+    for (tx, ty), tile in tiles.items():
+        if not (min_view_x <= tx <= max_view_x and min_view_y <= ty <= max_view_y):
+            continue
+
+        mini_x = int(draw_left + (tx - min_view_x) * scale)
+        mini_y = int(draw_top + (ty - min_view_y) * scale)
+
+        rect = pygame.Rect(mini_x, mini_y, tile_pixel_size, tile_pixel_size)
+
+        if tile == ".":
+            pygame.draw.rect(surface, (90, 170, 255), rect)
+        elif tile == "h":
+            pygame.draw.rect(surface, (170, 210, 255), rect)
+
+    # Spawn marker
+    if spawn_x is not None and spawn_y is not None:
+        spawn_tile_x = spawn_x / tile_size
+        spawn_tile_y = spawn_y / tile_size
+
+        if min_view_x <= spawn_tile_x <= max_view_x and min_view_y <= spawn_tile_y <= max_view_y:
+            spawn_mini_x = int(draw_left + (spawn_tile_x - min_view_x) * scale)
+            spawn_mini_y = int(draw_top + (spawn_tile_y - min_view_y) * scale)
+
+            marker_size = max(5, tile_pixel_size + 2)
+            spawn_rect = pygame.Rect(
+                spawn_mini_x - marker_size // 2,
+                spawn_mini_y - marker_size // 2,
+                marker_size,
+                marker_size,
+            )
+            pygame.draw.rect(surface, (20, 20, 20), spawn_rect.inflate(2, 2))
+            pygame.draw.rect(surface, (255, 220, 0), spawn_rect)
+
+    # Player marker stays centered-ish
+    focus_mini_x = int(draw_left + (focus_tile_x - min_view_x) * scale)
+    focus_mini_y = int(draw_top + (focus_tile_y - min_view_y) * scale)
+
+    dot_radius = max(3, min(6, tile_pixel_size))
+    pygame.draw.circle(surface, (255, 255, 255), (focus_mini_x, focus_mini_y), dot_radius + 1)
+    pygame.draw.circle(surface, (255, 60, 60), (focus_mini_x, focus_mini_y), dot_radius)

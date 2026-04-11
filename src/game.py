@@ -9,6 +9,7 @@ from src.collision import handle_all_collisions, is_in_trigger
 from src.inventory_ui import InventoryUI  
 
 from dungeongen.classes import DungeonContext, CombatRoom
+from dungeongen.rendering import draw_minimap
 from dungeongen.loading import (
     create_hub_generator,
     create_dungeon_generator
@@ -251,6 +252,17 @@ async def game(win, settings=None):
             coins, floating_texts, dungeon=active_gen, tile_size=tile_size
         )
         
+        draw_minimap(
+            win,
+             active_gen.tiles,
+             player.rect.centerx,
+            player.rect.centery,
+            tile_size,
+            spawn_x=spawn[0],
+            spawn_y=spawn[1],
+            minimap_width=160,
+            minimap_height=160 
+            )
         # Some text tips
         if state == "dungeon":
             progress_text = f"Rooms: {completed_room_count}/{room_count}"
