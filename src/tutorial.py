@@ -105,26 +105,39 @@ class TutorialPopup:
     def __init__(self, screen_width: int, screen_height: int):
         self.sw = screen_width
         self.sh = screen_height
+
+        # Panel dimensions
         self.pw = min(560, screen_width - 80)
         self.ph = 400
         self.px = (screen_width  - self.pw) // 2
         self.py = (screen_height - self.ph) // 2
 
+        # State
         self.visible   = False
         self.page      = 0
         self._alpha    = 0          
         self._slide_y  = 40        
         self._scan_t   = 0.0       
 
+        # Fonts
         self.font_heading = pygame.font.SysFont("Consolas", 22, bold=True)
         self.font_body    = pygame.font.SysFont("Consolas", 16)
         self.font_icon    = pygame.font.SysFont("Consolas", 20, bold=True)
         self.font_btn     = pygame.font.SysFont("Consolas", 15, bold=True)
         self.font_page    = pygame.font.SysFont("Consolas", 13)
 
+        # Interactive button rects (updated each frame)
         self._btn_prev  = pygame.Rect(0, 0, 0, 0)
         self._btn_next  = pygame.Rect(0, 0, 0, 0)
         self._btn_close = pygame.Rect(0, 0, 0, 0)
+
+        # Hover states
+        self._hover_prev  = False
+        self._hover_next  = False
+        self._hover_close = False
+        # ----------------------------------------------
+
+        self._build_panel_surface()
 
     def show(self, page: int = 0):
         self.visible  = True
