@@ -2,6 +2,7 @@ import pygame
 import math
 from src.ui import draw_health_bar, draw_money
 from dungeongen.classes import CombatRoom
+from src.assets import resolve_asset_path
 
 # Pause menu - Wil
 def draw_pause_menu(win, screen_width, screen_height):
@@ -219,3 +220,70 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
     # ESC hint
     hint = hint_font.render("Press ESC to return", True, (160, 160, 160))
     win.blit(hint, hint.get_rect(center=(screen_width // 2, screen_height - 40)))
+
+
+# Making the shop
+def draw_shop(win, screen_width, screen_height, player_gold, shop_items):
+
+    item_rects = []  # Will store rects for each item
+    
+    # Background overlay 
+    overlay = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 180))  # slightly darker
+    win.blit(overlay, (0, 0))
+    
+    # Top bar 
+    top_bar_rect = pygame.Rect(0, 0, screen_width, 80)
+    pygame.draw.rect(win, (255, 255, 255), top_bar_rect)
+    pygame.draw.line(win, (255, 165, 0), (0, 80), (screen_width, 80), 3)
+    
+    # bottom bar
+    bar_height = 150  # height of the bottom bar
+    bottom_bar_rect = pygame.Rect(0, screen_height - bar_height, screen_width, bar_height)
+    pygame.draw.rect(win, (255, 255, 255), bottom_bar_rect)
+    # Optional: top border line
+    pygame.draw.line(win, (255, 165, 0), (0, screen_height - bar_height), (screen_width, screen_height - bar_height), 3)
+
+    # Shop logo
+    shop_logo = pygame.image.load("sprites/shop/logo.jpg")
+    shop_logo = pygame.transform.scale(shop_logo, (120, 60))
+    win.blit(shop_logo, (20, 10))
+    
+    # Player gold
+    money_font = pygame.font.SysFont(None, 36)
+    money_text = money_font.render(f"Space Bucks: ${player_gold}", True, (0, 0, 0))
+    win.blit(money_text, (screen_width - 200, 20))
+    
+    # Items grid
+    card_w, card_h = 220, 120
+    padding_x, padding_y = 40, 30
+    start_x, start_y = 60, 120
+    
+    mx, my = pygame.mouse.get_pos()
+    
+    for idx, item in enumerate(shop_items):
+        col = idx % 3
+        row = idx // 3
+        x = start_x + col * (card_w + padding_x)
+        y = start_y + row * (card_h + padding_y)
+        card_rect = pygame.Rect(x, y, card_w, card_h)
+        item_rects.append(card_rect)  # <-- add to list
+        
+        # Hover effect
+        hover = card_rect.collidepoint(mx, my)
+        color = (255, 255, 230) if hover else (240, 240, 240)
+        pygame.draw.rect(win, color, card_rect, border_radius=12)
+        pygame.draw.rect(win, (100, 100, 100), card_rect, 3, border_radius=12)
+        
+        # Item info
+        font = pygame.font.SysFont(None, 28)
+        name_text = font.render(item["name"], True, (0, 0, 0))
+        price_text = font.render(f"${item['price']}", True, (50, 150, 50))
+        win.blit(name_text, (x + 10, y + 10))
+        win.blit(price_text, (x + 10, y + 40))
+        
+        if "image" in item:
+            img = pygame.transform.scale(item["image"], (60, 60))
+            win.blit(img, (x + card_w - 90, y + 40))
+    
+    return item_rects

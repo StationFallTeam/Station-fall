@@ -21,7 +21,7 @@ class RangedEnemy:
         self.speed      = 1.2
 
         self.sprite_sheet = pygame.image.load(
-            "sprites/enemy_human_sheet.png"
+            "sprites/enemy_human_range_sheet.png"
         ).convert_alpha()
 
         self.animations = {"down": [], "left": [], "right": [], "up": []}
