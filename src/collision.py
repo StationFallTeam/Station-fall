@@ -1,4 +1,5 @@
 import pygame
+import random
 
 class CollisionSystem:
     # Handles all collision detection
@@ -271,9 +272,15 @@ class CollisionSystem:
         if enemy in enemies:
             # Create coin at enemy location
             from src.coin import Coin
+            from src.health_drop import HealthDrop
+
             coin_value = 3
             coin = Coin(enemy.rect.centerx, enemy.rect.centery, value=coin_value)
             coins.append(coin)
+
+            if random.randint(1, 5) == 1:
+                health = HealthDrop(enemy.rect.centerx + 10, enemy.rect.centery, heal_amount=20)
+                coins.append(health) 
             
             enemies.remove(enemy)
 
