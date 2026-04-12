@@ -137,8 +137,6 @@ class TutorialPopup:
         self._hover_close = False
         # ----------------------------------------------
 
-        self._build_panel_surface()
-
     def show(self, page: int = 0):
         self.visible  = True
         self.page     = page
