@@ -120,11 +120,11 @@ class TutorialPopup:
         self._scan_t   = 0.0       
 
         # Fonts
-        self.font_heading = pygame.font.SysFont("Consolas", 22, bold=True)
-        self.font_body    = pygame.font.SysFont("Consolas", 16)
-        self.font_icon    = pygame.font.SysFont("Consolas", 20, bold=True)
-        self.font_btn     = pygame.font.SysFont("Consolas", 15, bold=True)
-        self.font_page    = pygame.font.SysFont("Consolas", 13)
+        self.font_heading = pygame.font.SysFont("Pixellari.ttf", 28, bold=True)
+        self.font_body    = pygame.font.SysFont("Pixellari.ttf", 18)
+        self.font_icon    = pygame.font.SysFont("Pixellari.ttf", 22, bold=True)
+        self.font_btn     = pygame.font.SysFont("Pixellari.ttf", 18, bold=True)
+        self.font_page    = pygame.font.SysFont("Pixellari.ttf", 15)
 
         # Interactive button rects (updated each frame)
         self._btn_prev  = pygame.Rect(0, 0, 0, 0)
