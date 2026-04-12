@@ -248,6 +248,7 @@ class TutorialPopup:
         panel.set_alpha(self._alpha)
         surface.blit(panel, (self.px, draw_y))
 
+    # Navigation methods
     def _next_page(self):
         if self.page < len(self.PAGES) - 1: self.page += 1
         else: self.hide()
