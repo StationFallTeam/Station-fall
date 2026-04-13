@@ -8,6 +8,8 @@ from src.render import draw_objects, draw_pause_menu, draw_shop
 from src.collision import handle_all_collisions, is_in_trigger
 from src.inventory_ui import InventoryUI  
 from src.floating_texts import FloatingText
+from src.health_drop import HealthDrop
+from src.tutorial import TutorialPopup
 
 from dungeongen.classes import DungeonContext, CombatRoom
 from dungeongen.rendering import draw_minimap
@@ -172,6 +174,13 @@ async def game(win, settings=None):
                     bullet = player.shoot(mouse_world)
                     if bullet:
                         bullets.append(bullet)
+
+            # For `H` key in hub to show tutorial logs
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_h:
+                if state == "hub" and is_in_trigger(player, "info"):
+                    tutorial_popup = TutorialPopup(screen_width, screen_height)
+                    tutorial_popup.show(win)
+
 
         # Update phase
         if not paused and not shop:
