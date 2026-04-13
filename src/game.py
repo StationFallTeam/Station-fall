@@ -286,7 +286,7 @@ async def game(win, settings=None):
                 start_surface = game_font.render(start_text, True, (0, 255, 0))
                 win.blit(start_surface, (20, 80))
             elif is_in_trigger(player, "info"):
-                info_text = "Press [PLACEHOLDER] to read the help logs"
+                info_text = "Press H to read the help logs"
                 info_surface = game_font.render(info_text, True, (0, 255, 255))
                 win.blit(info_surface, (20, 80))
             elif is_in_trigger(player, "quit"):
@@ -294,9 +294,9 @@ async def game(win, settings=None):
                 quit_surface = game_font.render(quit_text, True, (255, 255, 0))
                 win.blit(quit_surface, (20, 80))
             elif is_in_trigger(player, "shop"):
-                quit_text = "Press E to browse the shop"
-                quit_surface = game_font.render(quit_text, True, (255, 255, 0))
-                win.blit(quit_surface, (20, 80))
+                shop_text = "Press E to browse the shop"
+                shop_surface = game_font.render(shop_text, True, (255, 255, 0))
+                win.blit(shop_surface, (20, 80))
         
         # Draw inventory overlay if active
         if inventory_state:
