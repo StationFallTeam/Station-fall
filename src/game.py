@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import pygame
 
 from src.background import SpaceBackground
@@ -72,15 +73,23 @@ async def game(win, settings=None):
     room_count = 0
     completed_room_count = 0
     dungeon_context = DungeonContext(tile_size)
+    tutorial_popup = TutorialPopup(screen_width, screen_height)
     
     last_player_tile = None
     
     running = True
     while running:
         clock.tick(60)
-        for event in pygame.event.get():
+        events = pygame.event.get()
+        for event in events:
             if event.type == pygame.QUIT:
                 return "quit"
+
+            # When tutorial is open, it owns keyboard/mouse input.
+            if tutorial_popup.visible:
+                tutorial_popup.update([event])
+                continue
+
             # KEY HANDLER
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE: # ESCAPE LOGIC
@@ -142,6 +151,9 @@ async def game(win, settings=None):
                 elif event.key == pygame.K_e: # Shop
                     if is_in_trigger(player, "shop"):
                         shop = not shop
+                elif event.key == pygame.K_h:
+                    if state == "hub" and is_in_trigger(player, "info"):
+                        tutorial_popup.show()
 
             # MOUSE HANDLER
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -175,15 +187,8 @@ async def game(win, settings=None):
                     if bullet:
                         bullets.append(bullet)
 
-            # For `H` key in hub to show tutorial logs
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_h:
-                if state == "hub" and is_in_trigger(player, "info"):
-                    tutorial_popup = TutorialPopup(screen_width, screen_height)
-                    tutorial_popup.show(win)
-
-
         # Update phase
-        if not paused and not shop:
+        if not paused and not shop and not tutorial_popup.visible:
             keys = pygame.key.get_pressed()
             
             # Player movement
@@ -322,6 +327,8 @@ async def game(win, settings=None):
             item_rects = draw_shop(win, screen_width, screen_height, player.money, shop_items)
         else:
             item_rects = []
+
+        tutorial_popup.draw(win)
                     
         # Apply brightness filter
         if brightness < 1.0:
