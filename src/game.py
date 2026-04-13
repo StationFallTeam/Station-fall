@@ -8,6 +8,7 @@ from src.player import Player
 from src.render import draw_objects, draw_pause_menu, draw_shop
 from src.collision import handle_all_collisions, is_in_trigger
 from src.inventory_ui import InventoryUI  
+from src.floating_texts import FloatingText
 from dungeongen.classes import DungeonContext, CombatRoom
 from dungeongen.rendering import draw_minimap
 from dungeongen.loading import create_hub_generator, create_dungeon_generator
@@ -176,7 +177,12 @@ async def game(win, settings=None):
             for coin in coins[:]:
                 coin.update()
                 if player.rect.colliderect(coin.rect):
-                    player.money += coin.value
+                    from src.health_drop import HealthDrop
+                    if isinstance(coin, HealthDrop):
+                        player.health = min(player.health + coin.heal_amount, player.max_health)
+                        floating_texts.append(FloatingText(player.rect.centerx, player.rect.centery,f"+{coin.heal_amount}",color=(0, 255, 0)))
+                    else:
+                        player.money += coin.value
                     coins.remove(coin)
 
         # Drawing Phase

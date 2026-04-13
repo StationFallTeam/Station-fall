@@ -310,7 +310,8 @@ class TestCollisionSystem(unittest.TestCase):
         
         # Coin should be created
         mock_coin.assert_called_once()
-        self.assertEqual(len(coins), 1)
+        self.assertGreaterEqual(len(coins), 1)
+        self.assertLessEqual(len(coins), 2) # could drop 2 items if a coin and a health drop both spawn
 
     # Test integrated collision handling
     @patch('src.floating_texts.FloatingText')
