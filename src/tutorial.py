@@ -189,7 +189,7 @@ class TutorialPopup:
         self.visible  = True
         self.page     = page
         self._alpha   = 0
-        self._slide_y = 40
+        self._slide_y = 0
 
     def hide(self):
         self.visible = False
