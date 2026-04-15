@@ -86,8 +86,7 @@ async def game(win, settings=None):
                 return "quit"
 
             # When tutorial is open, it owns keyboard/mouse input.
-            if tutorial_popup.visible:
-                continue
+            if tutorial_popup.visible:continue
 
             # KEY HANDLER
             elif event.type == pygame.KEYDOWN:
