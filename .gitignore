@@ -22,3 +22,4 @@ build/web-cache/
 build/web-cache/
 station_fall_venv/
 .venv/
+.tutorial_shown
