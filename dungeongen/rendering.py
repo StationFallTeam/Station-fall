@@ -10,6 +10,7 @@ COLOR_GRID = (255, 255, 255)
 COLOR_TEXT = (255, 255, 255)
 COLOR_FURTHEST = (255, 200, 0)
 COLOR_DOOR_DOT = (255, 0, 0)
+COLOR_ROOM_COMPLETED = (80, 200, 120)
 
 def draw_grid(
     surface: pygame.Surface, 
@@ -309,9 +310,12 @@ def draw_minimap(
     minimap_width: int = 180,
     minimap_height: int = 180,
     padding: int = 12,
-    view_radius_tiles: int = 12,
+    view_radius_tiles: int = 16,
+    rooms: list[BaseRoom] | None = None,
+    hallways: list[Hallway] | None = None,
+    full_map: bool = False,
 ):
-    if not tiles:
+    if not tiles and not rooms and not hallways:
         return
 
     panel_x = surface.get_width() - minimap_width - padding
@@ -327,59 +331,87 @@ def draw_minimap(
     draw_width = minimap_width - inner_padding * 2
     draw_height = minimap_height - inner_padding * 2
 
-    # Center minimap around player
     focus_tile_x = focus_x / tile_size
     focus_tile_y = focus_y / tile_size
 
-    min_view_x = focus_tile_x - view_radius_tiles
-    max_view_x = focus_tile_x + view_radius_tiles
-    min_view_y = focus_tile_y - view_radius_tiles
-    max_view_y = focus_tile_y + view_radius_tiles
+    if full_map:
+        margin_tiles = 2
+        rects = []
+        if rooms:
+            rects.extend(room.rect for room in rooms)
+        if hallways:
+            rects.extend(hallway.rect for hallway in hallways)
 
-    view_tile_width = max_view_x - min_view_x
-    view_tile_height = max_view_y - min_view_y
+        if rects:
+            min_view_x = min(rect.x for rect in rects) - margin_tiles
+            max_view_x = max(rect.x + rect.w for rect in rects) + margin_tiles
+            min_view_y = min(rect.y for rect in rects) - margin_tiles
+            max_view_y = max(rect.y + rect.h for rect in rects) + margin_tiles
+        else:
+            xs = [tx for tx, _ in tiles.keys()]
+            ys = [ty for _, ty in tiles.keys()]
+            min_view_x = min(xs) - margin_tiles
+            max_view_x = max(xs) + 1 + margin_tiles
+            min_view_y = min(ys) - margin_tiles
+            max_view_y = max(ys) + 1 + margin_tiles
+    else:
+        min_view_x = focus_tile_x - view_radius_tiles
+        max_view_x = focus_tile_x + view_radius_tiles
+        min_view_y = focus_tile_y - view_radius_tiles
+        max_view_y = focus_tile_y + view_radius_tiles
+
+    view_tile_width = max(1, max_view_x - min_view_x)
+    view_tile_height = max(1, max_view_y - min_view_y)
 
     scale_x = draw_width / view_tile_width
     scale_y = draw_height / view_tile_height
     scale = min(scale_x, scale_y)
+    tile_pixel_size = max(2, int(scale))
 
-    tile_pixel_size = max(3, int(scale))
+    def draw_world_rect(world_rect, color):
+        view_right = max_view_x + 1
+        view_bottom = max_view_y + 1
 
-    # Draw only nearby dungeon tiles
-    for (tx, ty), tile in tiles.items():
-        if not (min_view_x <= tx <= max_view_x and min_view_y <= ty <= max_view_y):
-            continue
+        rect_left = max(world_rect.x, min_view_x)
+        rect_top = max(world_rect.y, min_view_y)
+        rect_right = min(world_rect.x + world_rect.w, view_right)
+        rect_bottom = min(world_rect.y + world_rect.h, view_bottom)
 
-        mini_x = int(draw_left + (tx - min_view_x) * scale)
-        mini_y = int(draw_top + (ty - min_view_y) * scale)
+        if rect_left >= rect_right or rect_top >= rect_bottom:
+            return
 
-        rect = pygame.Rect(mini_x, mini_y, tile_pixel_size, tile_pixel_size)
+        mini_x = int(draw_left + (rect_left - min_view_x) * scale)
+        mini_y = int(draw_top + (rect_top - min_view_y) * scale)
+        mini_w = max(2, int((rect_right - rect_left) * scale))
+        mini_h = max(2, int((rect_bottom - rect_top) * scale))
 
-        if tile == ".":
-            pygame.draw.rect(surface, (90, 170, 255), rect)
-        elif tile == "h":
-            pygame.draw.rect(surface, (170, 210, 255), rect)
+        pygame.draw.rect(surface, color, pygame.Rect(mini_x, mini_y, mini_w, mini_h))
 
-    # Spawn marker
-    if spawn_x is not None and spawn_y is not None:
-        spawn_tile_x = spawn_x / tile_size
-        spawn_tile_y = spawn_y / tile_size
+    if hallways:
+        for hallway in hallways:
+            draw_world_rect(hallway.rect, COLOR_HALL)
 
-        if min_view_x <= spawn_tile_x <= max_view_x and min_view_y <= spawn_tile_y <= max_view_y:
-            spawn_mini_x = int(draw_left + (spawn_tile_x - min_view_x) * scale)
-            spawn_mini_y = int(draw_top + (spawn_tile_y - min_view_y) * scale)
+    if rooms:
+        for room in rooms:
+            room_color = COLOR_ROOM
+            if isinstance(room, CombatRoom) and room.visited and not room.locked:
+                room_color = COLOR_ROOM_COMPLETED
+            draw_world_rect(room.rect, room_color)
 
-            marker_size = max(5, tile_pixel_size + 2)
-            spawn_rect = pygame.Rect(
-                spawn_mini_x - marker_size // 2,
-                spawn_mini_y - marker_size // 2,
-                marker_size,
-                marker_size,
-            )
-            pygame.draw.rect(surface, (20, 20, 20), spawn_rect.inflate(2, 2))
-            pygame.draw.rect(surface, (255, 220, 0), spawn_rect)
+    if not rooms and not hallways:
+        for (tx, ty), tile in tiles.items():
+            if not (min_view_x <= tx <= max_view_x and min_view_y <= ty <= max_view_y):
+                continue
 
-    # Player marker stays centered-ish
+            mini_x = int(draw_left + (tx - min_view_x) * scale)
+            mini_y = int(draw_top + (ty - min_view_y) * scale)
+            rect = pygame.Rect(mini_x, mini_y, tile_pixel_size, tile_pixel_size)
+
+            if tile == ".":
+                pygame.draw.rect(surface, COLOR_ROOM, rect)
+            elif tile == "h":
+                pygame.draw.rect(surface, COLOR_HALL, rect)
+
     focus_mini_x = int(draw_left + (focus_tile_x - min_view_x) * scale)
     focus_mini_y = int(draw_top + (focus_tile_y - min_view_y) * scale)
 

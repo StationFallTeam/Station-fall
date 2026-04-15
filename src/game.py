@@ -49,6 +49,7 @@ async def game(win, settings=None):
     # Game state
     inventory_state = False  # For inventory overlay
     paused = False # for pause menu - Wil
+    minimap_fullscreen = False
 
     shop = False # for the shop
     shop_items = [
@@ -148,6 +149,8 @@ async def game(win, settings=None):
                 elif event.key == pygame.K_i:
                     # Toggle inventory
                     inventory_state = not inventory_state
+                elif event.key == pygame.K_m:
+                    minimap_fullscreen = not minimap_fullscreen
                 elif event.key == pygame.K_e: # Shop
                     if is_in_trigger(player, "shop"):
                         shop = not shop
@@ -272,16 +275,24 @@ async def game(win, settings=None):
             coins, floating_texts, dungeon=active_gen, tile_size=tile_size
         )
         
-        draw_minimap(
-            win,
-             active_gen.tiles,
-             player.rect.centerx,
-            player.rect.centery,
-            tile_size,
-            spawn_x=spawn[0],
-            spawn_y=spawn[1],
-            minimap_width=160,
-            minimap_height=160 
+        if state == "dungeon":
+            minimap_width = screen_width - 24 if minimap_fullscreen else 160
+            minimap_height = screen_height - 24 if minimap_fullscreen else 160
+            minimap_padding = 12
+
+            draw_minimap(
+                win,
+                active_gen.tiles,
+                player.rect.centerx,
+                player.rect.centery,
+                tile_size,
+                minimap_width=minimap_width,
+                minimap_height=minimap_height,
+                padding=minimap_padding,
+                view_radius_tiles=22 if minimap_fullscreen else 16,
+                rooms=active_gen.rooms,
+                hallways=active_gen.hallways,
+                full_map=minimap_fullscreen,
             )
         # Some text tips
         if state == "dungeon":
