@@ -87,7 +87,6 @@ async def game(win, settings=None):
 
             # When tutorial is open, it owns keyboard/mouse input.
             if tutorial_popup.visible:
-                tutorial_popup.update([event])
                 continue
 
             # KEY HANDLER
