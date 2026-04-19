@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import pygame
 
 from src.background import SpaceBackground
@@ -8,6 +9,8 @@ from src.render import draw_objects, draw_pause_menu, draw_shop
 from src.collision import handle_all_collisions, is_in_trigger
 from src.inventory_ui import InventoryUI  
 from src.floating_texts import FloatingText
+from src.health_drop import HealthDrop
+from src.tutorial import TutorialPopup
 
 from dungeongen.classes import DungeonContext, CombatRoom
 from dungeongen.rendering import draw_minimap
@@ -46,6 +49,7 @@ async def game(win, settings=None):
     # Game state
     inventory_state = False  # For inventory overlay
     paused = False # for pause menu - Wil
+    minimap_fullscreen = False
 
     shop = False # for the shop
     shop_items = [
@@ -70,15 +74,23 @@ async def game(win, settings=None):
     room_count = 0
     completed_room_count = 0
     dungeon_context = DungeonContext(tile_size)
+    tutorial_popup = TutorialPopup(screen_width, screen_height)
     
     last_player_tile = None
     
     running = True
     while running:
         clock.tick(60)
-        for event in pygame.event.get():
+        events = pygame.event.get()
+        for event in events:
             if event.type == pygame.QUIT:
                 return "quit"
+
+            # When tutorial is open, it owns keyboard/mouse input.
+            if tutorial_popup.visible:
+                tutorial_popup.update([event])
+                continue
+
             # KEY HANDLER
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE: # ESCAPE LOGIC
@@ -137,9 +149,14 @@ async def game(win, settings=None):
                 elif event.key == pygame.K_i:
                     # Toggle inventory
                     inventory_state = not inventory_state
+                elif event.key == pygame.K_m:
+                    minimap_fullscreen = not minimap_fullscreen
                 elif event.key == pygame.K_e: # Shop
                     if is_in_trigger(player, "shop"):
                         shop = not shop
+                elif event.key == pygame.K_h:
+                    if state == "hub" and is_in_trigger(player, "info"):
+                        tutorial_popup.show()
 
             # MOUSE HANDLER
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -174,7 +191,7 @@ async def game(win, settings=None):
                         bullets.append(bullet)
 
         # Update phase
-        if not paused and not shop:
+        if not paused and not shop and not tutorial_popup.visible:
             keys = pygame.key.get_pressed()
             
             # Player movement
@@ -258,16 +275,24 @@ async def game(win, settings=None):
             coins, floating_texts, dungeon=active_gen, tile_size=tile_size
         )
         
-        draw_minimap(
-            win,
-             active_gen.tiles,
-             player.rect.centerx,
-            player.rect.centery,
-            tile_size,
-            spawn_x=spawn[0],
-            spawn_y=spawn[1],
-            minimap_width=160,
-            minimap_height=160 
+        if state == "dungeon":
+            minimap_width = screen_width - 24 if minimap_fullscreen else 160
+            minimap_height = screen_height - 24 if minimap_fullscreen else 160
+            minimap_padding = 12
+
+            draw_minimap(
+                win,
+                active_gen.tiles,
+                player.rect.centerx,
+                player.rect.centery,
+                tile_size,
+                minimap_width=minimap_width,
+                minimap_height=minimap_height,
+                padding=minimap_padding,
+                view_radius_tiles=22 if minimap_fullscreen else 16,
+                rooms=active_gen.rooms,
+                hallways=active_gen.hallways,
+                full_map=minimap_fullscreen,
             )
         # Some text tips
         if state == "dungeon":
@@ -286,7 +311,7 @@ async def game(win, settings=None):
                 start_surface = game_font.render(start_text, True, (0, 255, 0))
                 win.blit(start_surface, (20, 80))
             elif is_in_trigger(player, "info"):
-                info_text = "Press [PLACEHOLDER] to read the help logs"
+                info_text = "Press H to read the help logs"
                 info_surface = game_font.render(info_text, True, (0, 255, 255))
                 win.blit(info_surface, (20, 80))
             elif is_in_trigger(player, "quit"):
@@ -294,9 +319,9 @@ async def game(win, settings=None):
                 quit_surface = game_font.render(quit_text, True, (255, 255, 0))
                 win.blit(quit_surface, (20, 80))
             elif is_in_trigger(player, "shop"):
-                quit_text = "Press E to browse the shop"
-                quit_surface = game_font.render(quit_text, True, (255, 255, 0))
-                win.blit(quit_surface, (20, 80))
+                shop_text = "Press E to browse the shop"
+                shop_surface = game_font.render(shop_text, True, (255, 255, 0))
+                win.blit(shop_surface, (20, 80))
         
         # Draw inventory overlay if active
         if inventory_state:
@@ -313,6 +338,8 @@ async def game(win, settings=None):
             item_rects = draw_shop(win, screen_width, screen_height, player.money, shop_items)
         else:
             item_rects = []
+
+        tutorial_popup.draw(win)
                     
         # Apply brightness filter
         if brightness < 1.0:

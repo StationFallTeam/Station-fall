@@ -155,7 +155,7 @@ def draw_menu(win, screen_width, screen_height, truck_img, float_time):
     draw_button(credits_rect, "Credits")
     draw_button(quit_rect, "Quit")
 
-    ver = small_font.render("v1.0.0", True, (200, 200, 200))
+    ver = small_font.render("v1.1.0", True, (200, 200, 200))
     win.blit(ver, ver.get_rect(center=(screen_width - 35, screen_height - 15)))
 
     return start_rect, quit_rect, credits_rect
