@@ -1,9 +1,11 @@
 import pygame
 import random
 
+healthDropChance = 8
+healthDropAmount = 10
+
 class CollisionSystem:
-    # Handles all collision detection
-    
+    # Handles all collision detection 
     def __init__(self):
         self.walls = []
         self.temporary_walls = []  # For doors and other dynamic walls
@@ -98,6 +100,9 @@ class CollisionSystem:
             bullet_rect = bullet.get_rect()
             
             for enemy in enemies[:]:
+                shooter = getattr(bullet, '_shooter', None)
+                if enemy is shooter:
+                    continue
                 if bullet_rect.colliderect(enemy.rect):
                     # Handle bullet hitting enemy
                     damage_dealt = self._handle_bullet_enemy_collision(bullet, enemy, floating_texts)
@@ -278,8 +283,8 @@ class CollisionSystem:
             coin = Coin(enemy.rect.centerx, enemy.rect.centery, value=coin_value)
             coins.append(coin)
 
-            if random.randint(1, 5) == 1:
-                health = HealthDrop(enemy.rect.centerx + 10, enemy.rect.centery, heal_amount=20)
+            if random.randint(1, healthDropChance) == 1:
+                health = HealthDrop(enemy.rect.centerx + 10, enemy.rect.centery, heal_amount= healthDropAmount)
                 coins.append(health) 
             
             enemies.remove(enemy)
