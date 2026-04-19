@@ -30,6 +30,8 @@ class InventoryUI:
         self.ph = 400
         self.px = (screen_width  - self.pw) // 2
         self.py = (screen_height - self.ph) // 2
+        
+        self.panel_rect = pygame.Rect(self.px, self.py, self.pw, self.ph)
 
         # Animation state
         self._alpha   = 0
@@ -46,6 +48,7 @@ class InventoryUI:
         # Close button rect (screen-space, updated each draw)
         self._btn_close  = pygame.Rect(0, 0, 0, 0)
         self._hover_close = False
+    
 
     def draw(self, surface: pygame.Surface, money: int, visible: bool = True):
         """Call every frame while the inventory key is held / toggled on."""

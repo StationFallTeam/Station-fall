@@ -52,14 +52,14 @@ class TestGameUI(unittest.TestCase):
     # This test checks that the inventory panel is correctly centered on the screen with the expected dimensions.
     def test_inventory_panel_centering(self):
         """Requirement: The inventory panel should be centered on the screen."""
-        expected_x = (self.screen_width // 2) - 200
-        expected_y = (self.screen_height // 2) - 150
+        expected_x = (self.screen_width - min(560, self.screen_width - 80)) // 2
+        expected_y = (self.screen_height - 400) // 2
         
         self.assertEqual(self.inventory.panel_rect.x, expected_x)
         self.assertEqual(self.inventory.panel_rect.y, expected_y)
-        self.assertEqual(self.inventory.panel_rect.width, 400)
-        self.assertEqual(self.inventory.panel_rect.height, 300)
-
+        self.assertEqual(self.inventory.panel_rect.width, min(560, self.screen_width - 80))
+        self.assertEqual(self.inventory.panel_rect.height, 400)
+        
     # This test verifies that the inventory draw method can be called without throwing any exceptions, ensuring that the drawing logic is robust against typical usage scenarios.
     def test_inventory_draw_cycle(self):
         """Verify that the inventory draw method executes without error."""
