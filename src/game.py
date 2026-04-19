@@ -325,7 +325,7 @@ async def game(win, settings=None):
         
         # Draw inventory overlay if active
         if inventory_state:
-            inventory_ui.draw(win, player.money)
+            inventory_ui.draw(win, player.money, visible=inventory_state)
 
         # Draw pause menu
         if paused:
