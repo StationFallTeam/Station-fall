@@ -34,12 +34,18 @@ async def run_game(win, screen_width, screen_height, background, truck_img, sett
     float_time = 0
     menu_cam_x = 0
 
+    # music set to dead
+    pygame.mixer.music.stop()
+    music_volume = pygame.mixer.music.get_volume()
+    pygame.mixer.music.load('sound/uncomfortable-panels.ogg')
+    pygame.mixer.music.set_volume(music_volume)
+    pygame.mixer.music.play(-1)
+
     while True:
         clock.tick(60)
         float_time += 0.05
         menu_cam_x -= 2
     
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return

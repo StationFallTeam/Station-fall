@@ -25,6 +25,12 @@ async def game(win, settings=None):
     
     music_volume = settings.get('music_volume', 0.5)
     brightness = settings.get('brightness', 1.0)
+
+    # change music to standard background
+    pygame.mixer.music.stop()
+    pygame.mixer.music.load('sound/peace-in-void.ogg')
+    pygame.mixer.music.set_volume(music_volume)
+    pygame.mixer.music.play(-1)
     
     # Volume and brightness step constants
     VOLUME_STEP = 0.1

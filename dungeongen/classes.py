@@ -118,9 +118,23 @@ class CombatRoom(BaseRoom):
         from dungeongen.door_placement_functions import place_doors_for_room
         place_doors_for_room(self, dungeon_context)
 
+        # music set to combat
+        pygame.mixer.music.stop()
+        music_volume = pygame.mixer.music.get_volume()
+        pygame.mixer.music.load('sound/magnetic-march.ogg')
+        pygame.mixer.music.set_volume(music_volume)
+        pygame.mixer.music.play(-1)
+
     def unplace_doors(self, dungeon_context):
         from dungeongen.door_placement_functions import remove_doors_for_room
         remove_doors_for_room(self, dungeon_context)
+
+        # music reset to normal
+        pygame.mixer.music.stop()
+        music_volume = pygame.mixer.music.get_volume()
+        pygame.mixer.music.load('sound/peace-in-void.ogg')
+        pygame.mixer.music.set_volume(music_volume)
+        pygame.mixer.music.play(-1)
 
     def update(self, dungeon_context):
         if not self.visited:
