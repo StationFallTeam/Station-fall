@@ -1,7 +1,7 @@
 import pygame
 
 class HealthDrop:
-    def __init__(self, x, y, heal_amount=20):
+    def __init__(self, x, y, heal_amount):
         self.heal_amount = heal_amount
         self.radius = 8
         self.pos = pygame.Vector2(x, y)
