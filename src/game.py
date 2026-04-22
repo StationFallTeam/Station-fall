@@ -11,6 +11,7 @@ from src.inventory_ui import InventoryUI
 from src.floating_texts import FloatingText
 from src.health_drop import HealthDrop
 from src.tutorial import TutorialPopup
+from src.assets import resolve_asset_path
 
 from dungeongen.classes import DungeonContext, CombatRoom
 from dungeongen.rendering import draw_minimap
@@ -59,9 +60,9 @@ async def game(win, settings=None):
 
     shop = False # for the shop
     shop_items = [
-        {"name": "Healing Kit", "price": 10, "image": pygame.image.load("sprites/shop/HealingKit.png")},
-        {"name": "Blaster Upgrade", "price": 25, "image": pygame.image.load("sprites/shop/BlasterUpgrade.png")},
-        {"name": "Space Suit Upgrade", "price": 15, "image": pygame.image.load("sprites/shop/SpaceSuitUpgrade.png")},
+        {"name": "Healing Kit",         "price": 10,  "image": pygame.image.load(resolve_asset_path("sprites/shop/HealingKit.png"))},
+        {"name": "Blaster Upgrade",     "price": 25,  "image": pygame.image.load(resolve_asset_path("sprites/shop/BlasterUpgrade.png"))},
+        {"name": "Space Suit Upgrade",  "price": 15,  "image": pygame.image.load(resolve_asset_path("sprites/shop/SpaceSuitUpgrade.png"))},
     ]
 
     hub_type = "hub"
@@ -107,8 +108,7 @@ async def game(win, settings=None):
                     elif is_in_trigger(player, "quit"):
                         # Return current settings when quitting
                         current_settings = {'music_volume': music_volume, 'brightness': brightness}
-                        pygame.quit()
-                        sys.exit()
+                        return "quit", current_settings
                     else:
                         paused = not paused 
                 

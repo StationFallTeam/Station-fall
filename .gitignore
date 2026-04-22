@@ -16,9 +16,10 @@ venv/
 .vscode/
 
 # ===== Temporary files =====
+# ===== Temporary files =====
 *.tmp
 *.swp
-build/web-cache/
+build/
 build/web-cache/
 station_fall_venv/
 .venv/
