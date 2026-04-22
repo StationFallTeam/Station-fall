@@ -198,7 +198,7 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
         ("Simon Halaszi",        "| Developer | Dungeon Master |"),
         ("Loy Ngo",              "| Developer |"),
         ("Meheraj Khatri",       "| Developer |"),
-        ("Rowan",                "| Developer |"),
+        ("Rowan",                "| Developer | Music |"),
         ("Sebastian Bentancourt","| Developer |"),
         ("Yusairah Haque",       "| Developer |"),
         ("Zachary Evans",        "| Developer |"),
