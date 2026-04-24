@@ -85,6 +85,9 @@ async def game(win, settings=None):
     
     last_player_tile = None
     
+    shoot_sound = pygame.mixer.Sound(resolve_asset_path("sound/shoot.ogg"))
+    shoot_sound.set_volume(0.4)
+
     running = True
     while running:
         clock.tick(60)
@@ -126,6 +129,7 @@ async def game(win, settings=None):
                         
                 elif event.key == pygame.K_RETURN:
                     if state == "hub" and is_in_trigger(player, "start"):
+                        coins.clear()
                         # Transitiong to dungeon
                         state = "dungeon"
                         active_gen = dungeon_gen
@@ -194,6 +198,7 @@ async def game(win, settings=None):
                     mouse_world = camera.screen_to_world(event.pos)
                     bullet = player.shoot(mouse_world)
                     if bullet:
+                        shoot_sound.play()
                         bullets.append(bullet)
 
         # Update phase

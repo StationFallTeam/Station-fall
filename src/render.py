@@ -252,7 +252,7 @@ def draw_shop(win, screen_width, screen_height, player_gold, shop_items):
     # Player gold
     money_font = pygame.font.SysFont(None, 36)
     money_text = money_font.render(f"Space Bucks: ${player_gold}", True, (0, 0, 0))
-    win.blit(money_text, (screen_width - 200, 20))
+    win.blit(money_text, (screen_width - 250, 20))
     
     # Items grid
     card_w, card_h = 220, 120
