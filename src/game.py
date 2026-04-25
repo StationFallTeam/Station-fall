@@ -92,13 +92,18 @@ async def game(win, settings=None):
     while running:
         clock.tick(60)
         events = pygame.event.get()
+
+        # If tutorial is visible, only update it and skip other input handling
+        if tutorial_popup.visible:
+                tutorial_popup.update([event])
+                continue
+        
         for event in events:
             if event.type == pygame.QUIT:
                 return "quit"
-
-            # When tutorial is open, it owns keyboard/mouse input.
+            
+            # If tutorial is visible, only update it and skip other input handling
             if tutorial_popup.visible:
-                tutorial_popup.update([event])
                 continue
 
             # KEY HANDLER
