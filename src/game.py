@@ -95,7 +95,7 @@ async def game(win, settings=None):
 
         # If tutorial is visible, only update it and skip other input handling
         if tutorial_popup.visible:
-            tutorial_popup.update(event)
+            tutorial_popup.update(events)
         
         for event in events:
             if event.type == pygame.QUIT:
