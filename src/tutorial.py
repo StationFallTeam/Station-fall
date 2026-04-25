@@ -76,7 +76,7 @@ class TutorialPopup:
         },
         {
             "icon": "[$]",
-            "heading": "BLACK MARKET: Gear & Inventory",
+            "heading": "Stationzone: Gear & Inventory",
             "lines": [
                 "E — SHOP: Stand near a terminal to trade Space Bucks.",
                 "I — INVENTORY: Check your wallet and gear status.",
