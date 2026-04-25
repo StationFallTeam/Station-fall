@@ -25,7 +25,7 @@ class TutorialPopup:
     PAGES = [
         {
             "icon": ">>",
-            "heading": "SYSTEM INITIALIZED: Mission Briefing",
+            "heading": "Mission Briefing",
             "lines": [
                 "Pilot, you've woken up on a derelict graveyard in orbit.",
                 "The station's AI has gone rogue, and the corridors",
@@ -37,7 +37,7 @@ class TutorialPopup:
         },
         {
             "icon": "[WASD]",
-            "heading": "THRUSTER CONTROLS: Movement",
+            "heading": "Movement",
             "lines": [
                 "W — THRUST NORTH: Move up through the debris.",
                 "S — THRUST SOUTH: Back away from danger.",
@@ -50,7 +50,7 @@ class TutorialPopup:
         },
         {
             "icon": "(*)",
-            "heading": "OFFENSE & DEFENSE: Combat",
+            "heading": "Combat",
             "lines": [
                 "MOUSE LEFT CLICK — Fire your high-energy Blaster.",
                 "",
@@ -64,7 +64,7 @@ class TutorialPopup:
         },
         {
             "icon": "[!]",
-            "heading": "THREAT ASSESSMENT: Enemies",
+            "heading": "Enemies",
             "lines": [
                 "STALKERS: These melee units will hunt you relentlessly.",
                 "Keep moving or they will shred your suit on contact.",
@@ -89,7 +89,7 @@ class TutorialPopup:
         },
         {
             "icon": "[OK]",
-            "heading": "STATION PROTOCOLS: System Keys",
+            "heading": "System Keys",
             "lines": [
                 "ENTER — PORTAL: Launch your mission from the Hub portal.",
                 "R — RECALL: Return home ONLY after all rooms are clear.",
