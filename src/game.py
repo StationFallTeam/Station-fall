@@ -50,7 +50,6 @@ async def game(win, settings=None):
     inventory_ui = InventoryUI(screen_width, screen_height)
     tutorial_popup = TutorialPopup(screen_width, screen_height)
     
-<<<<<<< HEAD
     # Entity Lists
     bullets, coins, floating_texts = [], [], []
     
@@ -60,14 +59,6 @@ async def game(win, settings=None):
     shop = False 
     
     # Shop Setup
-=======
-    # Game state
-    inventory_state = False  # For inventory overlay
-    paused = False # for pause menu - Wil
-    minimap_fullscreen = False
-
-    shop = False # for the shop
->>>>>>> origin/main
     shop_items = [
         {"name": "Healing Kit",         "price": 10,  "image": pygame.image.load(resolve_asset_path("sprites/shop/HealingKit.png"))},
         {"name": "Blaster Upgrade",     "price": 25,  "image": pygame.image.load(resolve_asset_path("sprites/shop/BlasterUpgrade.png"))},
@@ -119,17 +110,9 @@ async def game(win, settings=None):
                     if shop: shop = False
                     elif paused: paused = False
                     elif is_in_trigger(player, "quit"):
-<<<<<<< HEAD
                         pygame.quit()
                         sys.exit()
                     else: paused = not paused 
-=======
-                        # Return current settings when quitting
-                        current_settings = {'music_volume': music_volume, 'brightness': brightness}
-                        return "quit", current_settings
-                    else:
-                        paused = not paused 
->>>>>>> origin/main
                 
                 # Settings
                 elif event.key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
@@ -142,49 +125,8 @@ async def game(win, settings=None):
                     brightness = min(brightness + BRIGHTNESS_STEP, 1.0)        
                 elif event.key == pygame.K_9:
                     brightness = max(brightness - BRIGHTNESS_STEP, 0.2)
-<<<<<<< HEAD
                 
                 # Tutorial Trigger (H Key)
-=======
-                        
-                elif event.key == pygame.K_RETURN:
-                    if state == "hub" and is_in_trigger(player, "start"):
-                        coins.clear()
-                        # Transitiong to dungeon
-                        state = "dungeon"
-                        active_gen = dungeon_gen
-                        spawn, dungeon_context = dungeon_gen.load_complete(tile_size)
-                        current_money = player.money
-                        player = Player(spawn[0], spawn[1])
-                        player.money = current_money
-                        bullets.clear()
-                        floating_texts.clear()
-                        last_player_tile = None
-                        room_count, completed_room_count = dungeon_gen.get_room_counts()
-                elif event.key == pygame.K_r and completed_room_count == room_count:
-                    if state == "dungeon" and is_in_trigger(player, "leave"):
-                        #Back to hub
-                        state = "hub"
-                        active_gen = hub_gen
-                        spawn = hub_gen.load_complete(tile_size)
-                        current_money = player.money
-                        player = Player(spawn[0], spawn[1])
-                        player.money = current_money
-                        dungeon_context = DungeonContext(tile_size)
-                        bullets.clear()
-                        floating_texts.clear()
-                        last_player_tile = None
-                        room_count = 0
-                        completed_room_count = 0
-                elif event.key == pygame.K_i:
-                    # Toggle inventory
-                    inventory_state = not inventory_state
-                elif event.key == pygame.K_m:
-                    minimap_fullscreen = not minimap_fullscreen
-                elif event.key == pygame.K_e: # Shop
-                    if is_in_trigger(player, "shop"):
-                        shop = not shop
->>>>>>> origin/main
                 elif event.key == pygame.K_h:
                     if state == "hub" and is_in_trigger(player, "info"):
                         tutorial_popup.show()
@@ -234,13 +176,7 @@ async def game(win, settings=None):
                 elif state == "dungeon":
                     mouse_world = camera.screen_to_world(event.pos)
                     bullet = player.shoot(mouse_world)
-<<<<<<< HEAD
                     if bullet: bullets.append(bullet)
-=======
-                    if bullet:
-                        shoot_sound.play()
-                        bullets.append(bullet)
->>>>>>> origin/main
 
         # 4. PHYSICS / LOGIC UPDATE PHASE
         if not paused and not shop and not tutorial_popup.visible:
@@ -292,33 +228,10 @@ async def game(win, settings=None):
         enemy_list = dungeon_context.enemies if state == "dungeon" else []
         draw_objects(win, player, enemy_list, bullets, camera, background, coins, floating_texts, active_gen, tile_size)
         
-<<<<<<< HEAD
         # UI Elements
         draw_minimap(win, active_gen.tiles, player.rect.centerx, player.rect.centery, tile_size, spawn[0], spawn[1], 160, 160)
 
         # Text UI
-=======
-        if state == "dungeon":
-            minimap_width = screen_width - 24 if minimap_fullscreen else 160
-            minimap_height = screen_height - 24 if minimap_fullscreen else 160
-            minimap_padding = 12
-
-            draw_minimap(
-                win,
-                active_gen.tiles,
-                player.rect.centerx,
-                player.rect.centery,
-                tile_size,
-                minimap_width=minimap_width,
-                minimap_height=minimap_height,
-                padding=minimap_padding,
-                view_radius_tiles=22 if minimap_fullscreen else 16,
-                rooms=active_gen.rooms,
-                hallways=active_gen.hallways,
-                full_map=minimap_fullscreen,
-            )
-        # Some text tips
->>>>>>> origin/main
         if state == "dungeon":
             progress_text = f"Rooms: {completed_room_count}/{room_count}"
             if completed_room_count == room_count:
@@ -346,13 +259,6 @@ async def game(win, settings=None):
                 shop_text = "Press E to browse the shop"
                 shop_surface = game_font.render(shop_text, True, (255, 255, 0))
                 win.blit(shop_surface, (20, 80))
-<<<<<<< HEAD
-=======
-        
-        # Draw inventory overlay if active
-        if inventory_state:
-            inventory_ui.draw(win, player.money, visible=inventory_state)
->>>>>>> origin/main
 
         if inventory_state: inventory_ui.draw(win, player.money)
         if paused: resume_rect, menu_rect, quit_rect = draw_pause_menu(win, screen_width, screen_height)
