@@ -196,9 +196,9 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
     team = [
         ("Wil Nahra",            "| Developer | Sprite Creation |"),
         ("Simon Halaszi",        "| Developer | Dungeon Master |"),
+        ("Meheraj Khatri",       "| Developer | UI & Mechanics Integration | QA Lead |"),
         ("Loy Ngo",              "| Developer |"),
-        ("Meheraj Khatri",       "| Developer |"),
-        ("Rowan",                "| Developer | Music |"),
+        ("Rowan Ess",            "| Developer | Music |"),
         ("Sebastian Bentancourt","| Developer |"),
         ("Yusairah Haque",       "| Developer |"),
         ("Zachary Evans",        "| Developer |"),
