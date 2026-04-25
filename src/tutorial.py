@@ -36,7 +36,7 @@ class TutorialPopup:
             ],
         },
         {
-            "icon": "[WASD]",
+            "icon": "[^]",
             "heading": "Movement",
             "lines": [
                 "W — THRUST NORTH: Move up through the debris.",
@@ -88,7 +88,7 @@ class TutorialPopup:
             ],
         },
         {
-            "icon": "[OK]",
+            "icon": "[?]",
             "heading": "System Keys",
             "lines": [
                 "ENTER — PORTAL: Launch your mission from the Hub portal.",
