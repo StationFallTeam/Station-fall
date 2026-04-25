@@ -8,6 +8,8 @@ from src.background import SpaceBackground
 from src.game import game as dungeon_game
 from src.assets import resolve_asset_path
 import traceback
+import os
+os.environ['SDL_VIDEO_HIGHDPI_DISABLED'] = '1'
 
 # NOTE:
 # When debugging pygbag web crashes, temporarily wrap main() in a try/except
@@ -34,12 +36,18 @@ async def run_game(win, screen_width, screen_height, background, truck_img, sett
     float_time = 0
     menu_cam_x = 0
 
+    # music set to dead
+    pygame.mixer.music.stop()
+    music_volume = pygame.mixer.music.get_volume()
+    pygame.mixer.music.load('sound/uncomfortable-panels.ogg')
+    pygame.mixer.music.set_volume(music_volume)
+    pygame.mixer.music.play(-1)
+
     while True:
         clock.tick(60)
         float_time += 0.05
         menu_cam_x -= 2
     
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return
@@ -93,7 +101,19 @@ async def main():
         pygame.mixer.music.set_volume(music_volume)
         VOLUME_STEP = 0.1
 
-        # Start music immediately
+        waiting = True
+        font = pygame.font.SysFont(None, 48)
+        while waiting:
+            win.fill((0, 0, 0))
+            background.update_and_draw(win, (0, 0))
+            text = font.render("Click or press any key to start", True, (255, 255, 255))
+            win.blit(text, (screen_width//2 - text.get_width()//2, screen_height//2))
+            pygame.display.flip()
+            for event in pygame.event.get():
+                if event.type in (pygame.MOUSEBUTTONDOWN, pygame.KEYDOWN):
+                    waiting = False
+            await asyncio.sleep(0)
+
         pygame.mixer.music.play(-1)
 
         # Brightness control
@@ -205,8 +225,6 @@ async def main():
         except asyncio.CancelledError:
             # Expected on Ctrl+C when the event loop cancels the running coroutine.
             pass
-        finally:
-            pygame.quit()
 
     except Exception:
         traceback.print_exc()

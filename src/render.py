@@ -155,7 +155,7 @@ def draw_menu(win, screen_width, screen_height, truck_img, float_time):
     draw_button(credits_rect, "Credits")
     draw_button(quit_rect, "Quit")
 
-    ver = small_font.render("v1.1.0", True, (200, 200, 200))
+    ver = small_font.render("v1.2.0", True, (200, 200, 200))
     win.blit(ver, ver.get_rect(center=(screen_width - 35, screen_height - 15)))
 
     return start_rect, quit_rect, credits_rect
@@ -198,7 +198,7 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
         ("Simon Halaszi",        "| Developer | Dungeon Master |"),
         ("Loy Ngo",              "| Developer |"),
         ("Meheraj Khatri",       "| Developer |"),
-        ("Rowan",                "| Developer |"),
+        ("Rowan",                "| Developer | Music |"),
         ("Sebastian Bentancourt","| Developer |"),
         ("Yusairah Haque",       "| Developer |"),
         ("Zachary Evans",        "| Developer |"),
@@ -252,7 +252,7 @@ def draw_shop(win, screen_width, screen_height, player_gold, shop_items):
     # Player gold
     money_font = pygame.font.SysFont(None, 36)
     money_text = money_font.render(f"Space Bucks: ${player_gold}", True, (0, 0, 0))
-    win.blit(money_text, (screen_width - 200, 20))
+    win.blit(money_text, (screen_width - 250, 20))
     
     # Items grid
     card_w, card_h = 220, 120

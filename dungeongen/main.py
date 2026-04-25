@@ -157,6 +157,8 @@ async def main():
             camera_center_x,
             camera_center_y,
             tile_size,
+            rooms=active_generator.rooms,
+            hallways=active_generator.hallways,
         )
         rooms = active_generator.rooms
         hallways = active_generator.hallways
