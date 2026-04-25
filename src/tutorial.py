@@ -141,35 +141,73 @@ class TutorialPopup:
         self._pre_render_all_pages()
 
     def _pre_render_all_pages(self):
+        """Processes text and wraps it to fit the popup width."""
+        self.page_surfaces = []
+        # Calculate available width (panel width minus horizontal margins)
+        max_w = self.pw - 60 
+
         for page_data in self.PAGES:
             temp_surf = pygame.Surface((self.pw, self.ph), pygame.SRCALPHA).convert_alpha()
-            # Heading
+            
+            # Draw Heading
             h_surf = self.font_heading.render(page_data["heading"], True, self.C_HEADING)
             temp_surf.blit(h_surf, (100, 36))
-            # Body
-            body_y = 106 + 14
+            
+            body_y = 120
             for line in page_data["lines"]:
                 if line == "":
-                    body_y += 8
+                    body_y += 12 # Paragraph spacing
                     continue
-                line_surf = self._render_line_internal(line)
-                temp_surf.blit(line_surf, (28, body_y))
-                body_y += self.font_body.get_linesize() + 2
+                
+                # Split line into wrapped chunks
+                wrapped_chunks = self._get_wrapped_lines(line, max_w)
+                
+                for i, chunk in enumerate(wrapped_chunks):
+                    # Only the first chunk of a line gets special 'Key — Value' coloring
+                    is_start_of_line = (i == 0)
+                    line_surf = self._render_line_internal(chunk, use_special_colors=is_start_of_line)
+                    
+                    temp_surf.blit(line_surf, (28, body_y))
+                    body_y += self.font_body.get_linesize() + 2
+                    
             self.page_surfaces.append(temp_surf)
 
-    def _render_line_internal(self, line):
-        for sep in ["\u2014", "  -  "]:
-            if sep in line:
-                parts = line.split(sep, 1)
-                k = self.font_body.render(parts[0].rstrip(), True, self.C_ICON_TEXT)
-                s = self.font_body.render(f" {sep} ", True, self.C_MUTED)
-                d = self.font_body.render(parts[1].lstrip(), True, self.C_BODY)
-                res = pygame.Surface((self.pw, k.get_height()), pygame.SRCALPHA).convert_alpha()
-                res.blit(k, (0, 0))
-                res.blit(s, (k.get_width(), 0))
-                res.blit(d, (k.get_width() + s.get_width(), 0))
-                return res
-        return self.font_body.render(line, True, self.C_BODY)
+    def _get_wrapped_lines(self, text, max_width):
+        """Helper to break a long string into a list of strings based on pixel width."""
+        words = text.split(' ')
+        lines = []
+        current_line = []
+
+        for word in words:
+            test_line = ' '.join(current_line + [word])
+            w, _ = self.font_body.size(test_line)
+            if w <= max_width:
+                current_line.append(word)
+            else:
+                lines.append(' '.join(current_line))
+                current_line = [word]
+        lines.append(' '.join(current_line))
+        return lines
+
+    def _render_line_internal(self, text, use_special_colors=True):
+        """Renders text, optionally highlighting keys like 'W —' or 'STALKERS:'."""
+        if use_special_colors:
+            # Check for common separators
+            for sep in [" — ", " - ", ": ", "\u2014"]:
+                if sep in text:
+                    parts = text.split(sep, 1)
+                    k = self.font_body.render(parts[0], True, self.C_ICON_TEXT)
+                    s = self.font_body.render(sep, True, self.C_MUTED)
+                    d = self.font_body.render(parts[1], True, self.C_BODY)
+                    
+                    res = pygame.Surface((self.pw, k.get_height()), pygame.SRCALPHA).convert_alpha()
+                    res.blit(k, (0, 0))
+                    res.blit(s, (k.get_width(), 0))
+                    res.blit(d, (k.get_width() + s.get_width(), 0))
+                    return res
+        
+        # Default rendering for simple lines or wrapped continuations
+        return self.font_body.render(text, True, self.C_BODY)
 
     def show(self, page: int = 0):
         self.visible  = True
