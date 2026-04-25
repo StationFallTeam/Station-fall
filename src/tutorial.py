@@ -1,3 +1,5 @@
+from asyncio import events
+
 import pygame
 import math
 
@@ -221,32 +223,24 @@ class TutorialPopup:
     def update(self, events: list):
         if not self.visible:
             return
-
-        # --- 1. ANIMATE ---
+        # Animate every frame
         if self._alpha < 255:
             self._alpha = min(255, self._alpha + self.FADE_SPEED)
         if self._slide_y > 0:
             self._slide_y = max(0, self._slide_y - self.ANIM_SPEED)
 
-        self._scan_t += 1 / 60
-
-        # Update hovers every frame
+        # Hover logic (independent of events)
         mx, my = pygame.mouse.get_pos()
         self._hover_prev = self._btn_prev.collidepoint(mx, my)
         self._hover_next = self._btn_next.collidepoint(mx, my)
 
-        # --- 2. HANDLE INPUT ---
+        # Process the events passed from game.py
         for event in events:
-            if event.type == pygame.KEYDOWN:
-                if event.key in (pygame.K_ESCAPE, pygame.K_RETURN, pygame.K_h):
-                    self.hide()
-                elif event.key == pygame.K_LEFT:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if self._hover_prev:
                     self._prev_page()
-                elif event.key == pygame.K_RIGHT:
+                elif self._hover_next:
                     self._next_page()
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if self._hover_prev: self._prev_page()
-                elif self._hover_next: self._next_page()
 
     def draw(self, surface: pygame.Surface):
         if not self.visible:
