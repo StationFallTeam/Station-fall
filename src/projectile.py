@@ -1,7 +1,7 @@
 import pygame 
 
 class Projectile:
-    def __init__(self, pos, velocity, radius=6, color=(225,50,50), lifetime_ms=1200, damage=15):
+    def __init__(self, pos, velocity, radius=6, color=(225,50,50), lifetime_ms=1200, damage=15, sound = None):
         self.pos = pygame.Vector2(pos)
         self.vel = pygame.Vector2(velocity)
         self.radius = radius
@@ -9,6 +9,10 @@ class Projectile:
         self.spawn_time = pygame.time.get_ticks()
         self.lifetime_ms = lifetime_ms
         self.damage = damage
+        
+        if sound:
+            sound.play()
+            
     def update(self): 
         self.pos += self.vel
         
