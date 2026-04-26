@@ -4,7 +4,7 @@ from src.damageable import Damageable
 from src.projectile import Projectile 
 from src.pathfinding import astar, world_to_tile, tile_to_world_center
 
-INNER_DEADZONE     = 128   # closer than this → flee
+INNER_DEADZONE     = 130   # closer than this → flee
 OUTER_DEADZONE     = 230   # farther than this → approach
 SHOOT_COOLDOWN_MS  = 1800  # time between shots
 PROJECTILE_SPEED   = 4.0
