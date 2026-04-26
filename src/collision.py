@@ -137,6 +137,16 @@ class CollisionSystem:
                 if bullet in bullets:
                     bullets.remove(bullet)
                     
+        # Player vs pickups (coins + health)
+        for item in coins[:]:
+            if player.rect.colliderect(item.rect):
+                if hasattr(item, "value"):  # coin
+                     player.money += item.value
+                elif hasattr(item, "heal_amount"):  # health drop
+                    player.health = min(player.health + item.heal_amount, player.max_health)
+
+                coins.remove(item)
+                    
     def _resolve_player_wall_collision_proper(self, player, walls):
         dx = player._last_dx
         dy = player._last_dy
