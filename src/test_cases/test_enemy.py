@@ -71,70 +71,70 @@ class TestEnemyUpdate(unittest.TestCase):
 
     def test_moves_right_when_player_is_to_the_right(self):
         player_rect = self._make_player_rect(200, 100)
-        self.enemy.update(player_rect)
+        self.enemy.update(player_rect, [], {}, 32)
         self.assertGreater(self.enemy.x, 100)
         self.assertEqual(self.enemy.direction, "right")
 
     def test_moves_left_when_player_is_to_the_left(self):
         player_rect = self._make_player_rect(0, 100)
-        self.enemy.update(player_rect)
+        self.enemy.update(player_rect, [], {}, 32)
         self.assertLess(self.enemy.x, 100)
         self.assertEqual(self.enemy.direction, "left")
 
     def test_moves_down_when_player_is_below(self):
         player_rect = self._make_player_rect(100, 200)
-        self.enemy.update(player_rect)
+        self.enemy.update(player_rect, [], {}, 32)
         self.assertGreater(self.enemy.y, 100)
         self.assertEqual(self.enemy.direction, "down")
 
     def test_moves_up_when_player_is_above(self):
         player_rect = self._make_player_rect(100, 0)
-        self.enemy.update(player_rect)
+        self.enemy.update(player_rect, [], {}, 32)
         self.assertLess(self.enemy.y, 100)
         self.assertEqual(self.enemy.direction, "up")
 
     def test_not_moving_when_player_at_same_position(self):
         player_rect = self._make_player_rect(100, 100)
-        self.enemy.update(player_rect)
+        self.enemy.update(player_rect, [], {}, 32)
         self.assertFalse(self.enemy.moving)
 
     def test_rect_follows_position(self):
         player_rect = self._make_player_rect(200, 100)
-        self.enemy.update(player_rect)
+        self.enemy.update(player_rect, [], {}, 32)
         self.assertEqual(self.enemy.rect.left, round(self.enemy.x))
         self.assertEqual(self.enemy.rect.top, round(self.enemy.y))
 
     def test_draw_rect_midbottom_matches_rect(self):
         player_rect = self._make_player_rect(200, 200)
-        self.enemy.update(player_rect)
+        self.enemy.update(player_rect, [], {}, 32)
         self.assertEqual(self.enemy.drawRect.midbottom, self.enemy.rect.midbottom)
 
     def test_frame_index_advances_when_moving(self):
         player_rect = self._make_player_rect(200, 100)
         self.enemy.frame_index = 0.0
-        self.enemy.update(player_rect)
+        self.enemy.update(player_rect, [], {}, 32)
         self.assertGreater(self.enemy.frame_index, 0.0)
 
     def test_frame_index_resets_when_not_moving(self):
         player_rect = self._make_player_rect(100, 100)
         self.enemy.frame_index = 2.0
-        self.enemy.update(player_rect)
+        self.enemy.update(player_rect, [], {}, 32)
         self.assertEqual(self.enemy.frame_index, 0)
 
     def test_frame_index_wraps_around(self):
         player_rect = self._make_player_rect(200, 100)
         self.enemy.frame_index = 3.95
-        self.enemy.update(player_rect)
+        self.enemy.update(player_rect, [], {}, 32)
         self.assertLess(self.enemy.frame_index, 4.0)
 
     def test_last_dx_stored(self):
         player_rect = self._make_player_rect(200, 100)
-        self.enemy.update(player_rect)
+        self.enemy.update(player_rect, [], {}, 32)
         self.assertEqual(self.enemy._last_dx, self.enemy.speed)
 
     def test_last_dy_stored_when_moving_down(self):
         player_rect = self._make_player_rect(100, 200)
-        self.enemy.update(player_rect)
+        self.enemy.update(player_rect, [], {}, 32)
         self.assertEqual(self.enemy._last_dy, self.enemy.speed)
 
 
