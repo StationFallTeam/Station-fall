@@ -6,7 +6,7 @@ from src.background import SpaceBackground
 from src.camera import Camera
 from src.player import Player
 from src.render import draw_objects, draw_pause_menu, draw_shop
-from src.collision import handle_all_collisions, is_in_trigger
+from src.collision import handle_all_collisions, is_in_trigger, collision_system
 from src.inventory_ui import InventoryUI  
 from src.floating_texts import FloatingText
 from src.health_drop import HealthDrop
@@ -247,7 +247,7 @@ async def game(win, settings=None):
                     
                 # Update enemies  
                 for enemy in dungeon_context.enemies[:]:
-                    enemy.update(player.rect)
+                    enemy.update(player.rect, collision_system.get_all_walls(), active_gen.collision_map, tile_size)
 
                     if hasattr(enemy, 'pop_projectiles'):
                         new_projectiles = enemy.pop_projectiles()
