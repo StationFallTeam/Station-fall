@@ -197,7 +197,7 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
         ("Wil Nahra",            "| Developer | Sprite Creation |"),
         ("Simon Halaszi",        "| Developer | Dungeon Master |"),
         ("Meheraj Khatri",       "| Developer | UI & Mechanics Integration | QA Lead |"),
-        ("Loy Ngo",              "| Developer |"),
+        ("Loy Ngo",              "| Developer | Navigation System (Minimap) | UI/Menu Systems |"),
         ("Rowan Ess",            "| Developer | Music |"),
         ("Sebastian Bentancourt","| Developer |"),
         ("Yusairah Haque",       "| Developer |"),
