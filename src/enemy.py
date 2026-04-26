@@ -1,6 +1,7 @@
 import pygame
 from src.damageable import Damageable
 from src.assets import resolve_asset_path
+from src.pathfinding import astar, world_to_tile, tile_to_world_center
 
 class Enemy:
     def __init__(self, x, y):
@@ -35,6 +36,12 @@ class Enemy:
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.damageable = Damageable(15)
 
+        self.path = []
+        self.path_index = 0
+        self.last_goal_tile = None
+        self.nav_mode = "direct"
+        self.nav_mode_until = 0 
+
     def _get_frame(self, x, y):
         frame = pygame.Surface((self.drawWidth, self.drawHeight), pygame.SRCALPHA)
         frame.blit(self.sprite_sheet, (0, 0), (x, y, self.drawWidth, self.drawHeight))
@@ -51,52 +58,110 @@ class Enemy:
                 )
                 self.animations[direction].append(frame)
 
-    def update(self, player_rect):
+    def update(self, player_rect, walls, collision_map, tile_size):
         self.moving = False
 
-        # Store old position for collision resolution
-        old_x, old_y = self.x, self.y
-        
-        # Movement logic
-        dx, dy = 0, 0
-        
-        if player_rect.x > self.x:
-            dx = self.speed
-            self.direction = "right"
-            self.moving = True
-        elif player_rect.x < self.x:
-            dx = -self.speed
-            self.direction = "left"
-            self.moving = True
-            
-        if player_rect.y > self.y:
-            dy = self.speed
-            self.direction = "down"
-            self.moving = True
-        elif player_rect.y < self.y:
-            dy = -self.speed
-            self.direction = "up"
-            self.moving = True
+        enemy_tile = world_to_tile(self.rect.centerx, self.rect.centery, tile_size)
+        player_tile = world_to_tile(player_rect.centerx, player_rect.centery, tile_size)
+        now = pygame.time.get_ticks()
 
-        # Apply movement
+        to_x = player_rect.centerx - self.rect.centerx
+        to_y = player_rect.centery - self.rect.centery
+
+        if self.nav_mode == "path" and now < self.nav_mode_until:
+            if (
+                not self.path
+                or self.path_index >= len(self.path)
+                or self.last_goal_tile != player_tile
+            ):
+                self.path = astar(collision_map, enemy_tile, player_tile)
+                self.path_index = 1
+                self.last_goal_tile = player_tile
+
+            if self.path and self.path_index < len(self.path):
+                next_tile = self.path[self.path_index]
+                target_x, target_y = tile_to_world_center(next_tile[0], next_tile[1], tile_size)
+                to_x = target_x - self.rect.centerx
+                to_y = target_y - self.rect.centery
+
+                if abs(to_x) < 8 and abs(to_y) < 8:
+                    self.path_index += 1
+                    if self.path_index < len(self.path):
+                        next_tile = self.path[self.path_index]
+                        target_x, target_y = tile_to_world_center(next_tile[0], next_tile[1], tile_size)
+                        to_x = target_x - self.rect.centerx
+                        to_y = target_y - self.rect.centery
+            else:
+                self.nav_mode = "direct"
+                
+        dist = (to_x * to_x + to_y * to_y) ** 0.5
+        dx, dy = 0.0, 0.0
+
+        if dist > 0:
+            dx = (to_x / dist) * self.speed
+            dy = (to_y / dist) * self.speed
+
+            test_rect = self.rect.copy()
+            test_rect.x += dx
+            test_rect.y += dy
+            blocked_diag = any(test_rect.colliderect(w) for w in walls)
+
+            if blocked_diag:
+                if self.path and self.path_index < len(self.path):
+                        next_tile = self.path[self.path_index]
+                        target_x, target_y = tile_to_world_center(next_tile[0], next_tile[1], tile_size)
+                        to_x = target_x - self.rect.centerx
+                        to_y = target_y - self.rect.centery
+                        dist = (to_x * to_x + to_y * to_y) ** 0.5
+                        if dist > 0:
+                            dx = (to_x / dist) * self.speed
+                            dy = (to_y / dist) * self.speed
+                if self.path_index >= len(self.path):
+                    self.path = astar(collision_map, enemy_tile, player_tile)
+                    self.path_index = 1
+                if self.nav_mode != "path":
+                    self.nav_mode = "path"
+                    self.nav_mode_until = now + 500
+                    self.path = astar(collision_map, enemy_tile, player_tile)
+                    self.path_index = 1
+                    self.last_goal_tile = player_tile
+                test_rect = self.rect.copy()
+                test_rect.x += dx
+                blocked_x = any(test_rect.colliderect(w) for w in walls)
+
+                test_rect = self.rect.copy()
+                test_rect.y += dy
+                blocked_y = any(test_rect.colliderect(w) for w in walls)
+                if blocked_x:
+                    dx = 0
+                if blocked_y:
+                    dy = 0
+            else:
+                if now >= self.nav_mode_until:
+                    self.nav_mode = "direct"
+
+            self.moving = (dx != 0 or dy != 0)
+
+            if abs(dx) > abs(dy) + 0.2:
+                self.direction = "right" if dx > 0 else "left"
+            elif abs(dy) > abs(dx) + 0.2:
+                self.direction = "down" if dy > 0 else "up"
+
         self.x += dx
         self.y += dy
-        
-        # Store movement deltas for collision resolution
         self._last_dx = dx
         self._last_dy = dy
 
         self.rect.topleft = (self.x, self.y)
         self.drawRect.midbottom = self.rect.midbottom
 
-        # Animate
         if self.moving:
             self.frame_index += self.anim_speed
             if self.frame_index >= len(self.animations[self.direction]):
                 self.frame_index = 0
         else:
             self.frame_index = 0
-        
+            
         self.damageable.update()
 
     def draw(self, screen, camera):
@@ -128,3 +193,11 @@ class Enemy:
     @property
     def is_dead(self):
         return self.health <= 0
+    
+    def _would_collide(self, x, y, handle_all_collisions):
+        test_rect = pygame.Rect(x - self.width // 2, y - self.height // 2, self.width, self.height)
+        
+        for wall in handle_all_collisions:
+            if test_rect.colliderect(wall):
+                return True
+        return False
