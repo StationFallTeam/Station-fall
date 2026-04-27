@@ -6,11 +6,12 @@ from src.background import SpaceBackground
 from src.camera import Camera
 from src.player import Player
 from src.render import draw_objects, draw_pause_menu, draw_shop
-from src.collision import handle_all_collisions, is_in_trigger
+from src.collision import handle_all_collisions, is_in_trigger, collision_system
 from src.inventory_ui import InventoryUI  
 from src.floating_texts import FloatingText
 from src.health_drop import HealthDrop
 from src.tutorial import TutorialPopup
+from src.assets import resolve_asset_path
 
 from dungeongen.classes import DungeonContext, CombatRoom
 from dungeongen.rendering import draw_minimap
@@ -25,6 +26,12 @@ async def game(win, settings=None):
     
     music_volume = settings.get('music_volume', 0.5)
     brightness = settings.get('brightness', 1.0)
+
+    # change music to standard background
+    pygame.mixer.music.stop()
+    pygame.mixer.music.load('sound/peace-in-void.ogg')
+    pygame.mixer.music.set_volume(music_volume)
+    pygame.mixer.music.play(-1)
     
     # Volume and brightness step constants
     VOLUME_STEP = 0.1
@@ -53,9 +60,9 @@ async def game(win, settings=None):
 
     shop = False # for the shop
     shop_items = [
-        {"name": "Healing Kit", "price": 10, "image": pygame.image.load("sprites/shop/HealingKit.png")},
-        {"name": "Blaster Upgrade", "price": 25, "image": pygame.image.load("sprites/shop/BlasterUpgrade.png")},
-        {"name": "Space Suit Upgrade", "price": 15, "image": pygame.image.load("sprites/shop/SpaceSuitUpgrade.png")},
+        {"name": "Healing Kit",         "price": 10,  "image": pygame.image.load(resolve_asset_path("sprites/shop/HealingKit.png"))},
+        {"name": "Blaster Upgrade",     "price": 25,  "image": pygame.image.load(resolve_asset_path("sprites/shop/BlasterUpgrade.png"))},
+        {"name": "Space Suit Upgrade",  "price": 15,  "image": pygame.image.load(resolve_asset_path("sprites/shop/SpaceSuitUpgrade.png"))},
     ]
 
     hub_type = "hub"
@@ -78,17 +85,24 @@ async def game(win, settings=None):
     
     last_player_tile = None
     
+    shoot_sound = pygame.mixer.Sound(resolve_asset_path("sound/shoot.ogg"))
+    shoot_sound.set_volume(0.4)
+
     running = True
     while running:
         clock.tick(60)
         events = pygame.event.get()
+
+        # If tutorial is visible, only update it and skip other input handling
+        if tutorial_popup.visible:
+            tutorial_popup.update(events)
+        
         for event in events:
             if event.type == pygame.QUIT:
                 return "quit"
-
-            # When tutorial is open, it owns keyboard/mouse input.
+            
+            # Skip all other input handling if tutorial is active, but still allow it to process its own events
             if tutorial_popup.visible:
-                tutorial_popup.update([event])
                 continue
 
             # KEY HANDLER
@@ -101,8 +115,7 @@ async def game(win, settings=None):
                     elif is_in_trigger(player, "quit"):
                         # Return current settings when quitting
                         current_settings = {'music_volume': music_volume, 'brightness': brightness}
-                        pygame.quit()
-                        sys.exit()
+                        return "quit", current_settings
                     else:
                         paused = not paused 
                 
@@ -120,6 +133,7 @@ async def game(win, settings=None):
                         
                 elif event.key == pygame.K_RETURN:
                     if state == "hub" and is_in_trigger(player, "start"):
+                        coins.clear()
                         # Transitiong to dungeon
                         state = "dungeon"
                         active_gen = dungeon_gen
@@ -188,6 +202,7 @@ async def game(win, settings=None):
                     mouse_world = camera.screen_to_world(event.pos)
                     bullet = player.shoot(mouse_world)
                     if bullet:
+                        shoot_sound.play()
                         bullets.append(bullet)
 
         # Update phase
@@ -232,7 +247,7 @@ async def game(win, settings=None):
                     
                 # Update enemies  
                 for enemy in dungeon_context.enemies[:]:
-                    enemy.update(player.rect)
+                    enemy.update(player.rect, collision_system.get_all_walls(), active_gen.collision_map, tile_size)
 
                     if hasattr(enemy, 'pop_projectiles'):
                         new_projectiles = enemy.pop_projectiles()
@@ -325,7 +340,7 @@ async def game(win, settings=None):
         
         # Draw inventory overlay if active
         if inventory_state:
-            inventory_ui.draw(win, player.money)
+            inventory_ui.draw(win, player.money, visible=inventory_state)
 
         # Draw pause menu
         if paused:
