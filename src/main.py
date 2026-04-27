@@ -42,7 +42,7 @@ async def run_game(win, screen_width, screen_height, background, truck_img, sett
     # music set to dead
     pygame.mixer.music.stop()
     music_volume = pygame.mixer.music.get_volume()
-    pygame.mixer.music.load('sound/uncomfortable-panels.ogg')
+    pygame.mixer.music.load(resolve_asset_path("sound/uncomfortable-panels.ogg"))
     pygame.mixer.music.set_volume(music_volume)
     pygame.mixer.music.play(-1)
 
