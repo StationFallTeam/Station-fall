@@ -256,7 +256,7 @@ class CollisionSystem:
         if player.is_invincible:
             return
             
-        damage = 10  # Default enemy damage
+        damage = getattr(enemy, "contact_damage", 10)
         player.take_damage(damage)
         
         # Add damage text

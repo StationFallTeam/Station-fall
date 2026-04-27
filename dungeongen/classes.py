@@ -6,10 +6,11 @@ import pygame
 
 # Context object for passing dungeon state to rooms for combat mechanics 
 class DungeonContext:
-    def __init__(self, tile_size=40):
+    def __init__(self, tile_size=40, dungeon_runs=0):
         self.enemies = []
         self.collision_map = {}
         self.tile_size = tile_size
+        self.dungeon_runs = max(0, int(dungeon_runs))
         self.rooms = []
         self.hallways = []
         self.dungeon_gen = None
@@ -166,16 +167,16 @@ class CombatRoom(BaseRoom):
             if self.unlock_timer == 0:
                 self.unplace_doors(dungeon_context)
 
-    def _create_enemy_by_type(self, enemy_type, world_x, world_y):
+    def _create_enemy_by_type(self, enemy_type, world_x, world_y, dungeon_runs=0):
         from src.enemy import Enemy
         from src.ranged_enemy import RangedEnemy
         
         # For now, all enemy types create the same Enemy class
         # This can be extended later to handle different enemy types
         if enemy_type in ["enemy"]:
-            return Enemy(world_x, world_y)
+            return Enemy(world_x, world_y, dungeon_runs=dungeon_runs)
         elif enemy_type in ["rangedEnemy"]:
-            return RangedEnemy(world_x, world_y)
+            return RangedEnemy(world_x, world_y, dungeon_runs=dungeon_runs)
         
         # Return None for unknown enemy types
         print(f"Warning: Unknown enemy type '{enemy_type}', skipping spawn")
@@ -191,6 +192,7 @@ class CombatRoom(BaseRoom):
         # Spawn enemies from parsed prefab data
         enemies = dungeon_context.enemies
         tile_size = dungeon_context.tile_size
+        dungeon_runs = getattr(dungeon_context, "dungeon_runs", 0)
         
         for enemy_type, local_x, local_y in self.enemy_spawn_data:
             # Convert local room coordinates to world coordinates
@@ -198,7 +200,7 @@ class CombatRoom(BaseRoom):
             world_y = (self.rect.y + local_y) * tile_size
             
             # Create enemy at world coordinates
-            enemy = self._create_enemy_by_type(enemy_type, world_x, world_y)
+            enemy = self._create_enemy_by_type(enemy_type, world_x, world_y, dungeon_runs=dungeon_runs)
             if enemy:
                 enemies.append(enemy)
                 self.enemies_spawned.append(enemy)

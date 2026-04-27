@@ -1,10 +1,11 @@
 import pygame
 from src.damageable import Damageable
 from src.assets import resolve_asset_path
+from src.enemy_scaling import scale_enemy_damage, scale_enemy_health
 from src.pathfinding import astar, world_to_tile, tile_to_world_center
 
 class Enemy:
-    def __init__(self, x, y):
+    def __init__(self, x, y, dungeon_runs=0):
 
         self.x = x
         self.y = y
@@ -31,10 +32,11 @@ class Enemy:
         self.frame_index = 0.0
         self.anim_speed = 0.1
         self.moving = True
+        self.contact_damage = scale_enemy_damage(10, dungeon_runs)
 
         self.drawRect = pygame.Rect(self.x, self.y, self.drawWidth, self.drawHeight)    
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
-        self.damageable = Damageable(15)
+        self.damageable = Damageable(scale_enemy_health(15, dungeon_runs))
 
         self.path = []
         self.path_index = 0

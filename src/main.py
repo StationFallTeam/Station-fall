@@ -30,7 +30,10 @@ async def run_game(win, screen_width, screen_height, background, truck_img, sett
         result = status
     
     if result != "dead":
+        settings['dungeon_runs'] = 0
         return
+
+    settings['dungeon_runs'] = 0
     
     clock = pygame.time.Clock()
     float_time = 0
@@ -123,7 +126,8 @@ async def main():
         # Settings dictionary to pass to and from the game
         current_settings = {
             'music_volume': music_volume,
-            'brightness': brightness
+            'brightness': brightness,
+            'dungeon_runs': 0,
         }
 
         # Start Menu System
