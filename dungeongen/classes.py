@@ -170,13 +170,16 @@ class CombatRoom(BaseRoom):
     def _create_enemy_by_type(self, enemy_type, world_x, world_y, dungeon_runs=0):
         from src.enemy import Enemy
         from src.ranged_enemy import RangedEnemy
+        from src.boss import Boss
         
         # For now, all enemy types create the same Enemy class
         # This can be extended later to handle different enemy types
         if enemy_type in ["enemy"]:
             return Enemy(world_x, world_y, dungeon_runs=dungeon_runs)
         elif enemy_type in ["rangedEnemy"]:
-            return RangedEnemy(world_x, world_y, dungeon_runs=dungeon_runs)
+            return RangedEnemy(world_x, world_y)
+        elif enemy_type in ["boss"]:
+            return Boss(world_x, world_y)
         
         # Return None for unknown enemy types
         print(f"Warning: Unknown enemy type '{enemy_type}', skipping spawn")
