@@ -1,6 +1,7 @@
 import pygame
 import math
 from src.damageable import Damageable
+from src.enemy_scaling import scale_enemy_damage, scale_enemy_health
 from src.projectile import Projectile 
 from src.pathfinding import astar, world_to_tile, tile_to_world_center
 
@@ -10,7 +11,7 @@ SHOOT_COOLDOWN_MS  = 1800  # time between shots
 PROJECTILE_SPEED   = 4.0
 
 class RangedEnemy:
-    def __init__(self, x, y):
+    def __init__(self, x, y, dungeon_runs=0):
         self.x = x
         self.y = y
 
@@ -31,10 +32,12 @@ class RangedEnemy:
         self.frame_index = 0.0
         self.anim_speed  = 0.08
         self.moving      = False
+        self.contact_damage = scale_enemy_damage(10, dungeon_runs)
+        self.projectile_damage = scale_enemy_damage(5, dungeon_runs)
 
         self.drawRect = pygame.Rect(self.x, self.y, self.drawWidth, self.drawHeight)
         self.rect     = pygame.Rect(self.x, self.y, self.width, self.height)
-        self.damageable = Damageable(10)   # squishier than melee
+        self.damageable = Damageable(scale_enemy_health(10, dungeon_runs))
 
         self._last_dx = 0
         self._last_dy = 0
@@ -232,7 +235,7 @@ class RangedEnemy:
                 self.y + self.height // 2 + norm_y * spawn_offset,
             )
             vel = (norm_x * PROJECTILE_SPEED, norm_y * PROJECTILE_SPEED)
-            proj = Projectile(origin, vel, 5, (80, 200, 255), 1400, 8)
+            proj = Projectile(origin, vel, self.projectile_damage, (80, 200, 255), 1400, 8)
             proj._shooter = self
             self._pending_projectiles.append(proj)
 

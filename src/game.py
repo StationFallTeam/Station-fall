@@ -22,10 +22,11 @@ from dungeongen.loading import (
 async def game(win, settings=None):
     # Settings from main menu
     if settings is None:
-        settings = {'music_volume': 0.5, 'brightness': 1.0}
+        settings = {'music_volume': 0.5, 'brightness': 1.0, 'dungeon_runs': 0}
     
     music_volume = settings.get('music_volume', 0.5)
     brightness = settings.get('brightness', 1.0)
+    dungeon_runs = max(0, int(settings.get('dungeon_runs', 0)))
 
     # change music to standard background
     pygame.mixer.music.stop()
@@ -80,13 +81,13 @@ async def game(win, settings=None):
     
     room_count = 0
     completed_room_count = 0
-    dungeon_context = DungeonContext(tile_size)
+    dungeon_context = DungeonContext(tile_size, dungeon_runs=dungeon_runs)
     tutorial_popup = TutorialPopup(screen_width, screen_height)
     
     last_player_tile = None
     
     shoot_sound = pygame.mixer.Sound(resolve_asset_path("sound/shoot.ogg"))
-    shoot_sound.set_volume(0.4)
+    shoot_sound.set_volume(0.4 * music_volume)
 
     running = True
     while running:
@@ -114,7 +115,7 @@ async def game(win, settings=None):
                         paused = False
                     elif is_in_trigger(player, "quit"):
                         # Return current settings when quitting
-                        current_settings = {'music_volume': music_volume, 'brightness': brightness}
+                        current_settings = {'music_volume': music_volume, 'brightness': brightness, 'dungeon_runs': dungeon_runs}
                         return "quit", current_settings
                     else:
                         paused = not paused 
@@ -122,10 +123,12 @@ async def game(win, settings=None):
                 # Settings controls
                 elif event.key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
                     music_volume = min(music_volume + VOLUME_STEP, 1.0)
-                    pygame.mixer.music.set_volume(music_volume)              
+                    pygame.mixer.music.set_volume(music_volume)
+                    shoot_sound.set_volume(0.4 * music_volume)
                 elif event.key in (pygame.K_MINUS, pygame.K_KP_MINUS):
                     music_volume = max(music_volume - VOLUME_STEP, 0.0)
-                    pygame.mixer.music.set_volume(music_volume)               
+                    pygame.mixer.music.set_volume(music_volume)
+                    shoot_sound.set_volume(0.4 * music_volume)
                 elif event.key == pygame.K_0:
                     brightness = min(brightness + BRIGHTNESS_STEP, 1.0)        
                 elif event.key == pygame.K_9:
@@ -138,6 +141,7 @@ async def game(win, settings=None):
                         state = "dungeon"
                         active_gen = dungeon_gen
                         spawn, dungeon_context = dungeon_gen.load_complete(tile_size)
+                        dungeon_context.dungeon_runs = dungeon_runs
                         current_money = player.money
                         player = Player(spawn[0], spawn[1])
                         player.money = current_money
@@ -147,6 +151,8 @@ async def game(win, settings=None):
                         room_count, completed_room_count = dungeon_gen.get_room_counts()
                 elif event.key == pygame.K_r and completed_room_count == room_count:
                     if state == "dungeon" and is_in_trigger(player, "leave"):
+                        dungeon_runs += 1
+                        settings['dungeon_runs'] = dungeon_runs
                         #Back to hub
                         state = "hub"
                         active_gen = hub_gen
@@ -154,7 +160,8 @@ async def game(win, settings=None):
                         current_money = player.money
                         player = Player(spawn[0], spawn[1])
                         player.money = current_money
-                        dungeon_context = DungeonContext(tile_size)
+                        dungeon_context = DungeonContext(tile_size, dungeon_runs=dungeon_runs)
+                        coins.clear()
                         bullets.clear()
                         floating_texts.clear()
                         last_player_tile = None
@@ -192,10 +199,10 @@ async def game(win, settings=None):
                     if resume_rect.collidepoint(event.pos):
                         paused = False
                     elif menu_rect.collidepoint(event.pos):
-                        current_settings = {'music_volume': music_volume, 'brightness': brightness}
+                        current_settings = {'music_volume': music_volume, 'brightness': brightness, 'dungeon_runs': dungeon_runs}
                         return "menu", current_settings
                     elif quit_rect.collidepoint(event.pos):
-                        current_settings = {'music_volume': music_volume, 'brightness': brightness}
+                        current_settings = {'music_volume': music_volume, 'brightness': brightness, 'dungeon_runs': dungeon_runs}
                         return "quit", current_settings
                 elif state == "dungeon":
                     # Shooting
@@ -266,7 +273,7 @@ async def game(win, settings=None):
             
             # Check if player died
             if player.health <= 0:
-                current_settings = {'music_volume': music_volume, 'brightness': brightness}
+                current_settings = {'music_volume': music_volume, 'brightness': brightness, 'dungeon_runs': dungeon_runs}
                 return "dead", current_settings # Return to menu when player dies
                         
             # Update coins
@@ -287,7 +294,8 @@ async def game(win, settings=None):
         enemy_list = dungeon_context.enemies if state == "dungeon" else []
         draw_objects(
             win, player, enemy_list, bullets, camera, background, 
-            coins, floating_texts, dungeon=active_gen, tile_size=tile_size
+            coins, floating_texts, dungeon=active_gen, tile_size=tile_size,
+            dungeon_runs=dungeon_runs
         )
         
         if state == "dungeon":

@@ -1,6 +1,6 @@
 import pygame
 import math
-from src.ui import draw_health_bar, draw_money
+from src.ui import draw_health_bar, draw_money, draw_runs
 from dungeongen.classes import CombatRoom
 from src.assets import resolve_asset_path
 
@@ -36,7 +36,7 @@ def draw_pause_menu(win, screen_width, screen_height):
 
     return resume_rect, menu_rect, quit_rect
 
-def draw_objects(win, player, enemies, bullets, camera, background, coins, floating_texts, dungeon, tile_size):
+def draw_objects(win, player, enemies, bullets, camera, background, coins, floating_texts, dungeon, tile_size, dungeon_runs=0):
     # 1. Draw the parallax background first using camera position
     background.update_and_draw(win, (camera.camera.x, camera.camera.y))
 
@@ -82,6 +82,7 @@ def draw_objects(win, player, enemies, bullets, camera, background, coins, float
     # Player HUD health bar
     draw_health_bar(win, player.health, player.max_health, 20, 20, 250, 18)
     draw_money(win, player.money, 20, 50)
+    draw_runs(win, dungeon_runs, 260, 50)
 
     # 7. Draw hovering enemy health bars (World Space)
     for enemy in enemies:
@@ -155,7 +156,7 @@ def draw_menu(win, screen_width, screen_height, truck_img, float_time):
     draw_button(credits_rect, "Credits")
     draw_button(quit_rect, "Quit")
 
-    ver = small_font.render("v1.2.0", True, (200, 200, 200))
+    ver = small_font.render("v1.3.0", True, (200, 200, 200))
     win.blit(ver, ver.get_rect(center=(screen_width - 35, screen_height - 15)))
 
     return start_rect, quit_rect, credits_rect
@@ -199,7 +200,7 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
         ("Meheraj Khatri",       "| Developer | UI & Mechanics Integration | QA Lead |"),
         ("Loy Ngo",              "| Developer | Navigation System (Minimap) | UI/Menu Systems |"),
         ("Rowan Ess",            "| Developer | Music |"),
-        ("Sebastian Bentancourt","| Developer |"),
+        ("Sebastian Betancourt","| Developer | Web Deployment | Build Pipeline |"),
         ("Yusairah Haque",       "| Developer |"),
         ("Zachary Evans",        "| Developer |"),
     ]
