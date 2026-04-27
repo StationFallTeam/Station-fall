@@ -4,28 +4,25 @@ from src.damageable import Damageable
 from src.projectile import Projectile
 from src.pathfinding import astar, world_to_tile, tile_to_world_center
 
-SHOOT_COOLDOWN_MS  = 500   # fast fire rate
-PROJECTILE_SPEED   = 5.0   # slightly faster than ranged enemy
-BOSS_SPEED         = 1.8   # faster than regular enemies
+SHOOT_COOLDOWN_MS  = 500   # fire rate
+PROJECTILE_SPEED   = 5.0   # bullet speed
+BOSS_SPEED         = 1.8   # speed
 
 class Boss:
     def __init__(self, x, y):
         self.x = x
         self.y = y
 
-        # Boss is bigger than regular enemies
         self.drawWidth  = 96
         self.drawHeight = 96
         self.width      = 64
         self.height     = 64
         self.speed      = BOSS_SPEED
 
-        # Reuse ranged enemy sprite for now, scaled up
         sprite = pygame.image.load(
             "sprites/enemy_human_range_sheet.png"
         ).convert_alpha()
 
-        # Scale each frame up to boss size
         original_frame_w = 48
         original_frame_h = 48
         sheet_w = sprite.get_width()
@@ -61,9 +58,6 @@ class Boss:
         self.nav_mode = "direct"
         self.nav_mode_until = 0
 
-    # ------------------------------------------------------------------ #
-    #  Sprite helpers                                                     #
-    # ------------------------------------------------------------------ #
     def _get_frame(self, x, y):
         frame = pygame.Surface((self.drawWidth, self.drawHeight), pygame.SRCALPHA)
         frame.blit(self.sprite_sheet, (0, 0), (x, y, self.drawWidth, self.drawHeight))
@@ -79,9 +73,6 @@ class Boss:
                 )
                 self.animations[direction].append(frame)
 
-    # ------------------------------------------------------------------ #
-    #  Core update                                                        #
-    # ------------------------------------------------------------------ #
     def update(self, player_rect, walls, collision_map, tile_size):
         self._pending_projectiles.clear()
         self.moving = False
@@ -100,7 +91,6 @@ class Boss:
             norm_x = to_x / dist
             norm_y = to_y / dist
 
-            # --- Pathfinding movement (same pattern as Enemy) ---
             if self.nav_mode == "path" and now < self.nav_mode_until:
                 if (
                     not self.path
@@ -136,7 +126,6 @@ class Boss:
                 dx = (to_x / nav_dist) * self.speed
                 dy = (to_y / nav_dist) * self.speed
 
-            # --- Wall collision + pathfinding fallback ---
             test_rect = self.rect.copy()
             test_rect.x += dx
             test_rect.y += dy
@@ -164,7 +153,6 @@ class Boss:
             self.moving = (dx != 0 or dy != 0)
             self._update_facing(norm_x, norm_y)
 
-            # Always shoot toward player
             self._try_shoot(norm_x, norm_y)
 
         self.x += dx
@@ -194,7 +182,6 @@ class Boss:
         now = pygame.time.get_ticks()
         if now - self._shoot_timer >= SHOOT_COOLDOWN_MS:
             self._shoot_timer = now
-            # Spawn projectile well outside boss hitbox
             spawn_offset = 36
             origin = (
                 self.x + self.width  // 2 + norm_x * spawn_offset,
@@ -210,9 +197,6 @@ class Boss:
         self._pending_projectiles.clear()
         return result
 
-    # ------------------------------------------------------------------ #
-    #  Draw / interface                                                   #
-    # ------------------------------------------------------------------ #
     def draw(self, screen, camera):
         frame = self.animations[self.direction][int(self.frame_index)]
         screen.blit(frame, camera.apply(self.drawRect))
