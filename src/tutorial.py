@@ -1,4 +1,3 @@
-from asyncio import events
 
 import pygame
 import math
