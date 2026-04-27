@@ -26,5 +26,5 @@ def draw_money(surface, amount, x, y) :
 
 def draw_runs(surface, runs, x, y):
     font = pygame.font.SysFont(None, 25)
-    text = font.render(f"Run: {runs}", True, (200, 220, 255))
+    text = font.render(f"Runs: {runs}", True, (200, 220, 255))
     surface.blit(text, (x, y))
