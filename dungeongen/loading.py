@@ -15,6 +15,7 @@ def parse_enemy_type_from_cell(cell):
     enemy_map = {
         'nrmE': 'enemy',       # Normal enemy
         'rngE': 'rangedEnemy', # Ranged enemy
+        'boss': 'boss',        # Boss enemy
         # Add more enemy types as needed
     }
     return enemy_map.get(cell)
