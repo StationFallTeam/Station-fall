@@ -200,7 +200,7 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
         ("Meheraj Khatri",       "| Developer | UI & Mechanics Integration | QA Lead |"),
         ("Loy Ngo",              "| Developer | Navigation System (Minimap) | UI/Menu Systems |"),
         ("Rowan Ess",            "| Developer | Music |"),
-        ("Sebastian Bentancourt","| Developer |"),
+        ("Sebastian Betancourt","| Developer | Web Deployment | Build Pipeline |"),
         ("Yusairah Haque",       "| Developer |"),
         ("Zachary Evans",        "| Developer |"),
     ]
