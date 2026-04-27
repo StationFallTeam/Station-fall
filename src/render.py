@@ -1,6 +1,6 @@
 import pygame
 import math
-from src.ui import draw_health_bar, draw_money
+from src.ui import draw_health_bar, draw_money, draw_runs
 from dungeongen.classes import CombatRoom
 from src.assets import resolve_asset_path
 
@@ -36,7 +36,7 @@ def draw_pause_menu(win, screen_width, screen_height):
 
     return resume_rect, menu_rect, quit_rect
 
-def draw_objects(win, player, enemies, bullets, camera, background, coins, floating_texts, dungeon, tile_size):
+def draw_objects(win, player, enemies, bullets, camera, background, coins, floating_texts, dungeon, tile_size, dungeon_runs=0):
     # 1. Draw the parallax background first using camera position
     background.update_and_draw(win, (camera.camera.x, camera.camera.y))
 
@@ -82,6 +82,7 @@ def draw_objects(win, player, enemies, bullets, camera, background, coins, float
     # Player HUD health bar
     draw_health_bar(win, player.health, player.max_health, 20, 20, 250, 18)
     draw_money(win, player.money, 20, 50)
+    draw_runs(win, dungeon_runs, 260, 50)
 
     # 7. Draw hovering enemy health bars (World Space)
     for enemy in enemies:
