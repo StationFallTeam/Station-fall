@@ -7,12 +7,15 @@ class FloatingText:
         self.text = text
         self.color = color
         self.duration = duration_ms
-        self.start_time = pygame.time.get_ticks()
+        self.start_time = None
         self.alpha = 255
         self.font = pygame.font.SysFont(None, 30)
         self.velocity_y = -1.2  # Pixels per frame, adjust for faster/slower floating
 
     def update(self):
+        if self.start_time is None:
+            self.start_time = pygame.time.get_ticks()
+
         # Move the text upwards
         self.y += self.velocity_y
         
