@@ -37,8 +37,9 @@ async def game(win, settings=None):
     # Volume and brightness step constants
     VOLUME_STEP = 0.1
     BRIGHTNESS_STEP = 0.1
-    screen_width = 920
-    screen_height = 920
+    # screen_width = 920
+    # screen_height = 920
+    screen_width, screen_height = win.get_size()
 
     pygame.display.set_caption("Station Fall")
 
@@ -211,6 +212,17 @@ async def game(win, settings=None):
                     if bullet:
                         shoot_sound.play()
                         bullets.append(bullet)
+                        
+            elif event.type == pygame.VIDEORESIZE:
+                screen_width, screen_height = event.w, event.h
+                win = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
+
+                background = SpaceBackground(screen_width, screen_height)
+                camera = Camera(screen_width, screen_height)
+                inventory_ui = InventoryUI(screen_width, screen_height)
+                tutorial_popup = TutorialPopup(screen_width, screen_height)
+                    
+        screen_width, screen_height = win.get_size()
 
         # Update phase
         if not paused and not shop and not tutorial_popup.visible:

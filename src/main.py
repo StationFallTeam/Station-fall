@@ -83,7 +83,7 @@ async def main():
         # Use same window size as playerInDungeon
         screen_width = 920
         screen_height = 920
-        win = pygame.display.set_mode((screen_width, screen_height))
+        win = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
         pygame.display.set_caption("Station Fall")
 
         clock = pygame.time.Clock()
@@ -200,7 +200,11 @@ async def main():
                                 state = CREDITS
                             elif quit_rect.collidepoint(event.pos):
                                 running = False
-
+                    
+                    elif event.type == pygame.VIDEORESIZE:
+                        screen_width, screen_height = event.w, event.h
+                        win = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
+                        background = SpaceBackground(screen_width, screen_height)
 
                 # ---------- DRAW / UPDATE PHASE ----------
                 
