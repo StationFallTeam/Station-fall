@@ -50,7 +50,7 @@ class InventoryUI:
         self._hover_close = False
     
 
-    def draw(self, surface: pygame.Surface, money: int, visible: bool = True):
+    def draw(self, surface: pygame.Surface, money: int, player, visible: bool = True):
         """Call every frame while the inventory key is held / toggled on."""
         if not visible:
             self._alpha   = 0
@@ -108,6 +108,19 @@ class InventoryUI:
         coin_value = self.font_body.render(f"  $  {money}", True, self.C_GOLD)
         panel.blit(coin_label, (28, body_y))
         panel.blit(coin_value, (28 + coin_label.get_width(), body_y))
+        body_y += self.font_body.get_linesize() + 10
+        
+        #Player stats
+        max_health = player.max_health
+        damage = player.damage
+
+        hp_text = self.font_body.render(f"Max HP: {max_health}", True, self.C_BODY)
+        dmg_text = self.font_body.render(f"Damage: {damage}", True, self.C_BODY)
+
+        panel.blit(hp_text, (28, body_y))
+        body_y += self.font_body.get_linesize() + 5
+
+        panel.blit(dmg_text, (28, body_y))
         body_y += self.font_body.get_linesize() + 10
 
         # Horizontal rule under coins
