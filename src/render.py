@@ -156,7 +156,7 @@ def draw_menu(win, screen_width, screen_height, truck_img, float_time):
     draw_button(credits_rect, "Credits")
     draw_button(quit_rect, "Quit")
 
-    ver = small_font.render("v1.3.0", True, (200, 200, 200))
+    ver = small_font.render("v1.3.1", True, (200, 200, 200))
     win.blit(ver, ver.get_rect(center=(screen_width - 35, screen_height - 15)))
 
     return start_rect, quit_rect, credits_rect
@@ -195,7 +195,7 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
         ("Rowan Ess",             "| Developer | Music |"),
         ("Sebastian Betancourt", "| Developer | Web Deployment | Build Pipeline |"),
         ("Yusairah Haque",        "| Developer | Enemy AI | Combat Mechanics |"),
-        ("Zachary Evans",         "| Developer |"),
+        ("Zachary Evans",         "| Developer | Enemy Creator | Writer"),
     ]
 
     SCROLL_SPEED = 50       # px/sec leftward scroll
