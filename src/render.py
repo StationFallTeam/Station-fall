@@ -179,49 +179,89 @@ def draw_game_over(win, screen_width, screen_height, truck_img, float_time):
     win.blit(truck_img, truck_rect)
 
 # Credits screen - Wil
-def draw_credits(win, screen_width, screen_height, background, float_time, menu_camera_x, menu_camera_y):
-    background.update_and_draw(win, (menu_camera_x, menu_camera_y))
+def draw_credits(win, screen_width, screen_height, background, float_time, menu_camera_x, menu_camera_y, truck_img):
 
     title_font = pygame.font.SysFont(None, 72)
-    name_font = pygame.font.SysFont(None, 42)
-    role_font = pygame.font.SysFont(None, 30)
-    hint_font = pygame.font.SysFont(None, 28)
+    name_font  = pygame.font.SysFont(None, 36)
+    role_font  = pygame.font.SysFont(None, 26)
+    hint_font  = pygame.font.SysFont(None, 28)
+    sub_font   = pygame.font.SysFont(None, 21)
+
+    team = [
+        ("Wil Nahra",             "| Developer | Sprite Creation |"),
+        ("Simon Halaszi",         "| Developer | Dungeon Master |"),
+        ("Meheraj Khatri",        "| Developer | UI & Mechanics | QA Lead |"),
+        ("Loy Ngo",               "| Developer | Navigation System | UI/Menu Systems |"),
+        ("Rowan Ess",             "| Developer | Music |"),
+        ("Sebastian Betancourt", "| Developer | Web Deployment | Build Pipeline |"),
+        ("Yusairah Haque",        "| Developer | Enemy AI | Combat Mechanics |"),
+        ("Zachary Evans",         "| Developer |"),
+    ]
+
+    SCROLL_SPEED = 50       # px/sec leftward scroll
+    ENTRY_GAP    = 400      # horizontal gap between each entry
+    BOB_SPEED    = 1.5      # how fast each entry bobs
+    BOB_AMP      = 18       # how many pixels up/down each entry floats
+
+    total_strip_w = len(team) * ENTRY_GAP
+
+    # Background
+    background.update_and_draw(win, (menu_camera_x, menu_camera_y))
+    credit_y = int(screen_height * 0.30)
+
+    # Clip to avoid overlapping title and truck area
+    clip_rect = pygame.Rect(0, 110, screen_width, int(screen_height * 0.52) - 110)
+    win.set_clip(clip_rect)
+
+    # Scroll offset — right to left
+    scroll_x = (float_time * SCROLL_SPEED) % total_strip_w
+
+    for repeat in range(2):
+        base_x = screen_width + repeat * total_strip_w - scroll_x
+
+        for i, (name, role) in enumerate(team):
+            cx = base_x + i * ENTRY_GAP
+
+            if cx + 300 < 0 or cx - 300 > screen_width:
+                continue
+
+            # Each entry bobs independently w/ offset
+            bob = math.sin(float_time * BOB_SPEED + i * 0.8) * BOB_AMP
+
+            cy = credit_y + int(bob)
+
+            name_surf = name_font.render(name, True, (220, 220, 255))
+            role_surf = role_font.render(role, True, (140, 140, 200))
+            win.blit(name_surf, name_surf.get_rect(center=(cx, cy)))
+            win.blit(role_surf, role_surf.get_rect(center=(cx, cy + 30)))
+
+    win.set_clip(None)
+
+    # Truck fixed in centre with gentle bob
+    truck_w = truck_img.get_width()
+    truck_h = truck_img.get_height()
+    truck_x = (screen_width - truck_w) // 2
+    truck_y = int(screen_height * 0.55)
+    truck_bob = math.sin(float_time * 3) * 2
+    truck_rect = truck_img.get_rect()
+    truck_rect.topleft = (truck_x, truck_y + int(truck_bob))
+    win.blit(truck_img, truck_rect)
 
     # Title
     title = title_font.render("CREDITS", True, (255, 255, 255))
-    win.blit(title, title.get_rect(center=(screen_width // 2, 80)))
+    win.blit(title, title.get_rect(center=(screen_width // 2, 55)))
+    pygame.draw.line(win, (100, 100, 255),
+                     (screen_width // 2 - 180, 95),
+                     (screen_width // 2 + 180, 95), 1)
 
-    # Divider line
-    pygame.draw.line(win, (100, 100, 255), (screen_width // 2 - 200, 120), (screen_width // 2 + 200, 120), 2)
-
-    team = [
-        ("Wil Nahra",            "| Developer | Sprite Creation |"),
-        ("Simon Halaszi",        "| Developer | Dungeon Master |"),
-        ("Meheraj Khatri",       "| Developer | UI & Mechanics Integration | QA Lead |"),
-        ("Loy Ngo",              "| Developer | Navigation System (Minimap) | UI/Menu Systems |"),
-        ("Rowan Ess",            "| Developer | Music |"),
-        ("Sebastian Betancourt","| Developer | Web Deployment | Build Pipeline |"),
-        ("Yusairah Haque",       "| Developer | Enemy AI | Combat Mechanics |"),
-        ("Zachary Evans",        "| Developer |"),
-    ]
-
-    start_y = 170
-    spacing = 90
-
-    for i, (name, role) in enumerate(team):
-        y = start_y + i * spacing
-        float_offset = math.sin(float_time + i * 0.4) * 4
-
-        name_surf = name_font.render(name, True, (220, 220, 255))
-        role_surf = role_font.render(role, True, (140, 140, 200))
-
-        win.blit(name_surf, name_surf.get_rect(center=(screen_width // 2, y + float_offset)))
-        win.blit(role_surf, role_surf.get_rect(center=(screen_width // 2, y + 32 + float_offset)))
+    #  Pokemon credit
+    sub_text = sub_font.render("Prefabs used in Stations originate from Pokemon Emerald", True, (120, 120, 120))
+    sub_y = truck_rect.bottom + 40
+    win.blit(sub_text, sub_text.get_rect(center=(screen_width // 2, sub_y)))
 
     # ESC hint
-    hint = hint_font.render("Press ESC to return", True, (160, 160, 160))
-    win.blit(hint, hint.get_rect(center=(screen_width // 2, screen_height - 40)))
-
+    hint = hint_font.render("Press ESC to return", True, (120, 120, 120))
+    win.blit(hint, hint.get_rect(center=(screen_width // 2, screen_height - 30)))
 
 # Making the shop
 def draw_shop(win, screen_width, screen_height, player_gold, shop_items):

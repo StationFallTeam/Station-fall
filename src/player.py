@@ -128,6 +128,6 @@ class Player(Damageable):
             direction = direction.normalize()
             speed = 10
             velocity = direction * speed 
-            return Projectile(start, velocity, radius=6, color=(225,50,50), lifetime_ms=1200)
+            return Projectile(start, velocity, radius=6, color=(225,50,50), lifetime_ms=1200, damage=self.damage)
     
     

@@ -144,8 +144,12 @@ async def game(win, settings=None):
                         spawn, dungeon_context = dungeon_gen.load_complete(tile_size)
                         dungeon_context.dungeon_runs = dungeon_runs
                         current_money = player.money
+                        current_damage = player.damage
+                        current_health = player.health
                         player = Player(spawn[0], spawn[1])
                         player.money = current_money
+                        player.damage = current_damage
+                        player.health = current_health
                         bullets.clear()
                         floating_texts.clear()
                         last_player_tile = None
