@@ -32,7 +32,7 @@ class Boss:
         self.speed      = BOSS_SPEED
 
         sprite = pygame.image.load(
-            "sprites/enemy_human_range_sheet.png"
+            "sprites/boss_sheet.png"
         ).convert_alpha()
 
         original_frame_w = 48
