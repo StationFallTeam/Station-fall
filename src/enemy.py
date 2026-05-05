@@ -44,6 +44,13 @@ class Enemy:
         self.nav_mode = "direct"
         self.nav_mode_until = 0 
 
+    @staticmethod
+    def base_stats(dungeon_runs=0):
+        return {
+            'health': scale_enemy_health(15, dungeon_runs),
+            'contact_damage': scale_enemy_damage(10, dungeon_runs),
+        }
+
     def _get_frame(self, x, y):
         frame = pygame.Surface((self.drawWidth, self.drawHeight), pygame.SRCALPHA)
         frame.blit(self.sprite_sheet, (0, 0), (x, y, self.drawWidth, self.drawHeight))

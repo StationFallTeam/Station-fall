@@ -5,7 +5,7 @@ from dungeongen.classes import CombatRoom
 from src.assets import resolve_asset_path
 
 # Pause menu - Wil
-def draw_pause_menu(win, screen_width, screen_height):
+def draw_pause_menu(win, screen_width, screen_height, base_seed=None, active_seed=None, run_count=None):
     overlay = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 160))
     win.blit(overlay, (0, 0))
@@ -14,7 +14,21 @@ def draw_pause_menu(win, screen_width, screen_height):
     btn_font = pygame.font.SysFont(None, 48)
 
     title = title_font.render("PAUSED", True, (255, 255, 255))
-    win.blit(title, title.get_rect(center=(screen_width // 2, screen_height // 2 - 140)))
+    win.blit(title, title.get_rect(center=(screen_width // 2, screen_height // 2 - 160)))
+
+    seed_font = pygame.font.SysFont(None, 28)
+    info_lines = []
+    if base_seed is not None:
+        info_lines.append(f"Base Seed: {base_seed}")
+    if active_seed is not None:
+        info_lines.append(f"Active Seed: {active_seed}")
+    if run_count is not None:
+        info_lines.append(f"Run: {run_count}")
+    line_y = screen_height // 2 - 110
+    for line in info_lines:
+        surf = seed_font.render(line, True, (200, 200, 200))
+        win.blit(surf, surf.get_rect(center=(screen_width // 2, line_y)))
+        line_y += seed_font.get_linesize() + 2
 
     btn_w, btn_h = 260, 60
     mx, my = pygame.mouse.get_pos()
@@ -30,9 +44,9 @@ def draw_pause_menu(win, screen_width, screen_height):
         win.blit(lbl, lbl.get_rect(center=rect.center))
         return rect
 
-    resume_rect = make_btn("Resume",   screen_height // 2 - 30)
-    menu_rect   = make_btn("Main Menu", screen_height // 2 + 60)
-    quit_rect   = make_btn("Quit",      screen_height // 2 + 150)
+    resume_rect = make_btn("Resume",    screen_height // 2 + 10)
+    menu_rect   = make_btn("Main Menu", screen_height // 2 + 100)
+    quit_rect   = make_btn("Quit",      screen_height // 2 + 190)
 
     return resume_rect, menu_rect, quit_rect
 
@@ -133,13 +147,13 @@ def draw_menu(win, screen_width, screen_height, truck_img, float_time):
     # Buttons
     btn_w, btn_h = 260, 60
     start_rect = pygame.Rect(0, 0, btn_w, btn_h)
-    start_rect.center = (screen_width // 2, screen_height // 2 +120)
+    start_rect.center = (screen_width // 2, screen_height // 2 + 140)
 
     credits_rect = pygame.Rect(0, 0, btn_w, btn_h)
-    credits_rect.center = (screen_width // 2, screen_height // 2 + 210)
+    credits_rect.center = (screen_width // 2, screen_height // 2 + 230)
 
     quit_rect = pygame.Rect(0, 0, btn_w, btn_h)
-    quit_rect.center = (screen_width // 2, screen_height // 2 + 300)
+    quit_rect.center = (screen_width // 2, screen_height // 2 + 320)
 
     mx, my = pygame.mouse.get_pos()
 
@@ -160,6 +174,70 @@ def draw_menu(win, screen_width, screen_height, truck_img, float_time):
     win.blit(ver, ver.get_rect(center=(screen_width - 35, screen_height - 15)))
 
     return start_rect, quit_rect, credits_rect
+
+
+def draw_game_settings_menu(win, screen_width, screen_height, truck_img, float_time, seed_text, seed_input_active=False):
+    title_font = pygame.font.SysFont(None, 90)
+    small_font = pygame.font.SysFont(None, 32)
+    btn_font = pygame.font.SysFont(None, 48)
+
+    title = title_font.render("GAME SETTINGS", True, (255, 255, 255))
+    win.blit(title, title.get_rect(center=(screen_width // 2, screen_height // 2 - 180)))
+
+    hint = small_font.render("Set base seed and begin", True, (200, 200, 200))
+    win.blit(hint, hint.get_rect(center=(screen_width // 2, screen_height // 2 - 120)))
+
+    #ship — floats independently, buttons are anchored to a fixed Y
+    float_offset = math.sin(float_time) * 15
+    truck_rect = truck_img.get_rect()
+    truck_rect.center = (screen_width // 2, screen_height // 2 + float_offset)
+    win.blit(truck_img, truck_rect)
+
+    mx, my = pygame.mouse.get_pos()
+
+    # Fixed anchor below where the truck sits at rest (no float influence)
+    truck_base_y = screen_height // 2 + truck_img.get_height() // 2
+
+    seed_label = small_font.render("Base Seed", True, (220, 220, 220))
+    win.blit(seed_label, seed_label.get_rect(center=(screen_width // 2, truck_base_y + 35)))
+
+    seed_input_rect = pygame.Rect(0, 0, 320, 44)
+    seed_input_rect.center = (screen_width // 2, truck_base_y + 70)
+    input_hover = seed_input_rect.collidepoint(mx, my)
+    input_color = (220, 220, 220) if (seed_input_active or input_hover) else (170, 170, 170)
+    pygame.draw.rect(win, input_color, seed_input_rect, border_radius=12)
+    pygame.draw.rect(win, (40, 40, 40), seed_input_rect, 3, border_radius=12)
+
+    seed_value_surface = small_font.render(seed_text or "0", True, (0, 0, 0))
+    win.blit(seed_value_surface, seed_value_surface.get_rect(center=seed_input_rect.center))
+
+    btn_w, btn_h = 260, 60
+    random_seed_rect = pygame.Rect(0, 0, btn_w, btn_h)
+    random_seed_rect.center = (screen_width // 2, truck_base_y + 145)
+
+    begin_game_rect = pygame.Rect(0, 0, btn_w, btn_h)
+    begin_game_rect.center = (screen_width // 2, truck_base_y + 225)
+
+    back_rect = pygame.Rect(0, 0, btn_w, btn_h)
+    back_rect.center = (screen_width // 2, truck_base_y + 305)
+
+    def draw_button(rect, text):
+        hover = rect.collidepoint(mx, my)
+        color = (220, 220, 220) if hover else (170, 170, 170)
+        pygame.draw.rect(win, color, rect, border_radius=12)
+        pygame.draw.rect(win, (40, 40, 40), rect, 3, border_radius=12)
+
+        label = btn_font.render(text, True, (0, 0, 0))
+        win.blit(label, label.get_rect(center=rect.center))
+
+    draw_button(random_seed_rect, "Random Seed")
+    draw_button(begin_game_rect, "Begin Game")
+    draw_button(back_rect, "Back")
+
+    ver = small_font.render("v1.3.1", True, (200, 200, 200))
+    win.blit(ver, ver.get_rect(center=(screen_width - 35, screen_height - 15)))
+
+    return begin_game_rect, random_seed_rect, seed_input_rect, back_rect
 
 # Game over screen
 def draw_game_over(win, screen_width, screen_height, truck_img, float_time):
@@ -237,14 +315,10 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
 
     win.set_clip(None)
 
-    # Truck fixed in centre with gentle bob
-    truck_w = truck_img.get_width()
-    truck_h = truck_img.get_height()
-    truck_x = (screen_width - truck_w) // 2
-    truck_y = int(screen_height * 0.55)
-    truck_bob = math.sin(float_time * 3) * 2
+    # Truck uses the same centered float logic as the other menus
+    float_offset = math.sin(float_time) * 15
     truck_rect = truck_img.get_rect()
-    truck_rect.topleft = (truck_x, truck_y + int(truck_bob))
+    truck_rect.center = (screen_width // 2, screen_height // 2 + float_offset)
     win.blit(truck_img, truck_rect)
 
     # Title
@@ -255,7 +329,7 @@ def draw_credits(win, screen_width, screen_height, background, float_time, menu_
                      (screen_width // 2 + 180, 95), 1)
 
     #  Pokemon credit
-    sub_text = sub_font.render("Prefabs used in Stations originate from Pokemon Emerald", True, (120, 120, 120))
+    sub_text = sub_font.render("Most sprites are adapted from Pokemon Emerald", True, (120, 120, 120))
     sub_y = truck_rect.bottom + 40
     win.blit(sub_text, sub_text.get_rect(center=(screen_width // 2, sub_y)))
 

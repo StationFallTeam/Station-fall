@@ -1,6 +1,7 @@
 import asyncio
 import sys
 import pygame
+import random
 
 from src.background import SpaceBackground
 from src.camera import Camera
@@ -22,11 +23,15 @@ from dungeongen.loading import (
 async def game(win, settings=None):
     # Settings from main menu
     if settings is None:
-        settings = {'music_volume': 0.5, 'brightness': 1.0, 'dungeon_runs': 0}
+        settings = {'music_volume': 0.5, 'brightness': 1.0, 'dungeon_runs': 0, 'base_seed': 0}
     
     music_volume = settings.get('music_volume', 0.5)
     brightness = settings.get('brightness', 1.0)
     dungeon_runs = max(0, int(settings.get('dungeon_runs', 0)))
+    base_seed = int(settings.get('base_seed', 0))
+    settings['base_seed'] = base_seed
+
+    random.seed(base_seed)
 
     # change music to standard background
     pygame.mixer.music.stop()
@@ -76,7 +81,8 @@ async def game(win, settings=None):
     
     state = "hub"
     active_gen = hub_gen
-    spawn = hub_gen.load_complete(tile_size)
+    spawn = hub_gen.load_complete(tile_size, seed=base_seed)
+    active_seed = base_seed
     
     player = Player(spawn[0], spawn[1])
     
@@ -116,7 +122,7 @@ async def game(win, settings=None):
                         paused = False
                     elif is_in_trigger(player, "quit"):
                         # Return current settings when quitting
-                        current_settings = {'music_volume': music_volume, 'brightness': brightness, 'dungeon_runs': dungeon_runs}
+                        current_settings = {'music_volume': music_volume, 'brightness': brightness, 'dungeon_runs': dungeon_runs, 'base_seed': base_seed}
                         return "quit", current_settings
                     else:
                         paused = not paused 
@@ -134,6 +140,8 @@ async def game(win, settings=None):
                     brightness = min(brightness + BRIGHTNESS_STEP, 1.0)        
                 elif event.key == pygame.K_9:
                     brightness = max(brightness - BRIGHTNESS_STEP, 0.2)
+                elif paused:
+                    continue
                         
                 elif event.key == pygame.K_RETURN:
                     if state == "hub" and is_in_trigger(player, "start"):
@@ -141,15 +149,18 @@ async def game(win, settings=None):
                         # Transitiong to dungeon
                         state = "dungeon"
                         active_gen = dungeon_gen
-                        spawn, dungeon_context = dungeon_gen.load_complete(tile_size)
+                        active_seed = base_seed + dungeon_runs
+                        spawn, dungeon_context = dungeon_gen.load_complete(tile_size, seed=active_seed)
                         dungeon_context.dungeon_runs = dungeon_runs
                         current_money = player.money
                         current_damage = player.damage
                         current_health = player.health
+                        current_inventory = player.inventory.copy()
                         player = Player(spawn[0], spawn[1])
                         player.money = current_money
                         player.damage = current_damage
                         player.health = current_health
+                        player.inventory = current_inventory
                         bullets.clear()
                         floating_texts.clear()
                         last_player_tile = None
@@ -161,10 +172,17 @@ async def game(win, settings=None):
                         #Back to hub
                         state = "hub"
                         active_gen = hub_gen
-                        spawn = hub_gen.load_complete(tile_size)
+                        active_seed = base_seed
+                        spawn = hub_gen.load_complete(tile_size, seed=active_seed)
                         current_money = player.money
+                        current_health = player.health
+                        current_damage = player.damage
+                        current_inventory = player.inventory.copy()
                         player = Player(spawn[0], spawn[1])
                         player.money = current_money
+                        player.health = current_health
+                        player.damage = current_damage
+                        player.inventory = current_inventory
                         dungeon_context = DungeonContext(tile_size, dungeon_runs=dungeon_runs)
                         coins.clear()
                         bullets.clear()
@@ -186,28 +204,43 @@ async def game(win, settings=None):
 
             # MOUSE HANDLER
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if shop:
+                if inventory_state and inv_close_rect.collidepoint(event.pos):
+                    inventory_state = False
+                elif inventory_state:
+                    # Check if clicking on inventory items
+                    for slot_rect, item_idx in inv_item_slots:
+                        if slot_rect.collidepoint(event.pos):
+                            if item_idx < len(player.inventory):
+                                item = player.inventory[item_idx]
+                                if item['name'] == "Healing Kit":
+                                    heal_amount = max(1, int(round(player.max_health * item['healing_fraction'])))
+                                    player.health = min(player.max_health, player.health + heal_amount)
+                                    player.inventory.pop(item_idx)
+                elif shop:
                     for idx, rect in enumerate(item_rects):
                             item = shop_items[idx]
                             if rect.collidepoint(event.pos):
                                 if player.money >= item['price']:
-                                    player.money -= item['price']
-                                    # Apply item effects
-                                    if item['name'] == "Instant Healing Kit":
-                                        player.health = min(player.max_health, player.health + 20)
+                                    # Add item to inventory instead of applying immediately
+                                    if item['name'] == "Healing Kit":
+                                        if len(player.inventory) < 10:
+                                            player.money -= item['price']
+                                            player.inventory.append({"name": "Healing Kit", "healing_fraction": 0.2})
                                     elif item['name'] == "Blaster Upgrade":
+                                        player.money -= item['price']
                                         player.damage += 5
                                     elif item['name'] == "Space Suit Upgrade":
+                                        player.money -= item['price']
                                         player.max_health += 10
                                         player.health = min(player.health, player.max_health)       
                 if paused:
                     if resume_rect.collidepoint(event.pos):
                         paused = False
                     elif menu_rect.collidepoint(event.pos):
-                        current_settings = {'music_volume': music_volume, 'brightness': brightness, 'dungeon_runs': dungeon_runs}
+                        current_settings = {'music_volume': music_volume, 'brightness': brightness, 'dungeon_runs': dungeon_runs, 'base_seed': base_seed}
                         return "menu", current_settings
                     elif quit_rect.collidepoint(event.pos):
-                        current_settings = {'music_volume': music_volume, 'brightness': brightness, 'dungeon_runs': dungeon_runs}
+                        current_settings = {'music_volume': music_volume, 'brightness': brightness, 'dungeon_runs': dungeon_runs, 'base_seed': base_seed}
                         return "quit", current_settings
                 elif state == "dungeon":
                     # Shooting
@@ -289,7 +322,7 @@ async def game(win, settings=None):
             
             # Check if player died
             if player.health <= 0:
-                current_settings = {'music_volume': music_volume, 'brightness': brightness, 'dungeon_runs': dungeon_runs}
+                current_settings = {'music_volume': music_volume, 'brightness': brightness, 'dungeon_runs': dungeon_runs, 'base_seed': base_seed}
                 return "dead", current_settings # Return to menu when player dies
                         
             # Update coins
@@ -298,8 +331,9 @@ async def game(win, settings=None):
                 if player.rect.colliderect(coin.rect):
                     from src.health_drop import HealthDrop
                     if isinstance(coin, HealthDrop):
-                        player.health = min(player.health + coin.heal_amount, player.max_health)
-                        floating_texts.append(FloatingText(player.rect.centerx, player.rect.centery,f"+{coin.heal_amount}",color=(0, 255, 0)))
+                        heal_amount = coin.heal_for(player)
+                        player.health = min(player.health + heal_amount, player.max_health)
+                        floating_texts.append(FloatingText(player.rect.centerx, player.rect.centery,f"+{heal_amount}",color=(0, 255, 0)))
                     else:
                         player.money += coin.value
                     coins.remove(coin)
@@ -364,11 +398,19 @@ async def game(win, settings=None):
         
         # Draw inventory overlay if active
         if inventory_state:
-            inventory_ui.draw(win, player.money, visible=inventory_state)
+            inv_close_rect, inv_item_slots = inventory_ui.draw(win, player.money, player=player, dungeon_runs=dungeon_runs, visible=inventory_state)
+        else:
+            inv_close_rect = pygame.Rect(0, 0, 0, 0)
+            inv_item_slots = []
 
         # Draw pause menu
         if paused:
-            resume_rect, menu_rect, quit_rect = draw_pause_menu(win, screen_width, screen_height)
+            resume_rect, menu_rect, quit_rect = draw_pause_menu(
+                win, screen_width, screen_height,
+                base_seed=base_seed,
+                active_seed=active_seed,
+                run_count=dungeon_runs,
+            )
         else:
             resume_rect = menu_rect = quit_rect = pygame.Rect(0, 0, 0, 0)
 

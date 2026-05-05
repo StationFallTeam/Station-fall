@@ -3,13 +3,25 @@ import math
 from src.damageable import Damageable
 from src.projectile import Projectile
 from src.pathfinding import astar, world_to_tile, tile_to_world_center
+from src.enemy_scaling import scale_enemy_damage, scale_enemy_health
 
 SHOOT_COOLDOWN_MS  = 500   # fire rate
 PROJECTILE_SPEED   = 5.0   # bullet speed
 BOSS_SPEED         = 1.8   # speed
+BOSS_CONTACT_DAMAGE = 10
+BOSS_PROJECTILE_DAMAGE = 15
+BOSS_HEALTH = 180
 
 class Boss:
-    def __init__(self, x, y):
+    @staticmethod
+    def base_stats(dungeon_runs=0):
+        return {
+            "health": scale_enemy_health(BOSS_HEALTH, dungeon_runs),
+            "contact_damage": scale_enemy_damage(BOSS_CONTACT_DAMAGE, dungeon_runs),
+            "projectile_damage": scale_enemy_damage(BOSS_PROJECTILE_DAMAGE, dungeon_runs),
+        }
+
+    def __init__(self, x, y, dungeon_runs=0):
         self.x = x
         self.y = y
 
@@ -43,7 +55,9 @@ class Boss:
 
         self.drawRect = pygame.Rect(self.x, self.y, self.drawWidth, self.drawHeight)
         self.rect     = pygame.Rect(self.x, self.y, self.width, self.height)
-        self.damageable = Damageable(250)
+        self.damageable = Damageable(scale_enemy_health(BOSS_HEALTH, dungeon_runs))
+        self.contact_damage = scale_enemy_damage(BOSS_CONTACT_DAMAGE, dungeon_runs)
+        self.projectile_damage = scale_enemy_damage(BOSS_PROJECTILE_DAMAGE, dungeon_runs)
 
         self._last_dx = 0
         self._last_dy = 0
@@ -188,7 +202,7 @@ class Boss:
                 self.y + self.height // 2 + norm_y * spawn_offset,
             )
             vel = (norm_x * PROJECTILE_SPEED, norm_y * PROJECTILE_SPEED)
-            proj = Projectile(origin, vel, 7, (255, 50, 200), 2000, 15)
+            proj = Projectile(origin, vel, 7, (255, 50, 200), 2000, self.projectile_damage)
             proj._shooter = self
             self._pending_projectiles.append(proj)
 
