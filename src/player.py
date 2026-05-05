@@ -39,6 +39,7 @@ class Player(Damageable):
         self.money = 0 # broke boy
 
         self.damage = 10  # starting damage
+        self.inventory = []  # list of items (dicts with 'name' and 'data')
    
 
     def _get_frame(self, x, y):

@@ -26,4 +26,6 @@ class TestVFXAndPickups(unittest.TestCase):
         drop = HealthDrop(50, 50, 20)
         drop.update()
         self.assertEqual(drop.rect.center, (50, 50))
-        self.assertEqual(drop.heal_amount, 20)
+        player = type("PlayerStub", (), {"max_health": 100})()
+        self.assertAlmostEqual(drop.heal_fraction, 0.2)
+        self.assertEqual(drop.heal_for(player), 20)

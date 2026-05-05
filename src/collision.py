@@ -142,8 +142,8 @@ class CollisionSystem:
             if player.rect.colliderect(item.rect):
                 if hasattr(item, "value"):  # coin
                      player.money += item.value
-                elif hasattr(item, "heal_amount"):  # health drop
-                    player.health = min(player.health + item.heal_amount, player.max_health)
+                elif hasattr(item, "heal_for"):  # health drop
+                    player.health = min(player.health + item.heal_for(player), player.max_health)
 
                 coins.remove(item)
                     

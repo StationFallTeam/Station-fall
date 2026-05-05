@@ -2,7 +2,7 @@ import pygame
 
 class HealthDrop:
     def __init__(self, x, y, heal_amount):
-        self.heal_amount = heal_amount
+        self.heal_fraction = max(0, heal_amount) / 100
         self.radius = 8
         self.pos = pygame.Vector2(x, y)
 
@@ -12,6 +12,9 @@ class HealthDrop:
             self.radius * 2,
             self.radius * 2
         )
+
+    def heal_for(self, player):
+        return max(1, int(round(player.max_health * self.heal_fraction)))
 
     def update(self):
         self.rect.center = (int(self.pos.x), int(self.pos.y))

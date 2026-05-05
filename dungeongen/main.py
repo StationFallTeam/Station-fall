@@ -151,24 +151,14 @@ async def main():
         camera_center_x = cam_x + SCREEN_W / 2
         camera_center_y = cam_y + SCREEN_H / 2
         
-        draw_minimap(
-            screen,
-            active_generator.tiles,
-            camera_center_x,
-            camera_center_y,
-            tile_size,
-            rooms=active_generator.rooms,
-            hallways=active_generator.hallways,
-        )
         rooms = active_generator.rooms
         hallways = active_generator.hallways
         seed = getattr(active_generator, "seed", None)
 
-        far_room = None
-        if show_debug and rooms:
-            far_room = max(rooms, key=lambda room: room.center[0] * room.center[0] + room.center[1] * room.center[1])
-            fx = far_room.center[0] * tile_size + tile_size // 2 - cam_x
-            fy = far_room.center[1] * tile_size + tile_size // 2 - cam_y
+        boss_room = next((room for room in rooms if getattr(room, "is_boss_room", False)), None)
+        if show_debug and boss_room:
+            fx = boss_room.center[0] * tile_size + tile_size // 2 - cam_x
+            fy = boss_room.center[1] * tile_size + tile_size // 2 - cam_y
             min_room_tiles = min(ROOM_SIZE)
             radius = max(3, (min_room_tiles * tile_size) // 4)
             pygame.draw.circle(screen, COLOR_FURTHEST, (fx, fy), radius)
@@ -180,9 +170,9 @@ async def main():
                     dot_y = dy * tile_size + tile_size // 2 - cam_y
                     pygame.draw.circle(screen, COLOR_DOOR_DOT, (dot_x, dot_y), max(2, tile_size // 5))
 
-                if room.is_base_room and room is not far_room:
+                if room.is_base_room and room is not boss_room:
                     continue
-                label_id = 0 if room is far_room else room.prefab_id
+                label_id = 0 if room is boss_room else room.prefab_id
                 px = room.center[0] * tile_size + tile_size // 2 - cam_x
                 py = room.center[1] * tile_size + tile_size // 2 - cam_y
                 label = font.render(str(label_id), True, COLOR_TEXT)

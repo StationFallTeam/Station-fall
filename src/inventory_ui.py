@@ -1,5 +1,8 @@
 import pygame
 import math
+from src.boss import Boss
+from src.enemy import Enemy
+from src.ranged_enemy import RangedEnemy
 
 
 class InventoryUI:
@@ -25,7 +28,7 @@ class InventoryUI:
         self.sw = screen_width
         self.sh = screen_height
 
-        # Panel dimensions (same proportions as TutorialPopup)
+        # Panel dimensions are kept aligned with the tested in-game layout.
         self.pw = min(560, screen_width - 80)
         self.ph = 400
         self.px = (screen_width  - self.pw) // 2
@@ -48,9 +51,11 @@ class InventoryUI:
         # Close button rect (screen-space, updated each draw)
         self._btn_close  = pygame.Rect(0, 0, 0, 0)
         self._hover_close = False
+        self._item_slots = []  # Track item slot rects for clicking
+
     
 
-    def draw(self, surface: pygame.Surface, money: int, visible: bool = True):
+    def draw(self, surface: pygame.Surface, money: int, player=None, dungeon_runs: int = 0, visible: bool = True):
         """Call every frame while the inventory key is held / toggled on."""
         if not visible:
             self._alpha   = 0
@@ -121,17 +126,32 @@ class InventoryUI:
         grid_w     = cols * slot_size + (cols - 1) * slot_gap
         grid_x     = (self.pw - grid_w) // 2
 
+        self._item_slots = []
+        inventory = player.inventory if player else []
+
         for i in range(cols):
             sx = grid_x + i * (slot_size + slot_gap)
             slot_rect = pygame.Rect(sx, body_y, slot_size, slot_size)
             pygame.draw.rect(panel, self.C_ICON_BG,  slot_rect, border_radius=6)
             pygame.draw.rect(panel, self.C_BORDER2,  slot_rect, 1, border_radius=6)
-            # Empty slot indicator
-            dash = self.font_btn.render("—", True, self.C_MUTED)
-            panel.blit(dash, (
-                slot_rect.centerx - dash.get_width()  // 2,
-                slot_rect.centery - dash.get_height() // 2,
-            ))
+            
+            # Show item if exists
+            if i < len(inventory):
+                item = inventory[i]
+                item_text = self.font_btn.render("Kit", True, self.C_ICON_TEXT) if item['name'] == "Healing Kit" else self.font_btn.render("?", True, self.C_MUTED)
+                panel.blit(item_text, (
+                    slot_rect.centerx - item_text.get_width()  // 2,
+                    slot_rect.centery - item_text.get_height() // 2,
+                ))
+                # Track this rect for click detection
+                self._item_slots.append((slot_rect.move(self.px, draw_y), i))
+            else:
+                # Empty slot indicator
+                dash = self.font_btn.render("—", True, self.C_MUTED)
+                panel.blit(dash, (
+                    slot_rect.centerx - dash.get_width()  // 2,
+                    slot_rect.centery - dash.get_height() // 2,
+                ))
 
         body_y += slot_size + slot_gap
 
@@ -141,11 +161,82 @@ class InventoryUI:
             slot_rect = pygame.Rect(sx, body_y, slot_size, slot_size)
             pygame.draw.rect(panel, self.C_ICON_BG,  slot_rect, border_radius=6)
             pygame.draw.rect(panel, self.C_BORDER2,  slot_rect, 1, border_radius=6)
-            dash = self.font_btn.render("—", True, self.C_MUTED)
-            panel.blit(dash, (
-                slot_rect.centerx - dash.get_width()  // 2,
-                slot_rect.centery - dash.get_height() // 2,
-            ))
+            
+            # Show item if exists
+            item_idx = cols + i
+            if item_idx < len(inventory):
+                item = inventory[item_idx]
+                item_text = self.font_btn.render("Kit", True, self.C_ICON_TEXT) if item['name'] == "Healing Kit" else self.font_btn.render("?", True, self.C_MUTED)
+                panel.blit(item_text, (
+                    slot_rect.centerx - item_text.get_width()  // 2,
+                    slot_rect.centery - item_text.get_height() // 2,
+                ))
+                # Track this rect for click detection
+                self._item_slots.append((slot_rect.move(self.px, draw_y), item_idx))
+            else:
+                dash = self.font_btn.render("—", True, self.C_MUTED)
+                panel.blit(dash, (
+                    slot_rect.centerx - dash.get_width()  // 2,
+                    slot_rect.centery - dash.get_height() // 2,
+                ))
+
+        # ── Stats section ─────────────────────────────────────────────
+        body_y += slot_size + slot_gap + 6
+        pygame.draw.line(panel, self.C_BORDER2, (20, body_y), (self.pw - 20, body_y), 1)
+        body_y += 10
+
+        # Collect values — enemy stats derived from base_stats class methods
+        p_hp    = f"{int(player.health)} / {player.max_health}" if player else "—"
+        p_dmg   = str(player.damage) if player else "—"
+        melee  = Enemy.base_stats(dungeon_runs)
+        ranged = RangedEnemy.base_stats(dungeon_runs)
+        boss   = Boss.base_stats(dungeon_runs)
+        e_hp_m  = str(melee['health'])
+        e_dmg_m = str(melee['contact_damage'])
+        e_hp_r  = str(ranged['health'])
+        e_dmg_r = str(ranged['contact_damage'])
+        e_dmg_proj = str(ranged['projectile_damage'])
+        e_hp_b = str(boss['health'])
+        e_dmg_b = str(boss['contact_damage'])
+        e_dmg_b_proj = str(boss['projectile_damage'])
+
+        col_lx  = 28
+        col_mx  = self.pw // 4
+        col_rx  = self.pw // 2
+        col_bx  = self.pw * 3 // 4
+        lh      = self.font_body.get_linesize() + 4
+
+        def stat_row(label, val, x, y, label_color):
+            l_surf = self.font_body.render(label, True, label_color)
+            v_surf = self.font_body.render(val,   True, self.C_BODY)
+            panel.blit(l_surf, (x, y))
+            panel.blit(v_surf, (x + l_surf.get_width() + 4, y))
+
+        # Column headers
+        h_surf = self.font_body.render("Player", True, self.C_HEADING)
+        panel.blit(h_surf, (col_lx, body_y))
+        m_head = self.font_body.render("Melee", True, (255, 120, 120))
+        panel.blit(m_head, (col_mx, body_y))
+        r_head = self.font_body.render("Ranged", True, (255, 180, 80))
+        panel.blit(r_head, (col_rx, body_y))
+        b_head = self.font_body.render("Boss", True, (255, 215, 80))
+        panel.blit(b_head, (col_bx, body_y))
+        body_y += lh + 2
+
+        stat_row("HP: ",  p_hp,   col_lx, body_y, self.C_MUTED)
+        stat_row("HP: ",  e_hp_m, col_mx, body_y, self.C_MUTED)
+        stat_row("HP: ",  e_hp_r, col_rx, body_y, self.C_MUTED)
+        stat_row("HP: ",  e_hp_b, col_bx, body_y, self.C_MUTED)
+        body_y += lh
+        stat_row("DMG: ", "—",     col_lx, body_y, self.C_MUTED)
+        stat_row("DMG: ", e_dmg_m, col_mx, body_y, self.C_MUTED)
+        stat_row("DMG: ", e_dmg_r, col_rx, body_y, self.C_MUTED)
+        stat_row("DMG: ", e_dmg_b, col_bx, body_y, self.C_MUTED)
+        body_y += lh
+        stat_row("PROJ: ", p_dmg,     col_lx, body_y, self.C_MUTED)
+        stat_row("PROJ: ", "—",        col_mx, body_y, self.C_MUTED)
+        stat_row("PROJ: ", e_dmg_proj, col_rx, body_y, self.C_MUTED)
+        stat_row("PROJ: ", e_dmg_b_proj, col_bx, body_y, self.C_MUTED)
 
         # Close button (top-right, same position as TutorialPopup) ─
         close_rect  = pygame.Rect(self.pw - 26, 8, 18, 18)
@@ -167,6 +258,7 @@ class InventoryUI:
 
         panel.set_alpha(self._alpha)
         surface.blit(panel, (self.px, draw_y))
+        return self._btn_close, self._item_slots
 
     # Internal helpers (identical to TutorialPopup)
 

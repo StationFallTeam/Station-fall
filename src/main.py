@@ -3,7 +3,8 @@ import pygame
 import asyncio
 import math
 import sys
-from src.render import draw_game_over, draw_credits, draw_menu
+import random
+from src.render import draw_game_over, draw_credits, draw_menu, draw_game_settings_menu
 from src.background import SpaceBackground 
 from src.game import game as dungeon_game
 from src.assets import resolve_asset_path
@@ -19,7 +20,21 @@ os.environ['SDL_VIDEO_HIGHDPI_DISABLED'] = '1'
 
 # Start Menu - Loy
 MENU = "menu"
+SETTINGS = "settings"
 CREDITS = "Credits"
+
+
+def generate_menu_seed():
+    return random.randint(0, 2_147_483_647)
+
+
+def parse_seed_input(seed_input, fallback_seed):
+    if not seed_input:
+        return fallback_seed
+    try:
+        return int(seed_input)
+    except ValueError:
+        return fallback_seed
 
 async def run_game(win, screen_width, screen_height, background, truck_img, settings): # checks the status of the character
     result = await dungeon_game(win, settings)
@@ -29,9 +44,13 @@ async def run_game(win, screen_width, screen_height, background, truck_img, sett
         settings.update(returned_settings)
         result = status
     
+    if result == "quit":
+        settings['dungeon_runs'] = 0
+        return "quit"
+
     if result != "dead":
         settings['dungeon_runs'] = 0
-        return
+        return result
 
     settings['dungeon_runs'] = 0
     
@@ -122,17 +141,28 @@ async def main():
         # Brightness control
         brightness = 1.0
         BRIGHTNESS_STEP = 0.1
+        base_seed = generate_menu_seed()
+        seed_input_text = str(base_seed)
+        seed_input_active = False
 
         # Settings dictionary to pass to and from the game
         current_settings = {
             'music_volume': music_volume,
             'brightness': brightness,
             'dungeon_runs': 0,
+            'base_seed': base_seed,
         }
 
         # Start Menu System
         state = MENU
         running = True
+        start_rect = pygame.Rect(0, 0, 0, 0)
+        quit_rect = pygame.Rect(0, 0, 0, 0)
+        credits_rect = pygame.Rect(0, 0, 0, 0)
+        random_seed_rect = pygame.Rect(0, 0, 0, 0)
+        seed_input_rect = pygame.Rect(0, 0, 0, 0)
+        begin_game_rect = pygame.Rect(0, 0, 0, 0)
+        back_rect = pygame.Rect(0, 0, 0, 0)
 
         try:
             while running:
@@ -145,6 +175,18 @@ async def main():
                         running = False
 
                     elif event.type == pygame.KEYDOWN:
+                        if state == SETTINGS and seed_input_active:
+                            if event.key == pygame.K_BACKSPACE:
+                                seed_input_text = seed_input_text[:-1]
+                            elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                                seed_input_active = False
+                            elif event.key == pygame.K_ESCAPE:
+                                seed_input_active = False
+                                state = MENU
+                            elif event.unicode and event.unicode.isdigit() and len(seed_input_text) < 18:
+                                seed_input_text += event.unicode
+                            continue
+
                         # Global controls
                         if event.key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
                             music_volume = min(music_volume + VOLUME_STEP, 1.0)
@@ -172,15 +214,36 @@ async def main():
                         # State-specific keyboard input
                         elif state == MENU:
                             if event.key == pygame.K_RETURN:
-                                
-                                await run_game(win, screen_width, screen_height, background, truck_img, current_settings)
-                                # Update local variables from potentially modified settings
-                                music_volume = current_settings.get('music_volume', music_volume)
-                                brightness = current_settings.get('brightness', brightness)
-                                pygame.mixer.music.set_volume(music_volume)
-                                
+                                state = SETTINGS
+                                seed_input_active = True
                             elif event.key == pygame.K_ESCAPE:
                                 running = False
+
+                        elif state == SETTINGS:
+                            if event.key == pygame.K_RETURN:
+                                selected_seed = parse_seed_input(seed_input_text, current_settings.get('base_seed', base_seed))
+                                current_settings['base_seed'] = selected_seed
+                                seed_input_text = str(selected_seed)
+                                seed_input_active = False
+
+                                result = await run_game(win, screen_width, screen_height, background, truck_img, current_settings)
+                                music_volume = current_settings.get('music_volume', music_volume)
+                                brightness = current_settings.get('brightness', brightness)
+                                base_seed = current_settings.get('base_seed', base_seed)
+                                seed_input_text = str(base_seed)
+                                pygame.mixer.music.set_volume(music_volume)
+                                if result == "quit":
+                                    running = False
+                                    continue
+                                state = MENU
+                            elif event.key == pygame.K_r:
+                                base_seed = generate_menu_seed()
+                                current_settings['base_seed'] = base_seed
+                                seed_input_text = str(base_seed)
+                                seed_input_active = False
+                            elif event.key == pygame.K_ESCAPE:
+                                state = MENU
+                                seed_input_active = False
 
                         elif state == CREDITS:
                             if event.key == pygame.K_ESCAPE:
@@ -189,17 +252,42 @@ async def main():
                     elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                         if state == MENU:
                             if start_rect.collidepoint(event.pos):
-                                await run_game(win, screen_width, screen_height, background, truck_img, current_settings)
-                                # Update local variables from potentially modified settings
-                                music_volume = current_settings.get('music_volume', music_volume)
-                                brightness = current_settings.get('brightness', brightness)
-                                pygame.mixer.music.set_volume(music_volume)
-
-                                # After returning from dungeon, stay in menu
+                                state = SETTINGS
+                                seed_input_active = True
                             elif credits_rect.collidepoint(event.pos):
                                 state = CREDITS
                             elif quit_rect.collidepoint(event.pos):
                                 running = False
+
+                        elif state == SETTINGS:
+                            if begin_game_rect.collidepoint(event.pos):
+                                selected_seed = parse_seed_input(seed_input_text, current_settings.get('base_seed', base_seed))
+                                current_settings['base_seed'] = selected_seed
+                                seed_input_text = str(selected_seed)
+                                seed_input_active = False
+
+                                result = await run_game(win, screen_width, screen_height, background, truck_img, current_settings)
+                                music_volume = current_settings.get('music_volume', music_volume)
+                                brightness = current_settings.get('brightness', brightness)
+                                base_seed = current_settings.get('base_seed', base_seed)
+                                seed_input_text = str(base_seed)
+                                pygame.mixer.music.set_volume(music_volume)
+                                if result == "quit":
+                                    running = False
+                                    continue
+                                state = MENU
+                            elif random_seed_rect.collidepoint(event.pos):
+                                base_seed = generate_menu_seed()
+                                current_settings['base_seed'] = base_seed
+                                seed_input_text = str(base_seed)
+                                seed_input_active = False
+                            elif seed_input_rect.collidepoint(event.pos):
+                                seed_input_active = True
+                            elif back_rect.collidepoint(event.pos):
+                                state = MENU
+                                seed_input_active = False
+                            else:
+                                seed_input_active = False
                     
                     elif event.type == pygame.VIDEORESIZE:
                         screen_width, screen_height = event.w, event.h
@@ -214,7 +302,23 @@ async def main():
                 if state == MENU:
                     background.update_and_draw(win, (menu_camera_x, menu_camera_y))
                     start_rect, quit_rect, credits_rect = draw_menu(
-                        win, screen_width, screen_height, truck_img, float_time
+                        win,
+                        screen_width,
+                        screen_height,
+                        truck_img,
+                        float_time,
+                    )
+
+                elif state == SETTINGS:
+                    background.update_and_draw(win, (menu_camera_x, menu_camera_y))
+                    begin_game_rect, random_seed_rect, seed_input_rect, back_rect = draw_game_settings_menu(
+                        win,
+                        screen_width,
+                        screen_height,
+                        truck_img,
+                        float_time,
+                        seed_input_text,
+                        seed_input_active=seed_input_active,
                     )
 
                 elif state == CREDITS:

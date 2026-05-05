@@ -96,6 +96,14 @@ class CombatRoom(BaseRoom):
         
         # Enemy spawn data parsed from prefab
         self.enemy_spawn_data = []
+        self.is_boss_room = False
+
+    def _get_spawn_plan(self):
+        if self.is_boss_room:
+            center_local_x = self.center[0] - self.rect.x
+            center_local_y = self.center[1] - self.rect.y
+            return [("boss", center_local_x, center_local_y)]
+        return list(self.enemy_spawn_data)
 
     def on_enter(self, dungeon_context):
         if self.visited:
@@ -107,7 +115,7 @@ class CombatRoom(BaseRoom):
         
         # Setup spawn warning visual effects
         self.spawn_warnings = []
-        for enemy_type, local_x, local_y in self.enemy_spawn_data:
+        for enemy_type, local_x, local_y in self._get_spawn_plan():
             world_tile_x = self.rect.x + local_x
             world_tile_y = self.rect.y + local_y
             self.spawn_warnings.append([world_tile_x, world_tile_y, 90])  # 90 frames = 1.5 seconds
@@ -177,16 +185,17 @@ class CombatRoom(BaseRoom):
         if enemy_type in ["enemy"]:
             return Enemy(world_x, world_y, dungeon_runs=dungeon_runs)
         elif enemy_type in ["rangedEnemy"]:
-            return RangedEnemy(world_x, world_y)
+            return RangedEnemy(world_x, world_y, dungeon_runs=dungeon_runs)
         elif enemy_type in ["boss"]:
-            return Boss(world_x, world_y)
+            return Boss(world_x, world_y, dungeon_runs=dungeon_runs)
         
         # Return None for unknown enemy types
         print(f"Warning: Unknown enemy type '{enemy_type}', skipping spawn")
         return None
 
     def spawn_enemies(self, dungeon_context):
-        if not self.enemy_spawn_data:
+        spawn_plan = self._get_spawn_plan()
+        if not spawn_plan:
             return
             
         # Clear spawn warnings when actually spawning
@@ -197,7 +206,7 @@ class CombatRoom(BaseRoom):
         tile_size = dungeon_context.tile_size
         dungeon_runs = getattr(dungeon_context, "dungeon_runs", 0)
         
-        for enemy_type, local_x, local_y in self.enemy_spawn_data:
+        for enemy_type, local_x, local_y in spawn_plan:
             # Convert local room coordinates to world coordinates
             world_x = (self.rect.x + local_x) * tile_size
             world_y = (self.rect.y + local_y) * tile_size
@@ -205,6 +214,13 @@ class CombatRoom(BaseRoom):
             # Create enemy at world coordinates
             enemy = self._create_enemy_by_type(enemy_type, world_x, world_y, dungeon_runs=dungeon_runs)
             if enemy:
+                if self.is_boss_room and enemy_type == "boss":
+                    center_world_x = self.center[0] * tile_size + tile_size // 2
+                    center_world_y = self.center[1] * tile_size + tile_size // 2
+                    enemy.x = center_world_x - enemy.width // 2
+                    enemy.y = center_world_y - enemy.height // 2
+                    enemy.rect.topleft = (enemy.x, enemy.y)
+                    enemy.drawRect.midbottom = enemy.rect.midbottom
                 enemies.append(enemy)
                 self.enemies_spawned.append(enemy)
 
@@ -519,15 +535,31 @@ class DungeonGen:
             seed=self.seed,
         )
 
+        self._mark_boss_room()
+
         self.generated = True
         self.center_camera(SCREEN_W, SCREEN_H)
 
-    def load_complete(self, tile_size):
+    def _mark_boss_room(self):
+        combat_rooms = [room for room in self.rooms if isinstance(room, CombatRoom)]
+        for room in combat_rooms:
+            room.is_boss_room = False
+
+        if not combat_rooms:
+            return
+
+        boss_room = max(
+            combat_rooms,
+            key=lambda room: room.center[0] * room.center[0] + room.center[1] * room.center[1],
+        )
+        boss_room.is_boss_room = True
+
+    def load_complete(self, tile_size, seed=None):
         # Complete loading and setup for gameplay
         if not self.loaded:
             self.load_all_assets()
             
-        self.generate_dungeon_random()
+        self.generate_dungeon_random(seed=seed)
         
         # Handle all collision and trigger setup
         from src.collision import clear_temporary_walls, clear_triggers, update_collision_walls
@@ -843,6 +875,7 @@ class HubGen:
         self.tile_size = 4
         self.cam_x = 0
         self.cam_y = 0
+        self.seed = None
 
     def _resolve_hub_path(self):
         if os.path.isdir(self.hub_path):
@@ -990,10 +1023,14 @@ class HubGen:
         self.cam_x = room.center[0] * self.tile_size - SCREEN_W // 2
         self.cam_y = room.center[1] * self.tile_size - SCREEN_H // 2
 
-    def load_complete(self, tile_size):
+    def load_complete(self, tile_size, seed=None):
         # Complete loading and setup for gameplay
         if not self.loaded:
             self.load_all_assets()
+
+        self.seed = seed
+        if seed is not None:
+            random.seed(seed)
         
         self.generate_hub_room()
         

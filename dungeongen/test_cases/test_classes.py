@@ -98,6 +98,7 @@ class TestCombatRoom(unittest.TestCase):
         self.assertIsInstance(combat_room.enemy_spawn_data, list)
         self.assertEqual(combat_room.spawn_timer, 0)
         self.assertEqual(combat_room.unlock_timer, 0)
+        self.assertFalse(combat_room.is_boss_room)
     
     def test_combat_room_has_no_hub_attributes(self):
         """Test that CombatRoom doesn't have hub-specific attributes"""
@@ -118,6 +119,14 @@ class TestCombatRoom(unittest.TestCase):
         rect = Rect(0, 0, 10, 10)
         combat_room = CombatRoom(rect, "test")
         self.assertTrue(hasattr(combat_room, '_create_enemy_by_type'))
+
+    def test_boss_room_spawn_plan_uses_center_boss(self):
+        rect = Rect(10, 20, 8, 8)
+        combat_room = CombatRoom(rect, "test")
+        combat_room.enemy_spawn_data = [("enemy", 1, 1)]
+        combat_room.is_boss_room = True
+
+        self.assertEqual(combat_room._get_spawn_plan(), [("boss", 4, 4)])
 
 
 class TestHallway(unittest.TestCase):
@@ -153,6 +162,17 @@ class TestDungeonGen(unittest.TestCase):
         """Test that DungeonGen has the unified load_complete method"""
         dungeon_gen = DungeonGen()
         self.assertTrue(hasattr(dungeon_gen, 'load_complete'))
+
+    def test_mark_boss_room_marks_farthest_combat_room(self):
+        dungeon_gen = DungeonGen()
+        near_room = CombatRoom(Rect(5, 5, 8, 8), "near")
+        far_room = CombatRoom(Rect(30, 40, 8, 8), "far")
+        dungeon_gen.rooms = [near_room, far_room]
+
+        dungeon_gen._mark_boss_room()
+
+        self.assertFalse(near_room.is_boss_room)
+        self.assertTrue(far_room.is_boss_room)
 
 
 class TestHubGen(unittest.TestCase):
