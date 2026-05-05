@@ -102,29 +102,33 @@ class InventoryUI:
         panel.blit(heading_surf, (icon_rect.right + 16, 36))
 
         # Separator
-        sep_y = icon_rect.bottom + 18
+        sep_y = icon_rect.bottom + 12
         pygame.draw.line(panel, self.C_BORDER2, (20, sep_y), (self.pw - 20, sep_y), 1)
 
         # Body content 
-        body_y = sep_y + 18
+        body_y = sep_y + 12
 
         # Coins row with colour accent
         coin_label = self.font_body.render("Space Bucks", True, self.C_MUTED)
         coin_value = self.font_body.render(f"  $  {money}", True, self.C_GOLD)
         panel.blit(coin_label, (28, body_y))
         panel.blit(coin_value, (28 + coin_label.get_width(), body_y))
-        body_y += self.font_body.get_linesize() + 10
+        body_y += self.font_body.get_linesize() + 6
 
         # Horizontal rule under coins
         pygame.draw.line(panel, self.C_ICON_BG,(28, body_y), (self.pw - 28, body_y), 1)
-        body_y += 14
+        body_y += 10
 
-        # Placeholder item slots (3 × 2 grid)
-        slot_size  = 64
-        slot_gap   = 14
+        # Item slots (5 × 2 grid)
+        slot_size  = 48
+        slot_gap   = 8
         cols       = 5
         grid_w     = cols * slot_size + (cols - 1) * slot_gap
         grid_x     = (self.pw - grid_w) // 2
+
+        inventory_title = self.font_body.render("Items", True, self.C_HEADING)
+        panel.blit(inventory_title, (28, body_y))
+        body_y += self.font_body.get_linesize() + 6
 
         self._item_slots = []
         inventory = player.inventory if player else []
@@ -138,7 +142,7 @@ class InventoryUI:
             # Show item if exists
             if i < len(inventory):
                 item = inventory[i]
-                item_text = self.font_btn.render("Kit", True, self.C_ICON_TEXT) if item['name'] == "Healing Kit" else self.font_btn.render("?", True, self.C_MUTED)
+                item_text = self.font_body.render("Kit", True, self.C_ICON_TEXT) if item['name'] == "Healing Kit" else self.font_body.render("?", True, self.C_MUTED)
                 panel.blit(item_text, (
                     slot_rect.centerx - item_text.get_width()  // 2,
                     slot_rect.centery - item_text.get_height() // 2,
@@ -147,7 +151,7 @@ class InventoryUI:
                 self._item_slots.append((slot_rect.move(self.px, draw_y), i))
             else:
                 # Empty slot indicator
-                dash = self.font_btn.render("—", True, self.C_MUTED)
+                dash = self.font_body.render("—", True, self.C_MUTED)
                 panel.blit(dash, (
                     slot_rect.centerx - dash.get_width()  // 2,
                     slot_rect.centery - dash.get_height() // 2,
@@ -166,7 +170,7 @@ class InventoryUI:
             item_idx = cols + i
             if item_idx < len(inventory):
                 item = inventory[item_idx]
-                item_text = self.font_btn.render("Kit", True, self.C_ICON_TEXT) if item['name'] == "Healing Kit" else self.font_btn.render("?", True, self.C_MUTED)
+                item_text = self.font_body.render("Kit", True, self.C_ICON_TEXT) if item['name'] == "Healing Kit" else self.font_body.render("?", True, self.C_MUTED)
                 panel.blit(item_text, (
                     slot_rect.centerx - item_text.get_width()  // 2,
                     slot_rect.centery - item_text.get_height() // 2,
@@ -174,16 +178,16 @@ class InventoryUI:
                 # Track this rect for click detection
                 self._item_slots.append((slot_rect.move(self.px, draw_y), item_idx))
             else:
-                dash = self.font_btn.render("—", True, self.C_MUTED)
+                dash = self.font_body.render("—", True, self.C_MUTED)
                 panel.blit(dash, (
                     slot_rect.centerx - dash.get_width()  // 2,
                     slot_rect.centery - dash.get_height() // 2,
                 ))
 
         # ── Stats section ─────────────────────────────────────────────
-        body_y += slot_size + slot_gap + 6
+        body_y += slot_size + slot_gap + 4
         pygame.draw.line(panel, self.C_BORDER2, (20, body_y), (self.pw - 20, body_y), 1)
-        body_y += 10
+        body_y += 6
 
         # Collect values — enemy stats derived from base_stats class methods
         p_hp    = f"{int(player.health)} / {player.max_health}" if player else "—"
@@ -204,7 +208,7 @@ class InventoryUI:
         col_mx  = self.pw // 4
         col_rx  = self.pw // 2
         col_bx  = self.pw * 3 // 4
-        lh      = self.font_body.get_linesize() + 4
+        lh      = self.font_body.get_linesize() + 1
 
         def stat_row(label, val, x, y, label_color):
             l_surf = self.font_body.render(label, True, label_color)
