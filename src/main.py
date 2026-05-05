@@ -218,7 +218,7 @@ async def main():
                     )
 
                 elif state == CREDITS:
-                    draw_credits(win, screen_width, screen_height, background, float_time, menu_camera_x, menu_camera_y)
+                    draw_credits(win, screen_width, screen_height, background, float_time, menu_camera_x, menu_camera_y, truck_img)
 
                 # Apply brightness filter
                 if brightness < 1.0:
