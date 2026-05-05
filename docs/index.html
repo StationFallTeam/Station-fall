@@ -287,8 +287,8 @@ config = {
         canvas.emscripten {
             border: 0px none;
             background-color: transparent;
-            width: 100%;
-            height: 100%;
+            width: 920px;
+            height: 920px;
             z-index: 5;
 
             padding: 0;
@@ -484,5 +484,25 @@ frameborder="1"
 
     </script>
 
+    <script>
+        // Fix for Retina/HiDPI displays - pygbag overrides canvas size repeatedly
+        function fixCanvas() {
+            var canvas = document.getElementById("canvas");
+            if (canvas) {
+                canvas.style.width = "920px";
+                canvas.style.height = "920px";
+                canvas.style.imageRendering = "pixelated";
+            }
+        }
+        fixCanvas();
+        window.addEventListener("load", function() {
+            var canvas = document.getElementById("canvas");
+            if (canvas) {
+                var observer = new MutationObserver(fixCanvas);
+                observer.observe(canvas, { attributes: true, attributeFilter: ["style", "width", "height"] });
+            }
+            fixCanvas();
+        });
+    </script>
 </body>
 </html>
