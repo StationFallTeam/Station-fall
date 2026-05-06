@@ -52,7 +52,7 @@ python3 - <<'PYEOF'
 with open("build/web/index.html", "r") as f:
     html = f.read()
 
-# 4a) Fix html element background to eliminate gray on wide screens
+# 4a) Fix html element background to eliminate gray borders
 if "html {" not in html and "html{" not in html:
     html = html.replace(
         "<style>",
