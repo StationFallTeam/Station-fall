@@ -99,9 +99,14 @@ async def main():
         if sys.platform != "emscripten":
             pygame.mixer.init()
 
-        # Use same window size as playerInDungeon
-        screen_width = 920
-        screen_height = 920
+        # Use monitor resolution for window size
+        if sys.platform != "emscripten":
+            info = pygame.display.Info()
+            screen_width = info.current_w
+            screen_height = info.current_h
+        else:
+            screen_width = 920
+            screen_height = 920
         win = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
         pygame.display.set_caption("Station Fall")
 

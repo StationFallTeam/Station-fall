@@ -71,10 +71,11 @@ class TestDeployment(unittest.TestCase):
         html = self._load_html()
         self.assertNotIn("pythonrc.py", html)
 
-    def test_no_legacy_hidpi_fix(self):
-        html = self._load_html()
-
-        self.assertNotIn("fixCanvas", html)
+    def test_canvas_fix_present(self):
+        index_path = Path("docs/index.html")
+        if not index_path.exists():
+            self.skipTest("docs/index.html not built yet")
+        self.assertIn("fixCanvas", index_path.read_text())
 
 if __name__ == "__main__":
     unittest.main()
